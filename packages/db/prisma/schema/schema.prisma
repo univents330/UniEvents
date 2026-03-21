@@ -9,34 +9,48 @@ datasource db {
   provider = "postgresql"
 }
 
-model Event {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  startDate   DateTime
-  endDate     DateTime
-  location    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  tickets   Ticket[]
-  passes    Pass[]
-  attendees Attendee[]
+enum EventType {
+  FREE
+  PAID
 }
 
+enum EventMode {
+  ONLINE
+  OFFLINE
+}
+
+// Event Modal Ready
+model Event {
+  id          String     @id @default(cuid())
+  name        String
+  timezone    DateTime
+  type        EventType
+  mode        EventMode
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  price       Float?
+  tickets     Ticket[] 
+  passes      Pass[]
+  attendees   Attendee[]
+}
+// Ticket model Ready
 model Ticket {
   id        String    @id @default(cuid())
   eventId   String
   event     Event     @relation(fields: [eventId], references: [id])
-  type      String
   price     Float
-  quantity  Int
+  quantity  Int @default(1)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   payments  Payment[]
   qrCode    QRCode?
+  maxqantity Int
 }
-
+// Attendee Modal Ready
 model Attendee {
   id        String   @id @default(cuid())
   name      String
@@ -50,6 +64,7 @@ model Attendee {
   passes   Pass[]
 }
 
+// Pass modal Ready
 model Pass {
   id         String   @id @default(cuid())
   eventId    String
@@ -60,18 +75,17 @@ model Pass {
   status     String   @default("ACTIVE")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  qrCode QRCode?
+  qrCode QRCode
 }
-
+// checkin modal ready
 model CheckIn {
   id         String   @id @default(cuid())
   attendeeId String
   attendee   Attendee @relation(fields: [attendeeId], references: [id])
   timestamp  DateTime @default(now())
-  method     String?
+  method     String
 }
-
+// Payment modal Ready
 model Payment {
   id        String   @id @default(cuid())
   ticketId  String
@@ -82,7 +96,7 @@ model Payment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
+// Qr Code Modal Ready
 model QRCode {
   id        String   @id @default(cuid())
   code      String   @unique
