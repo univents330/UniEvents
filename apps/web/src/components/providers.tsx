@@ -1,7 +1,7 @@
 "use client";
 
-import { Toaster } from "@my-better-t-app/ui/components/sonner";
 import { NeonAuthUIProvider } from "@neondatabase/auth/react/ui";
+import { Toaster } from "@voltaze/ui/components/sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 

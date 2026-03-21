@@ -1,5 +1,5 @@
 {
-	"name": "my-better-t-app",
+	"name": "voltaze",
 	"private": true,
 	"workspaces": {
 		"packages": [
@@ -28,22 +28,22 @@
 		"check-types": "turbo check-types",
 		"dev:web": "turbo -F web dev",
 		"dev:server": "turbo -F server dev",
-		"db:push": "turbo -F @my-better-t-app/db db:push",
-		"db:studio": "turbo -F @my-better-t-app/db db:studio",
-		"db:generate": "turbo -F @my-better-t-app/db db:generate",
-		"db:migrate": "turbo -F @my-better-t-app/db db:migrate",
+		"db:push": "turbo -F @voltaze/db db:push",
+		"db:studio": "turbo -F @voltaze/db db:studio",
+		"db:generate": "turbo -F @voltaze/db db:generate",
+		"db:migrate": "turbo -F @voltaze/db db:migrate",
 		"check": "biome check --write .",
 		"prepare": "husky"
 	},
 	"dependencies": {
-		"@my-better-t-app/env": "workspace:*",
+		"@voltaze/env": "workspace:*",
 		"@neondatabase/auth": "^0.2.0-beta.1",
 		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.0",
-		"@my-better-t-app/config": "workspace:*",
+		"@voltaze/config": "workspace:*",
 		"@types/bun": "catalog:",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.1.2",

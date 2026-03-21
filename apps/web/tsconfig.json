@@ -22,7 +22,7 @@
 		],
 		"paths": {
 			"@/*": ["./src/*"],
-			"@my-better-t-app/ui/*": ["../../packages/ui/src/*"]
+			"@voltaze/ui/*": ["../../packages/ui/src/*"]
 		}
 	},
 	"include": [

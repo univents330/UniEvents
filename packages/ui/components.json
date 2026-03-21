@@ -12,11 +12,11 @@
 	},
 	"iconLibrary": "lucide",
 	"aliases": {
-		"components": "@my-better-t-app/ui/components",
-		"utils": "@my-better-t-app/ui/lib/utils",
-		"hooks": "@my-better-t-app/ui/hooks",
-		"lib": "@my-better-t-app/ui/lib",
-		"ui": "@my-better-t-app/ui/components"
+		"components": "@voltaze/ui/components",
+		"utils": "@voltaze/ui/lib/utils",
+		"hooks": "@voltaze/ui/hooks",
+		"lib": "@voltaze/ui/lib",
+		"ui": "@voltaze/ui/components"
 	},
 	"menuColor": "default",
 	"menuAccent": "subtle",

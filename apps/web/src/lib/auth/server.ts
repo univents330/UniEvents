@@ -1,5 +1,5 @@
-import { env } from "@my-better-t-app/env/web";
 import { createNeonAuth } from "@neondatabase/auth/next/server";
+import { env } from "@voltaze/env/web";
 
 export const auth = createNeonAuth({
 	baseUrl: env.NEON_AUTH_BASE_URL,

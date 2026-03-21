@@ -8,8 +8,8 @@
 		"start": "next start"
 	},
 	"dependencies": {
-		"@my-better-t-app/env": "workspace:*",
-		"@my-better-t-app/ui": "workspace:*",
+		"@voltaze/env": "workspace:*",
+		"@voltaze/ui": "workspace:*",
 		"@neondatabase/auth": "^0.2.0-beta.1",
 		"@prisma/client": "catalog:",
 		"babel-plugin-react-compiler": "^1.0.0",
@@ -23,7 +23,7 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@my-better-t-app/config": "workspace:*",
+		"@voltaze/config": "workspace:*",
 		"@tailwindcss/postcss": "^4.1.18",
 		"@types/node": "^20",
 		"@types/react": "catalog:",

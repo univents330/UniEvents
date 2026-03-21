@@ -1,5 +1,5 @@
 {
-	"name": "@my-better-t-app/db",
+	"name": "@voltaze/db",
 	"type": "module",
 	"exports": {
 		".": {
@@ -17,7 +17,7 @@
 		"db:studio": "prisma studio"
 	},
 	"dependencies": {
-		"@my-better-t-app/env": "workspace:*",
+		"@voltaze/env": "workspace:*",
 		"@neondatabase/serverless": "^1.0.2",
 		"@prisma/adapter-neon": "^7.2.0",
 		"@prisma/client": "catalog:",
@@ -25,7 +25,7 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@my-better-t-app/config": "workspace:*",
+		"@voltaze/config": "workspace:*",
 		"prisma": "^7.2.0",
 		"typescript": "^5"
 	}

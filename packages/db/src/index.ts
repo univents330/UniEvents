@@ -1,5 +1,5 @@
-import { env } from "@my-better-t-app/env/server";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { env } from "@voltaze/env/server";
 
 import { PrismaClient } from "../prisma/generated/client";
 

@@ -10,15 +10,15 @@
 		"start": "bun run dist/index.mjs"
 	},
 	"dependencies": {
-		"@my-better-t-app/db": "workspace:*",
-		"@my-better-t-app/env": "workspace:*",
+		"@voltaze/db": "workspace:*",
+		"@voltaze/env": "workspace:*",
 		"cors": "^2.8.5",
 		"dotenv": "catalog:",
 		"express": "^5.1.0",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@my-better-t-app/config": "workspace:*",
+		"@voltaze/config": "workspace:*",
 		"@types/bun": "catalog:",
 		"@types/cors": "^2.8.17",
 		"@types/express": "^5.0.1",
