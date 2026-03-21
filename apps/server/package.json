@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@voltaze/db": "workspace:*",
 		"@voltaze/env": "workspace:*",
+		"@voltaze/schema": "workspace:*",
 		"cors": "^2.8.5",
 		"dotenv": "catalog:",
 		"express": "^5.1.0",

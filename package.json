@@ -36,9 +36,10 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
-		"@voltaze/env": "workspace:*",
 		"@neondatabase/auth": "^0.2.0-beta.1",
+		"@voltaze/env": "workspace:*",
 		"dotenv": "catalog:",
+		"razorpay": "^2.9.6",
 		"zod": "catalog:"
 	},
 	"devDependencies": {

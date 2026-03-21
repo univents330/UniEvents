@@ -7,103 +7,732 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public"]
 }
 
-enum EventType {
-  FREE
-  PAID
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+
+  @@schema("public")
 }
 
-enum EventMode {
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+
+  @@schema("public")
+}
+
+enum EventVisibility {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+
+  @@schema("public")
+}
+
+enum EventFormat {
+  IN_PERSON
   ONLINE
-  OFFLINE
+  HYBRID
+
+  @@schema("public")
 }
 
-// Event Modal Ready
-model Event {
-  id          String     @id @default(cuid())
+enum SessionType {
+  TALK
+  WORKSHOP
+  PANEL
+  BREAK
+  NETWORKING
+  KEYNOTE
+  QA
+  OTHER
+
+  @@schema("public")
+}
+
+enum SponsorTier {
+  TITLE
+  PLATINUM
+  GOLD
+  SILVER
+  BRONZE
+  COMMUNITY
+
+  @@schema("public")
+}
+
+enum CommunityAccess {
+  OPEN
+  APPLICATION
+  INVITE_ONLY
+
+  @@schema("public")
+}
+
+enum CommunityRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+
+  @@schema("public")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+
+  @@schema("public")
+}
+
+enum WaitlistStatus {
+  WAITING
+  OFFERED
+  ACCEPTED
+  EXPIRED
+
+  @@schema("public")
+}
+
+enum TicketVisibility {
+  PUBLIC
+  HIDDEN
+  INVITE_ONLY
+
+  @@schema("public")
+}
+
+enum PromoType {
+  PERCENT
+  AMOUNT
+
+  @@schema("public")
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  CANCELLED
+  REFUNDED
+  EXPIRED
+
+  @@schema("public")
+}
+
+enum RazorpayOrderStatus {
+  CREATED
+  ATTEMPTED
+  PAID
+  CONFIRMED
+  AUTHORIZED
+  CAPTURED
+  REFUNDED
+  FAILED
+  EXPIRED
+
+  @@schema("public")
+}
+
+enum RazorpayRefundStatus {
+  SUBMITTED
+  PROCESSED
+  FAILED
+  PENDING
+
+  @@schema("public")
+}
+
+enum CheckInMethod {
+  QR_SCAN
+  MANUAL
+  SELF
+
+  @@schema("public")
+}
+
+enum FormFieldType {
+  TEXT
+  TEXTAREA
+  EMAIL
+  PHONE
+  URL
+  NUMBER
+  DATE
+  SELECT
+  MULTISELECT
+  CHECKBOX
+  RADIO
+  FILE
+  CONSENT
+  LINKEDIN
+
+  @@schema("public")
+}
+
+model UserProfile {
+  id      String @id @default(cuid())
+  userId  String @unique
+  email   String?
+  name    String?
+  image   String?
+  bio      String?
+  website  String?
+  twitter  String?
+  linkedin String?
+  github   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("user_profiles")
+  @@schema("public")
+}
+
+model Organization {
+  id          String  @id @default(cuid())
   name        String
-  timezone    DateTime
-  type        EventType
-  mode        EventMode
-  description String
-  startDate   DateTime
-  endDate     DateTime
-  location    String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  price       Float?
-  tickets     Ticket[] 
-  passes      Pass[]
-  attendees   Attendee[]
-}
-// Ticket model Ready
-model Ticket {
-  id        String    @id @default(cuid())
-  eventId   String
-  event     Event     @relation(fields: [eventId], references: [id])
-  price     Float
-  quantity  Int @default(1)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  payments  Payment[]
-  qrCode    QRCode?
-  maxqantity Int
-}
-// Attendee Modal Ready
-model Attendee {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id])
+  slug        String  @unique
+  description String?
+  logoUrl     String?
+  website     String?
+  verified    Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  checkIns CheckIn[]
-  passes   Pass[]
+  members     OrgMember[]
+  events      Event[]
+  communities Community[]
+
+  @@map("organizations")
+  @@schema("public")
 }
 
-// Pass modal Ready
-model Pass {
-  id         String   @id @default(cuid())
+model OrgMember {
+  id     String  @id @default(cuid())
+  userId String
+  orgId  String
+  role   OrgRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+  @@map("org_members")
+  @@schema("public")
+}
+
+model EventSeries {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events Event[]
+
+  @@map("event_series")
+  @@schema("public")
+}
+
+model Event {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  title       String
+  description String?
+  summary     String?
+
+  coverUrl     String?
+  thumbnailUrl String?
+
+  venueName  String?
+  address    String?
+  city       String?
+  state      String?
+  country    String?
+  postalCode String?
+  latitude   Float?
+  longitude  Float?
+  onlineUrl  String?
+
+  timezone String   @default("UTC")
+  startsAt DateTime
+  endsAt   DateTime
+
+  format             EventFormat     @default(IN_PERSON)
+  visibility         EventVisibility @default(PUBLIC)
+  status             EventStatus     @default(DRAFT)
+  capacity           Int?
+  isApprovalRequired Boolean         @default(false)
+
+  orgId    String
+  seriesId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  series       EventSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+
+  cohosts      EventCohost[]
+  tags         EventTag[]
+  ticketTiers  TicketTier[]
+  promoCodes   PromoCode[]
+  tracks       AgendaTrack[]
+  speakers     EventSpeaker[]
+  sponsors     EventSponsor[]
+  formFields   FormField[]
+  invites      Invite[]
+  waitlist     Waitlist[]
+  updates      EventUpdate[]
+  certificates Certificate[]
+  analytics    EventAnalytics[]
+
+  @@index([orgId])
+  @@index([seriesId])
+  @@index([status, visibility])
+  @@index([startsAt])
+  @@map("events")
+  @@schema("public")
+}
+
+model EventCohost {
+  id        String  @id @default(cuid())
+  eventId   String
+  userId    String
+  canManage Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("event_cohosts")
+  @@schema("public")
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  events EventTag[]
+
+  @@map("tags")
+  @@schema("public")
+}
+
+model EventTag {
+  eventId String
+  tagId   String
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, tagId])
+  @@map("event_tags")
+  @@schema("public")
+}
+
+model AgendaTrack {
+  id       String  @id @default(cuid())
+  eventId  String
+  name     String
+  color    String?
+  position Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event    Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sessions AgendaSession[]
+
+  @@index([eventId])
+  @@map("agenda_tracks")
+  @@schema("public")
+}
+
+model AgendaSession {
+  id          String      @id @default(cuid())
+  trackId     String
+  title       String
+  description String?
+  type        SessionType @default(TALK)
+  startsAt    DateTime
+  endsAt      DateTime
+  position    Int         @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  track    AgendaTrack      @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  speakers SessionSpeaker[]
+
+  @@index([trackId])
+  @@index([startsAt])
+  @@map("agenda_sessions")
+  @@schema("public")
+}
+
+model EventSpeaker {
+  id       String  @id @default(cuid())
+  eventId  String
+  name     String
+  title    String?
+  bio      String?
+  photoUrl String?
+  website  String?
+  twitter  String?
+  linkedin String?
+  position Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event    Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sessions SessionSpeaker[]
+
+  @@index([eventId])
+  @@map("event_speakers")
+  @@schema("public")
+}
+
+model SessionSpeaker {
+  sessionId String
+  speakerId String
+
+  session AgendaSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  speaker EventSpeaker  @relation(fields: [speakerId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, speakerId])
+  @@map("session_speakers")
+  @@schema("public")
+}
+
+model EventSponsor {
+  id          String      @id @default(cuid())
+  eventId     String
+  name        String
+  tier        SponsorTier @default(COMMUNITY)
+  logoUrl     String?
+  website     String?
+  description String?
+  position    Int         @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("event_sponsors")
+  @@schema("public")
+}
+
+model EventUpdate {
+  id       String  @id @default(cuid())
+  eventId  String
+  title    String
+  body     String
+  isPinned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("event_updates")
+  @@schema("public")
+}
+
+model Certificate {
+  id             String   @id @default(cuid())
+  eventId        String
+  recipientName  String
+  recipientEmail String
+  templateUrl    String?
+  downloadUrl    String?
+  issuedAt       DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([recipientEmail])
+  @@map("certificates")
+  @@schema("public")
+}
+
+model EventAnalytics {
+  id             String   @id @default(cuid())
+  eventId        String
+  date           DateTime @db.Date
+  pageViews      Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  registrations  Int      @default(0)
+  ticketsSold    Int      @default(0)
+  revenue        Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, date])
+  @@map("event_analytics")
+  @@schema("public")
+}
+
+model Community {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  description String?
+  logoUrl     String?
+  coverUrl    String?
+  access      CommunityAccess @default(OPEN)
+  orgId       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  members      CommunityMember[]
+
+  @@index([orgId])
+  @@map("communities")
+  @@schema("public")
+}
+
+model CommunityMember {
+  id          String        @id @default(cuid())
+  communityId String
+  userId      String
+  role        CommunityRole @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@map("community_members")
+  @@schema("public")
+}
+
+model Waitlist {
+  id         String         @id @default(cuid())
   eventId    String
-  event      Event    @relation(fields: [eventId], references: [id])
-  attendeeId String
-  attendee   Attendee @relation(fields: [attendeeId], references: [id])
-  type       String
-  status     String   @default("ACTIVE")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  qrCode QRCode
+  userId     String?
+  email      String
+  status     WaitlistStatus @default(WAITING)
+  position   Int            @default(0)
+  notifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, email])
+  @@index([eventId, status])
+  @@map("waitlist")
+  @@schema("public")
 }
-// checkin modal ready
+
+model Invite {
+  id      String       @id @default(cuid())
+  eventId String
+  userId  String?
+  email   String
+  code    String       @unique
+  status  InviteStatus @default(PENDING)
+  message String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, email])
+  @@index([code])
+  @@map("invites")
+  @@schema("public")
+}
+
+model TicketTier {
+  id          String           @id @default(cuid())
+  eventId     String
+  name        String
+  description String?
+  price       Int              @default(0)
+  currency    String           @default("INR")
+  quantity    Int?
+  sold        Int              @default(0)
+  minPerOrder Int              @default(1)
+  maxPerOrder Int              @default(10)
+  salesStart  DateTime?
+  salesEnd    DateTime?
+  visibility  TicketVisibility @default(PUBLIC)
+  position    Int              @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@index([eventId])
+  @@map("ticket_tiers")
+  @@schema("public")
+}
+
+model PromoCode {
+  id         String    @id @default(cuid())
+  eventId    String
+  code       String
+  type       PromoType @default(PERCENT)
+  value      Int
+  maxUses    Int?
+  timesUsed  Int       @default(0)
+  validFrom  DateTime?
+  validUntil DateTime?
+  isActive   Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@unique([eventId, code])
+  @@index([eventId])
+  @@map("promo_codes")
+  @@schema("public")
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  tierId      String
+  userId      String
+  promoCodeId String?
+  status      TicketStatus @default(VALID)
+  metadata    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tier      TicketTier     @relation(fields: [tierId], references: [id], onDelete: Restrict)
+  promoCode PromoCode?     @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  payment   Payment?
+  checkIns  CheckIn[]
+  responses FormResponse[]
+
+  @@index([tierId])
+  @@index([userId])
+  @@index([code])
+  @@map("tickets")
+  @@schema("public")
+}
+
 model CheckIn {
-  id         String   @id @default(cuid())
-  attendeeId String
-  attendee   Attendee @relation(fields: [attendeeId], references: [id])
-  timestamp  DateTime @default(now())
-  method     String
+  id            String        @id @default(cuid())
+  ticketId      String
+  method        CheckInMethod @default(QR_SCAN)
+  checkedInById String?
+
+  createdAt DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("check_ins")
+  @@schema("public")
 }
-// Payment modal Ready
+
 model Payment {
-  id        String   @id @default(cuid())
-  ticketId  String
-  ticket    Ticket   @relation(fields: [ticketId], references: [id])
-  amount    Float
-  status    String   @default("PENDING")
-  provider  String?
+  id       String @id @default(cuid())
+  ticketId String @unique
+
+  razorpayOrderId  String?                @unique
+  razorpayPaymentId String?               @unique
+  orderStatus      RazorpayOrderStatus @default(CREATED)
+
+  amount   Int
+  currency String @default("INR")
+
+  paymentMethod String?
+  paymentSignature String?
+  paidAt        DateTime?
+
+  razorpayRefundId String?               @unique
+  refundAmount Int?
+  refundStatus RazorpayRefundStatus?
+  refundReason String?
+  refundedAt   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([razorpayOrderId])
+  @@index([orderStatus])
+  @@map("payments")
+  @@schema("public")
 }
-// Qr Code Modal Ready
-model QRCode {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  ticketId  String?  @unique
-  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
-  passId    String?  @unique
-  pass      Pass?    @relation(fields: [passId], references: [id])
+
+model FormField {
+  id          String        @id @default(cuid())
+  eventId     String
+  label       String
+  type        FormFieldType @default(TEXT)
+  placeholder String?
+  helpText    String?
+  isRequired  Boolean       @default(false)
+  options     Json?
+  position    Int           @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  responses FormResponse[]
+
+  @@index([eventId])
+  @@map("form_fields")
+  @@schema("public")
+}
+
+model FormResponse {
+  id       String @id @default(cuid())
+  fieldId  String
+  ticketId String
+  value    String
+
+  createdAt DateTime @default(now())
+
+  field  FormField @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  ticket Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([fieldId, ticketId])
+  @@map("form_responses")
+  @@schema("public")
 }

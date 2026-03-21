@@ -9,6 +9,9 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),
+		RAZORPAY_KEY_ID: z.string().min(1),
+		RAZORPAY_KEY_SECRET: z.string().min(1),
+		RAZORPAY_WEBHOOK_SECRET: z.string().min(1),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

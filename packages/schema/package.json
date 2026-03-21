@@ -1,0 +1,22 @@
+{
+	"name": "@voltaze/schema",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./common": "./src/common.ts",
+		"./org": "./src/org.ts",
+		"./event": "./src/event.ts",
+		"./ticket": "./src/ticket.ts",
+		"./agenda": "./src/agenda.ts",
+		"./community": "./src/community.ts"
+	},
+	"dependencies": {
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@voltaze/config": "workspace:*",
+		"typescript": "^5"
+	}
+}

@@ -1,0 +1,3 @@
+{
+	"extends": "@voltaze/config/tsconfig.base.json"
+}

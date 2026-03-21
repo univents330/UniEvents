@@ -8,7 +8,7 @@ dotenv.config({
 });
 
 export default defineConfig({
-	schema: path.join("prisma", "schema"),
+	schema: path.join("prisma", "schema", "schema.prisma"),
 	migrations: {
 		path: path.join("prisma", "migrations"),
 	},
