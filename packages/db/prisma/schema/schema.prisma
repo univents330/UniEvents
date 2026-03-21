@@ -1,10 +1,95 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated"
+  provider     = "prisma-client"
+  output       = "../generated"
   moduleFormat = "esm"
-  runtime = "bun"
+  runtime      = "bun"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tickets   Ticket[]
+  passes    Pass[]
+  attendees Attendee[]
+}
+
+model Ticket {
+  id        String    @id @default(cuid())
+  eventId   String
+  event     Event     @relation(fields: [eventId], references: [id])
+  type      String
+  price     Float
+  quantity  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
+  qrCode    QRCode?
+}
+
+model Attendee {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  checkIns CheckIn[]
+  passes   Pass[]
+}
+
+model Pass {
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id])
+  attendeeId String
+  attendee   Attendee @relation(fields: [attendeeId], references: [id])
+  type       String
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  qrCode QRCode?
+}
+
+model CheckIn {
+  id         String   @id @default(cuid())
+  attendeeId String
+  attendee   Attendee @relation(fields: [attendeeId], references: [id])
+  timestamp  DateTime @default(now())
+  method     String?
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  amount    Float
+  status    String   @default("PENDING")
+  provider  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QRCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  ticketId  String?  @unique
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
+  passId    String?  @unique
+  pass      Pass?    @relation(fields: [passId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
