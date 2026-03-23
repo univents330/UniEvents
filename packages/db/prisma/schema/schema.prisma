@@ -9,12 +9,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  SUPER_ADMIN
-  USER
-  HOST
-}
-
 enum EventType {
   FREE
   PAID
@@ -24,39 +18,24 @@ enum EventMode {
   ONLINE
   OFFLINE
 }
-
 enum EventVisibility {
   PUBLIC
   PRIVATE
 }
 
-enum TicketStatus {
-  ACTIVE
-  SOLD_OUT
-  DISABLED
+enum UserRole {
+  ADMIN
+  HOST
+  USER
 }
 
-enum DiscountType {
-  PERCENTAGE
-  FIXED
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  REFUNDED
+enum AuthProvider {
+  AUTH0
+  EMAIL
 }
 
 enum PaymentGateway {
   RAZORPAY
-}
-
-enum PaymentStatus {
-  PENDING
-  CAPTURED
-  FAILED
-  REFUNDED
 }
 
 enum PassStatus {
@@ -65,308 +44,146 @@ enum PassStatus {
   CANCELLED
 }
 
-enum CheckInMethod {
-  QR
-  MANUAL
-}
-
-enum NotificationChannel {
-  EMAIL
-  WHATSAPP
-}
-
-enum NotificationStatus {
-  QUEUED
-  SENT
+enum PaymentStatus {
+  PENDING
+  SUCCESS
   FAILED
-}
-
-enum SupportQueryStatus {
-  OPEN
-  IN_PROGRESS
-  CLOSED
+  REFUNDED
 }
 
 model User {
-  id             String   @id @default(cuid())
-  authProvider   String   @default("AUTH0")
-  authProviderId String?  @unique
-  name           String
-  email          String   @unique
-  phone          String?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  role         UserRole @default(USER)
+  authProvider AuthProvider @default(AUTH0)
+  authSubject  String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  roles               UserRole[]
-  hostedEvents        Event[]             @relation("HostedEvents")
-  teamMemberships     EventTeamMember[]
-  orders              Order[]
-  attendees           Attendee[]
-  scannerCheckIns     CheckIn[]           @relation("ScannerCheckIns")
-  notifications       Notification[]
-  supportQueries      SupportQuery[]
-  supportQueryReplies SupportQueryReply[] @relation("SupportQueryRepliedBy")
+  hostedEvents Event[]
 }
 
-model UserRole {
-  id        String   @id @default(cuid())
-  userId    String
-  role      Role
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, role])
-}
-
+// Event Modal Ready
 model Event {
-  id                    String          @id @default(cuid())
-  hostId                String
-  name                  String
-  description           String
-  venueName             String
-  address               String
-  type                  EventType
-  mode                  EventMode
-  visibility            EventVisibility
-  startDate             DateTime
-  endDate               DateTime
-  allowUserCancellation Boolean         @default(false)
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-
-  host           User              @relation("HostedEvents", fields: [hostId], references: [id], onDelete: Restrict)
-  tickets        Ticket[]
-  passes         Pass[]
-  attendees      Attendee[]
-  orders         Order[]
-  coupons        Coupon[]
-  teamMembers    EventTeamMember[]
-  supportQueries SupportQuery[]
-
-  @@index([hostId])
+  id          String     @id @default(cuid())
+  name        String
+  timezone    DateTime
+  coverurl    String 
+  thumbnail   String
+  venuename   String
+  address     String
+  latitude    String
+  longitude  String
+  type        EventType
+  mode        EventMode
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  price       Float?
+  tickets     Ticket[] 
+  passes      Pass[]
+  visibility  EventVisibility
+  attendees   Attendee[]
+  hostId      String?
+  host        User?      @relation(fields: [hostId], references: [id])
+  coupons     Coupon[]
 }
-
+// Ticket model Ready
 model Ticket {
-  id                  String       @id @default(cuid())
-  eventId             String
-  name                String
-  event               Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  price               Float
-  quantity            Int          @default(1)
-  maxQuantityPerOrder Int          @default(10)
-  status              TicketStatus @default(ACTIVE)
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-
-  orderItems OrderItem[]
-  passes     Pass[]
-
-  @@index([eventId])
+  id        String    @id @default(cuid())
+  eventId   String
+  event     Event     @relation(fields: [eventId], references: [id])
+  price     Float
+  quantity  Int @default(1)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
+  qrCode    QRCode?
+  maxqantity Int
 }
-
-model Order {
-  id             String      @id @default(cuid())
-  eventId        String
-  userId         String
-  couponId       String?
-  status         OrderStatus @default(PENDING)
-  totalAmount    Float
-  discountAmount Float       @default(0)
-  finalAmount    Float
-  cancelAllowed  Boolean     @default(false)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  event    Event      @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  user     User       @relation(fields: [userId], references: [id], onDelete: Restrict)
-  coupon   Coupon?    @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  items    OrderItem[]
-  payments Payment[]
-  passes   Pass[]
-  notifications Notification[]
-
-  @@index([eventId])
-  @@index([userId])
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  ticketId  String
-  quantity  Int
-  unitPrice Float
-  subtotal  Float
-  createdAt DateTime @default(now())
-
-  order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
-
-  @@index([orderId])
-  @@index([ticketId])
-}
-
+// Attendee Modal Ready
 model Attendee {
   id        String   @id @default(cuid())
-  eventId   String
-  userId    String?
   name      String
-  email     String
-  phone     String?
+  email     String   @unique
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  event    Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user     User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  checkIns CheckIn[]
   passes   Pass[]
-  checkIns CheckIn[]
-
-  @@unique([eventId, email])
-  @@index([userId])
 }
 
+// Pass modal Ready
 model Pass {
-  id          String     @id @default(cuid())
-  eventId     String
-  orderId     String
-  ticketId    String
-  attendeeId  String
-  code        String     @unique
-  status      PassStatus @default(ACTIVE)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  cancelledAt DateTime?
-  usedAt      DateTime?
-
-  event    Event     @relation(fields: [eventId], references: [id], onDelete: Restrict)
-  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  ticket   Ticket    @relation(fields: [ticketId], references: [id], onDelete: Restrict)
-  attendee Attendee  @relation(fields: [attendeeId], references: [id], onDelete: Restrict)
-  checkIns CheckIn[]
-
-  @@index([eventId])
-  @@index([orderId])
-  @@index([attendeeId])
+  id         String   @id @default(cuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id])
+  attendeeId String
+  attendee   Attendee @relation(fields: [attendeeId], references: [id])
+  type       String
+  status     PassStatus   @default(ACTIVE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  qrCode     QRCode?
+  checkIns   CheckIn[]
 }
-
+// checkin modal ready
 model CheckIn {
-  id          String        @id @default(cuid())
-  passId      String
-  attendeeId  String
-  scannedById String
-  method      CheckInMethod @default(QR)
-  timestamp   DateTime      @default(now())
-
-  pass      Pass     @relation(fields: [passId], references: [id], onDelete: Cascade)
-  attendee  Attendee @relation(fields: [attendeeId], references: [id], onDelete: Cascade)
-  scannedBy User     @relation("ScannerCheckIns", fields: [scannedById], references: [id], onDelete: Restrict)
+  id         String   @id @default(cuid())
+  attendeeId String
+  attendee   Attendee @relation(fields: [attendeeId], references: [id])
+  passId     String
+  pass       Pass     @relation(fields: [passId], references: [id])
+  timestamp  DateTime @default(now())
+  method     String
 
   @@unique([passId])
-  @@index([scannedById])
+}
+// Payment modal Ready
+model Payment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  couponId  String?
+  coupon    Coupon?  @relation(fields: [couponId], references: [id])
+  amount    Float
+  status    PaymentStatus @default(PENDING)
+  gateway   PaymentGateway?
+  transactionId String? @unique
+  currency  String   @default("INR")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Coupon {
-  id             String       @id @default(cuid())
-  eventId        String
-  code           String
-  discountType   DiscountType
-  discountValue  Float
-  maxRedemptions Int?
-  redeemedCount  Int          @default(0)
-  startsAt       DateTime?
-  endsAt         DateTime?
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id          String   @id @default(cuid())
+  code        String   @unique
+  description String?
+  discountPct Int
+  isActive    Boolean  @default(true)
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  event  Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  orders Order[]
-
-  @@unique([eventId, code])
+  payments    Payment[]
 }
-
-model EventTeamMember {
-  id               String   @id @default(cuid())
-  eventId          String
-  userId           String
-  canScanQr        Boolean  @default(true)
-  canViewRevenue   Boolean  @default(true)
-  canManageCoupons Boolean  @default(false)
-  createdAt        DateTime @default(now())
-
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([eventId, userId])
-}
-
-model Payment {
-  id               String         @id @default(cuid())
-  orderId          String
-  gateway          PaymentGateway @default(RAZORPAY)
-  gatewayOrderId   String?
-  gatewayPaymentId String?
-  amount           Float
-  status           PaymentStatus  @default(PENDING)
-  currency         String         @default("INR")
-  paidAt           DateTime?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-}
-
-model Notification {
-  id                String             @id @default(cuid())
-  userId            String
-  orderId           String?
-  channel           NotificationChannel
-  status            NotificationStatus @default(QUEUED)
-  recipient         String
-  message           String
-  providerMessageId String?
-  sentAt            DateTime?
-  createdAt         DateTime           @default(now())
-
-  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([orderId])
-}
-
-model SupportQuery {
-  id        String             @id @default(cuid())
-  userId    String
-  eventId   String?
-  subject   String
-  message   String
-  status    SupportQueryStatus @default(OPEN)
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-
-  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event   Event?              @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  replies SupportQueryReply[]
-
-  @@index([userId])
-  @@index([eventId])
-  @@index([status])
-}
-
-model SupportQueryReply {
+// QrCode Modal Ready
+model QRCode {
   id        String   @id @default(cuid())
-  queryId   String
-  adminId   String
-  message   String
+  code      String   @unique
+  ticketId  String  @unique
+  ticket    Ticket  @relation(fields: [ticketId], references: [id])
+  passId    String  @unique
+  pass      Pass    @relation(fields: [passId], references: [id])
+  isUsed    Boolean @default(false)
+  usedAt    DateTime?
   createdAt DateTime @default(now())
-
-  query SupportQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
-  admin User         @relation("SupportQueryRepliedBy", fields: [adminId], references: [id], onDelete: Restrict)
-
-  @@index([queryId])
-  @@index([adminId])
+  updatedAt DateTime @updatedAt
 }
