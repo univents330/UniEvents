@@ -134,9 +134,11 @@ model Pass {
   attendee   Attendee @relation(fields: [attendeeId], references: [id])
   type       String
   status     PassStatus   @default(ACTIVE)
+  code       String   @unique
+  isUsed     Boolean  @default(false)
+  usedAt     DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  qrCode     QRCode?
   checkIns   CheckIn[]
 
   @@index([eventId])
@@ -192,15 +194,4 @@ model Coupon {
   payments    Payment[]
 
   @@index([eventId])
-}
-// QrCode Modal Ready
-model QRCode {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  passId    String  @unique
-  pass      Pass    @relation(fields: [passId], references: [id])
-  isUsed    Boolean @default(false)
-  usedAt    DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
