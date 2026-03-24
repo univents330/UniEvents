@@ -102,9 +102,10 @@ model Ticket {
   quantity  Int @default(1)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  payments  Payment[]
-  qrCode    QRCode?
+  passes    Pass[]
   maxqantity Int
+
+  @@index([eventId])
 }
 // Attendee Modal Ready
 model Attendee {
@@ -118,6 +119,8 @@ model Attendee {
 
   checkIns CheckIn[]
   passes   Pass[]
+
+  @@index([eventId])
 }
 
 // Pass modal Ready
@@ -125,6 +128,8 @@ model Pass {
   id         String   @id @default(cuid())
   eventId    String
   event      Event    @relation(fields: [eventId], references: [id])
+  ticketId   String?
+  ticket     Ticket?  @relation(fields: [ticketId], references: [id])
   attendeeId String
   attendee   Attendee @relation(fields: [attendeeId], references: [id])
   type       String
@@ -133,6 +138,8 @@ model Pass {
   updatedAt  DateTime @updatedAt
   qrCode     QRCode?
   checkIns   CheckIn[]
+
+  @@index([eventId])
 }
 // checkin modal ready
 model CheckIn {
@@ -149,17 +156,26 @@ model CheckIn {
 // Payment modal Ready
 model Payment {
   id        String   @id @default(cuid())
-  ticketId  String
-  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  orderId   String?
+  order     Order?   @relation(fields: [orderId], references: [id])
   couponId  String?
   coupon    Coupon?  @relation(fields: [couponId], references: [id])
-  amount    Float
+  amount    Decimal
   status    PaymentStatus @default(PENDING)
   gateway   PaymentGateway?
   transactionId String? @unique
   currency  String   @default("INR")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([transactionId])
+}
+
+model Order {
+  id        String    @id @default(cuid())
+  payments  Payment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Coupon {
@@ -174,13 +190,13 @@ model Coupon {
   updatedAt   DateTime @updatedAt
 
   payments    Payment[]
+
+  @@index([eventId])
 }
 // QrCode Modal Ready
 model QRCode {
   id        String   @id @default(cuid())
   code      String   @unique
-  ticketId  String  @unique
-  ticket    Ticket  @relation(fields: [ticketId], references: [id])
   passId    String  @unique
   pass      Pass    @relation(fields: [passId], references: [id])
   isUsed    Boolean @default(false)
