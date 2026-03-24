@@ -27,6 +27,7 @@ enum EventVisibility {
 model Event {
   id          String     @id @default(cuid())
   name        String
+  slug        String     @unique
   timezone    DateTime
   coverurl    String 
   thumbnail   String

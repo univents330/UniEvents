@@ -19,7 +19,18 @@ const eventSchema = z.object({
 	location: z.string(),
 	price: z.number().optional(),
 	visibility: z.enum(["PUBLIC", "PRIVATE"]),
+	slug: z.string().optional(),
 });
+
+const slugify = (text: string) => {
+	return text
+		.toString()
+		.toLowerCase()
+		.trim()
+		.replace(/\s+/g, "-")
+		.replace(/[^\w-]+/g, "")
+		.replace(/--+/g, "-");
+};
 
 const updateEventSchema = eventSchema.partial();
 
@@ -33,8 +44,13 @@ export const createEvent = async (req: Request, res: Response) => {
 			});
 		}
 
+		const data = {
+			...validation.data,
+			slug: validation.data.slug || slugify(validation.data.name),
+		};
+
 		const event = await prisma.event.create({
-			data: validation.data,
+			data,
 		});
 		res.status(201).json(event);
 	} catch (error) {
@@ -84,6 +100,32 @@ export const getEventById = async (req: Request, res: Response) => {
 	} catch (error) {
 		res.status(500).json({
 			message: "Error fetching event",
+			error,
+		});
+	}
+};
+
+export const getEventBySlug = async (req: Request, res: Response) => {
+	const slug = req.params.slug as string;
+	try {
+		const event = await prisma.event.findUnique({
+			where: { slug },
+			include: {
+				tickets: true,
+				_count: {
+					select: { attendees: true },
+				},
+			},
+		});
+		if (!event) {
+			return res.status(404).json({
+				message: "Event not found",
+			});
+		}
+		res.json(event);
+	} catch (error) {
+		res.status(500).json({
+			message: "Error fetching event by slug",
 			error,
 		});
 	}
