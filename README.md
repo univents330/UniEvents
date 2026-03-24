@@ -4,6 +4,7 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 
 ## Features
 
+
 - **TypeScript** - For type safety and improved developer experience
 - **Next.js** - Full-stack React framework
 - **TailwindCSS** - Utility-first CSS for rapid UI development
