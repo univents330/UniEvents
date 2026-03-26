@@ -4,10 +4,9 @@ import { z } from "zod";
 
 const createTicketSchema = z.object({
 	eventId: z.string(),
-	orderId: z.string().optional(),
-	price: z.coerce.number().int().nonnegative(),
-	quantity: z.coerce.number().int().positive().optional(),
-	maxQuantity: z.coerce.number().int().positive().optional(),
+	orderId: z.string(),
+	tierId: z.string(),
+	pricePaid: z.coerce.number().int().nonnegative(),
 });
 
 const updateTicketSchema = createTicketSchema.partial();
@@ -38,7 +37,7 @@ export const getTicket = async (req: Request, res: Response) => {
 	try {
 		const ticket = await prisma.ticket.findUnique({
 			where: { id },
-			include: { event: true },
+			include: { event: true, order: true, tier: true, pass: true },
 		});
 		if (!ticket) {
 			return res.status(404).json({

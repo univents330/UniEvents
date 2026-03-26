@@ -5,12 +5,13 @@ import {
 	getPassesByEvent,
 	verifyPass,
 } from "../controller/pass_controller";
+import { requireAuth } from "../middleware/auth";
 
 const router: Router = Router();
 
-router.post("/passes", createPass);
-router.get("/passes/:id", getPass);
-router.get("/passes/event/:eventId", getPassesByEvent);
-router.post("/passes/verify/:id", verifyPass);
+router.post("/passes", requireAuth, createPass);
+router.get("/passes/:id", requireAuth, getPass);
+router.get("/passes/event/:eventId", requireAuth, getPassesByEvent);
+router.post("/passes/verify/:id", requireAuth, verifyPass);
 
 export default router;

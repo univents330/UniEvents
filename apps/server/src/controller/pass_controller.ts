@@ -5,10 +5,10 @@ import { z } from "zod";
 const createPassSchema = z.object({
 	eventId: z.string(),
 	attendeeId: z.string(),
-	ticketId: z.string().optional(),
-	type: z.string(),
+	ticketId: z.string(),
+	type: z.enum(["GENERAL", "VIP", "BACKSTAGE", "SPEAKER"]).optional(),
 	status: z.enum(["ACTIVE", "USED", "CANCELLED"]).optional(),
-	code: z.string().optional(),
+	code: z.string(),
 });
 
 // create pass controller ready
@@ -21,8 +21,13 @@ export const createPass = async (req: Request, res: Response) => {
 				errors: validation.error.issues,
 			});
 		}
+		const data = {
+			...validation.data,
+			type: validation.data.type ?? "GENERAL",
+			status: validation.data.status ?? "ACTIVE",
+		};
 		const pass = await prisma.pass.create({
-			data: validation.data,
+			data,
 		});
 		res.status(201).json(pass);
 	} catch (error) {
@@ -78,6 +83,7 @@ export const verifyPass = async (req: Request, res: Response) => {
 			prisma.checkIn.create({
 				data: {
 					attendeeId: pass.attendeeId,
+					eventId: pass.eventId,
 					method: "QR_SCAN",
 				},
 			}),

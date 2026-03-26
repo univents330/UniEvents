@@ -1,6 +1,7 @@
 import { env } from "@voltaze/env/server";
 import cors from "cors";
 import express from "express";
+import authRouter from "./routes/auth_routes";
 import eventRouter from "./routes/event_routes";
 import orderRouter from "./routes/order_routes";
 import passRouter from "./routes/pass_routes";
@@ -18,6 +19,7 @@ app.use(
 
 app.use(express.json());
 
+app.use("/api", authRouter);
 app.use("/api", ticketRouter);
 app.use("/api", eventRouter);
 app.use("/api", passRouter);

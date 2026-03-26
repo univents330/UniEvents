@@ -6,13 +6,14 @@ import {
 	getTicketsByEvent,
 	updateTicket,
 } from "../controller/ticket_controller";
+import { requireAuth } from "../middleware/auth";
 
 const router: Router = Router();
 
-router.post("/tickets", createTicket);
-router.get("/tickets/:id", getTicket);
-router.get("/tickets/event/:eventId", getTicketsByEvent);
-router.patch("/tickets/:id", updateTicket);
-router.delete("/tickets/:id", deleteTicket);
+router.post("/tickets", requireAuth, createTicket);
+router.get("/tickets/:id", requireAuth, getTicket);
+router.get("/tickets/event/:eventId", requireAuth, getTicketsByEvent);
+router.patch("/tickets/:id", requireAuth, updateTicket);
+router.delete("/tickets/:id", requireAuth, deleteTicket);
 
 export default router;

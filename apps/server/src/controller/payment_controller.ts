@@ -14,18 +14,21 @@ const paymentGatewaySchema = z.enum(["RAZORPAY"]);
 
 const createPaymentSchema = z.object({
 	orderId: z.string(),
-	amount: z.coerce.string(),
+	amount: z.coerce.number().int().nonnegative(),
+	currency: z.string().optional(),
 	transactionId: z.string().optional(),
 	status: paymentStatusSchema.optional(),
-	gateway: paymentGatewaySchema.optional(),
-	provider: z.string().optional(),
+	gateway: paymentGatewaySchema,
+	gatewayMeta: z.any().optional(),
 });
 
 const updatePaymentSchema = z.object({
 	transactionId: z.string().optional(),
 	status: paymentStatusSchema.optional(),
 	gateway: paymentGatewaySchema.optional(),
-	provider: z.string().optional(),
+	gatewayMeta: z.any().optional(),
+	currency: z.string().optional(),
+	amount: z.coerce.number().int().nonnegative().optional(),
 });
 
 export const createPayment = async (req: Request, res: Response) => {

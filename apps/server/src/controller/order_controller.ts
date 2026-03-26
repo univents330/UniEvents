@@ -7,11 +7,11 @@ const db = prisma as any;
 const createOrderSchema = z.object({
 	attendeeId: z.string(),
 	eventId: z.string(),
-	status: z.string().optional(),
+	status: z.enum(["PENDING", "COMPLETED", "CANCELLED"]).optional(),
 });
 
 const updateOrderSchema = z.object({
-	status: z.string().optional(),
+	status: z.enum(["PENDING", "COMPLETED", "CANCELLED"]).optional(),
 });
 
 export const createOrder = async (req: Request, res: Response) => {

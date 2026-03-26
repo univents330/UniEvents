@@ -1,25 +1,25 @@
 import prisma from "@voltaze/db";
 import type { Request, Response } from "express";
 import { z } from "zod";
+import type { AuthedRequest } from "../middleware/auth";
 
 const eventSchema = z.object({
 	name: z.string(),
-	timezone: z.coerce.date(),
-	coverurl: z.string().url(),
+	slug: z.string().optional(),
+	coverUrl: z.string().url(),
 	thumbnail: z.string().url(),
-	venuename: z.string(),
+	venueName: z.string(),
 	address: z.string(),
 	latitude: z.string(),
 	longitude: z.string(),
-	type: z.enum(["FREE", "PAID"]),
-	mode: z.enum(["ONLINE", "OFFLINE"]),
-	description: z.string(),
+	timezone: z.coerce.date(),
 	startDate: z.coerce.date(),
 	endDate: z.coerce.date(),
-	location: z.string(),
-	price: z.coerce.number().int().nonnegative().optional(),
+	type: z.enum(["FREE", "PAID"]),
+	mode: z.enum(["ONLINE", "OFFLINE"]),
 	visibility: z.enum(["PUBLIC", "PRIVATE"]),
-	slug: z.string().optional(),
+	status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED", "COMPLETED"]).optional(),
+	description: z.string(),
 });
 
 const slugify = (text: string) => {
@@ -44,9 +44,16 @@ export const createEvent = async (req: Request, res: Response) => {
 			});
 		}
 
-		const data = {
-			...validation.data,
-			slug: validation.data.slug || slugify(validation.data.name),
+		const user = (req as AuthedRequest).user;
+		if (!user) {
+			return res.status(401).json({ message: "Authentication required" });
+		}
+
+		const eventData = validation.data;
+		const data: any = {
+			...eventData,
+			slug: eventData.slug || slugify(eventData.name),
+			user: { connect: { id: user.id } },
 		};
 
 		const event = await prisma.event.create({
@@ -135,7 +142,21 @@ export const getEventBySlug = async (req: Request, res: Response) => {
 
 export const updateEvent = async (req: Request, res: Response) => {
 	const id = req.params.id as string;
+	const user = (req as AuthedRequest).user;
+	if (!user) {
+		return res.status(401).json({ message: "Authentication required" });
+	}
 	try {
+		const existingEvent = await prisma.event.findUnique({ where: { id } });
+		if (!existingEvent) {
+			return res.status(404).json({ message: "Event not found" });
+		}
+		if (existingEvent.userId !== user.id) {
+			return res
+				.status(403)
+				.json({ message: "Not authorized to update this event" });
+		}
+
 		const validation = updateEventSchema.safeParse(req.body);
 		if (!validation.success) {
 			return res.status(400).json({
@@ -144,9 +165,14 @@ export const updateEvent = async (req: Request, res: Response) => {
 			});
 		}
 
+		const updateData: any = { ...validation.data };
+		if (updateData.slug && typeof updateData.slug !== "string") {
+			updateData.slug = slugify(existingEvent.name);
+		}
+
 		const event = await prisma.event.update({
 			where: { id },
-			data: validation.data,
+			data: updateData,
 		});
 		res.json(event);
 	} catch (error) {
@@ -159,7 +185,21 @@ export const updateEvent = async (req: Request, res: Response) => {
 
 export const deleteEvent = async (req: Request, res: Response) => {
 	const id = req.params.id as string;
+	const user = (req as AuthedRequest).user;
+	if (!user) {
+		return res.status(401).json({ message: "Authentication required" });
+	}
 	try {
+		const existingEvent = await prisma.event.findUnique({ where: { id } });
+		if (!existingEvent) {
+			return res.status(404).json({ message: "Event not found" });
+		}
+		if (existingEvent.userId !== user.id) {
+			return res
+				.status(403)
+				.json({ message: "Not authorized to delete this event" });
+		}
+
 		await prisma.event.delete({
 			where: { id },
 		});
