@@ -1,22 +1,43 @@
-import type { Router } from "express";
-import * as paymentsController from "./payments.controller.js";
+import {
+	createPaymentSchema,
+	idParamSchema,
+	razorpayWebhookSchema,
+	updatePaymentSchema,
+} from "@voltaze/schema";
+import { Router } from "express";
 
-export function createPaymentsRouter(router: Router) {
-	router.post(
-		"/payments",
-		paymentsController.validateBody(paymentsController.createPaymentSchema),
-		paymentsController.createPayment,
-	);
-	router.get("/payments/:id", paymentsController.getPayment);
+import { validatePipe } from "@/common/pipes/validate.pipe";
+import { asyncHandler } from "@/common/utils/async-handler";
+
+import { paymentsController } from "./payments.controller";
+
+export function createPaymentsRouter(): Router {
+	const router = Router();
+
 	router.get(
-		"/payments/order/:orderId",
-		paymentsController.getPaymentByOrderId,
+		"/",
+		asyncHandler((req, res) => paymentsController.list(req, res)),
+	);
+	router.get(
+		"/:id",
+		validatePipe({ params: idParamSchema }),
+		asyncHandler((req, res) => paymentsController.getById(req, res)),
+	);
+	router.post(
+		"/",
+		validatePipe({ body: createPaymentSchema }),
+		asyncHandler((req, res) => paymentsController.create(req, res)),
 	);
 	router.patch(
-		"/payments/:id/status",
-		paymentsController.validateBody(paymentsController.updatePaymentSchema),
-		paymentsController.updatePaymentStatus,
+		"/:id",
+		validatePipe({ params: idParamSchema, body: updatePaymentSchema }),
+		asyncHandler((req, res) => paymentsController.update(req, res)),
 	);
-	router.post("/payments/:id/refund", paymentsController.refundPayment);
-	router.post("/webhooks/payment", paymentsController.handleWebhook);
+	router.post(
+		"/webhook/razorpay",
+		validatePipe({ body: razorpayWebhookSchema }),
+		asyncHandler((req, res) => paymentsController.webhook(req, res)),
+	);
+
+	return router;
 }

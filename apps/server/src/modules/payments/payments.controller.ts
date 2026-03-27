@@ -1,68 +1,43 @@
-import { createPaymentSchema, updatePaymentSchema } from "@voltaze/schema";
-import type { Request, RequestHandler, Response } from "express";
-import { controller, created, ok, validateBody } from "../../lib/controller.js";
-import * as paymentsService from "./payments.service.js";
+import {
+	createPaymentSchema,
+	idParamSchema,
+	razorpayWebhookSchema,
+	updatePaymentSchema,
+} from "@voltaze/schema";
+import type { Request, Response } from "express";
 
-export const createPayment: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const payment = await paymentsService.createPayment(req.body);
-		created(res, payment);
-	},
-);
+import { paymentsService } from "./payments.service";
 
-export const getPayment: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const payment = await paymentsService.getPaymentById(
-			req.params.id as string,
-		);
-		ok(res, payment);
-	},
-);
+export class PaymentsController {
+	async list(_req: Request, res: Response) {
+		const payments = await paymentsService.list();
+		res.status(200).json(payments);
+	}
 
-export const getPaymentByOrderId: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const payment = await paymentsService.getPaymentByOrderId(
-			req.params.orderId as string,
-		);
-		if (!payment) {
-			res.status(404).json({
-				success: false,
-				error: { message: "Payment not found", code: "NOT_FOUND" },
-			});
-			return;
-		}
-		ok(res, payment);
-	},
-);
+	async getById(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const payment = await paymentsService.getById(params.id);
+		res.status(200).json(payment);
+	}
 
-export const updatePaymentStatus: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const payment = await paymentsService.updatePaymentStatus(
-			req.params.id as string,
-			req.body.status,
-			req.body.transactionId,
-		);
-		ok(res, payment);
-	},
-);
+	async create(req: Request, res: Response) {
+		const body = createPaymentSchema.parse(req.body);
+		const payment = await paymentsService.create(body);
+		res.status(201).json(payment);
+	}
 
-export const handleWebhook: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await paymentsService.processWebhook(
-			req.body.gateway,
-			req.body,
-		);
-		ok(res, result);
-	},
-);
+	async update(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = updatePaymentSchema.parse(req.body);
+		const payment = await paymentsService.update(params.id, body);
+		res.status(200).json(payment);
+	}
 
-export const refundPayment: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const payment = await paymentsService.refundPayment(
-			req.params.id as string,
-		);
-		ok(res, payment);
-	},
-);
+	async webhook(req: Request, res: Response) {
+		const body = razorpayWebhookSchema.parse(req.body);
+		const payment = await paymentsService.handleWebhook(body);
+		res.status(200).json(payment);
+	}
+}
 
-export { createPaymentSchema, updatePaymentSchema, validateBody };
+export const paymentsController = new PaymentsController();

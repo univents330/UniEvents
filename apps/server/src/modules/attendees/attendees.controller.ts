@@ -1,72 +1,38 @@
 import {
 	attendeeFilterSchema,
 	createAttendeeSchema,
+	idParamSchema,
 	updateAttendeeSchema,
 } from "@voltaze/schema";
-import type { Request, RequestHandler, Response } from "express";
-import { controller, created, ok, validateBody } from "../../lib/controller";
-import * as attendeesService from "./attendees.service";
+import type { Request, Response } from "express";
 
-export const createAttendee: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const attendee = await attendeesService.createAttendee(req.body);
-		created(res, attendee);
-	},
-);
+import { attendeesService } from "./attendees.service";
 
-export const getAttendee: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const attendee = await attendeesService.getAttendeeById(
-			req.params.id as string,
-		);
-		ok(res, attendee);
-	},
-);
+export class AttendeesController {
+	async list(req: Request, res: Response) {
+		const query = attendeeFilterSchema.parse(req.query);
+		const attendees = await attendeesService.list(query);
+		res.status(200).json(attendees);
+	}
 
-export const getAttendeeByEmail: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const attendee = await attendeesService.getAttendeeByEmail(
-			req.params.eventId as string,
-			req.params.email as string,
-		);
-		if (!attendee) {
-			res.status(404).json({
-				success: false,
-				error: { message: "Attendee not found", code: "NOT_FOUND" },
-			});
-			return;
-		}
-		ok(res, attendee);
-	},
-);
+	async getById(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const attendee = await attendeesService.getById(params.id);
+		res.status(200).json(attendee);
+	}
 
-export const listAttendees: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await attendeesService.listAttendees(req.query as any);
-		ok(res, result);
-	},
-);
+	async create(req: Request, res: Response) {
+		const body = createAttendeeSchema.parse(req.body);
+		const attendee = await attendeesService.create(body);
+		res.status(201).json(attendee);
+	}
 
-export const updateAttendee: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const attendee = await attendeesService.updateAttendee(
-			req.params.id as string,
-			req.body,
-		);
-		ok(res, attendee);
-	},
-);
+	async update(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = updateAttendeeSchema.parse(req.body);
+		const attendee = await attendeesService.update(params.id, body);
+		res.status(200).json(attendee);
+	}
+}
 
-export const deleteAttendee: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		await attendeesService.deleteAttendee(req.params.id as string);
-		ok(res, { deleted: true });
-	},
-);
-
-export {
-	attendeeFilterSchema,
-	createAttendeeSchema,
-	updateAttendeeSchema,
-	validateBody,
-};
+export const attendeesController = new AttendeesController();

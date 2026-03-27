@@ -1,118 +1,65 @@
 import { prisma } from "@voltaze/db";
-import { createError } from "../../lib/middleware/error";
+import type {
+	CreateTicketInput,
+	TicketFilterInput,
+	UpdateTicketInput,
+} from "@voltaze/schema";
 
-export async function getTicketById(id: string) {
-	const ticket = await prisma.ticket.findUnique({
-		where: { id },
-		include: {
-			tier: true,
-			event: true,
-			order: { include: { attendee: true } },
-			pass: true,
-		},
-	});
-	if (!ticket) {
-		throw createError("Ticket not found", 404, "NOT_FOUND");
-	}
-	return ticket;
-}
+import { BadRequestError, NotFoundError } from "@/common/exceptions/app-error";
 
-export async function getTicketsByOrderId(orderId: string) {
-	return prisma.ticket.findMany({
-		where: { orderId },
-		include: { tier: true, event: true, pass: true },
-	});
-}
-
-export async function getTicketsByAttendeeId(attendeeId: string) {
-	return prisma.ticket.findMany({
-		where: { order: { attendeeId } },
-		include: { tier: true, event: true, pass: true },
-	});
-}
-
-export async function getTicketsByEventId(eventId: string) {
-	return prisma.ticket.findMany({
-		where: { eventId },
-		include: { tier: true, order: { include: { attendee: true } }, pass: true },
-	});
-}
-
-export async function generatePass(
-	ticketId: string,
-	passType?: "GENERAL" | "VIP" | "BACKSTAGE" | "SPEAKER",
-) {
-	const ticket = await prisma.ticket.findUnique({
-		where: { id: ticketId },
-		include: {
-			pass: true,
-			event: true,
-			order: { include: { attendee: true } },
-		},
-	});
-
-	if (!ticket) {
-		throw createError("Ticket not found", 404, "NOT_FOUND");
+export class TicketsService {
+	async list(input: TicketFilterInput) {
+		const { page, limit, sortBy, sortOrder, ...filters } = input;
+		const skip = (page - 1) * limit;
+		return prisma.ticket.findMany({
+			where: filters,
+			orderBy: { [sortBy]: sortOrder },
+			skip,
+			take: limit,
+		});
 	}
 
-	if (ticket.pass) {
-		throw createError(
-			"Pass already generated for this ticket",
-			400,
-			"PASS_EXISTS",
-		);
+	async getById(id: string) {
+		const ticket = await prisma.ticket.findUnique({ where: { id } });
+		if (!ticket) throw new NotFoundError("Ticket not found");
+		return ticket;
 	}
 
-	const code = generatePassCode();
+	async create(input: CreateTicketInput) {
+		const [order, event, tier] = await Promise.all([
+			prisma.order.findUnique({ where: { id: input.orderId } }),
+			prisma.event.findUnique({ where: { id: input.eventId } }),
+			prisma.ticketTier.findUnique({ where: { id: input.tierId } }),
+		]);
+		if (!order) throw new NotFoundError("Order not found");
+		if (!event) throw new NotFoundError("Event not found");
+		if (!tier) throw new NotFoundError("Ticket tier not found");
+		if (tier.eventId !== input.eventId) {
+			throw new BadRequestError("Ticket tier does not belong to event");
+		}
+		if (tier.soldCount >= tier.maxQuantity) {
+			throw new BadRequestError("Ticket tier sold out");
+		}
 
-	return prisma.pass.create({
-		data: {
-			eventId: ticket.eventId,
-			attendeeId: ticket.order.attendeeId,
-			ticketId: ticket.id,
-			type: passType ?? "GENERAL",
-			code,
-		},
-		include: {
-			event: true,
-			attendee: true,
-			ticket: { include: { tier: true } },
-		},
-	});
-}
-
-function generatePassCode(): string {
-	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-	let code = "";
-	for (let i = 0; i < 12; i++) {
-		if (i > 0 && i % 4 === 0) code += "-";
-		code += chars.charAt(Math.floor(Math.random() * chars.length));
+		return prisma.$transaction(async (tx) => {
+			const ticket = await tx.ticket.create({
+				data: {
+					...input,
+					pricePaid: tier.price,
+				},
+			});
+			await tx.ticketTier.update({
+				where: { id: input.tierId },
+				data: { soldCount: { increment: 1 } },
+			});
+			return ticket;
+		});
 	}
-	return code;
+
+	async update(id: string, input: UpdateTicketInput) {
+		await this.getById(id);
+		return prisma.ticket.update({ where: { id }, data: input });
+	}
 }
 
-export async function getPassByCode(code: string) {
-	const pass = await prisma.pass.findUnique({
-		where: { code },
-		include: {
-			event: true,
-			attendee: true,
-			ticket: { include: { tier: true } },
-		},
-	});
-	return pass;
-}
-
-export async function getPassesByEventId(eventId: string) {
-	return prisma.pass.findMany({
-		where: { eventId },
-		include: { attendee: true, ticket: { include: { tier: true } } },
-	});
-}
-
-export async function getPassesByAttendeeId(attendeeId: string) {
-	return prisma.pass.findMany({
-		where: { attendeeId },
-		include: { event: true, ticket: { include: { tier: true } } },
-	});
-}
+export const ticketsService = new TicketsService();

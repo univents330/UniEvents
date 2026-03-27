@@ -1,22 +1,39 @@
-import type { Router } from "express";
-import * as attendeesController from "./attendees.controller";
+import {
+	attendeeFilterSchema,
+	createAttendeeSchema,
+	idParamSchema,
+	updateAttendeeSchema,
+} from "@voltaze/schema";
+import { Router } from "express";
 
-export function createAttendeesRouter(router: Router) {
-	router.post(
-		"/attendees",
-		attendeesController.validateBody(attendeesController.createAttendeeSchema),
-		attendeesController.createAttendee,
-	);
-	router.get("/attendees", attendeesController.listAttendees);
-	router.get("/attendees/:id", attendeesController.getAttendee);
+import { validatePipe } from "@/common/pipes/validate.pipe";
+import { asyncHandler } from "@/common/utils/async-handler";
+
+import { attendeesController } from "./attendees.controller";
+
+export function createAttendeesRouter(): Router {
+	const router = Router();
+
 	router.get(
-		"/attendees/event/:eventId/email/:email",
-		attendeesController.getAttendeeByEmail,
+		"/",
+		validatePipe({ query: attendeeFilterSchema }),
+		asyncHandler((req, res) => attendeesController.list(req, res)),
+	);
+	router.get(
+		"/:id",
+		validatePipe({ params: idParamSchema }),
+		asyncHandler((req, res) => attendeesController.getById(req, res)),
+	);
+	router.post(
+		"/",
+		validatePipe({ body: createAttendeeSchema }),
+		asyncHandler((req, res) => attendeesController.create(req, res)),
 	);
 	router.patch(
-		"/attendees/:id",
-		attendeesController.validateBody(attendeesController.updateAttendeeSchema),
-		attendeesController.updateAttendee,
+		"/:id",
+		validatePipe({ params: idParamSchema, body: updateAttendeeSchema }),
+		asyncHandler((req, res) => attendeesController.update(req, res)),
 	);
-	router.delete("/attendees/:id", attendeesController.deleteAttendee);
+
+	return router;
 }

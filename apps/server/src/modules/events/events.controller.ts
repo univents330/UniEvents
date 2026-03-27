@@ -1,97 +1,38 @@
 import {
 	createEventSchema,
-	createTicketTierSchema,
 	eventFilterSchema,
+	idParamSchema,
 	updateEventSchema,
-	updateTicketTierSchema,
 } from "@voltaze/schema";
-import type { Request, RequestHandler, Response } from "express";
-import { controller, created, ok, validateBody } from "../../lib/controller.js";
-import * as eventsService from "./events.service.js";
+import type { Request, Response } from "express";
 
-export const createEvent: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const event = await eventsService.createEvent(req.body);
-		created(res, event);
-	},
-);
+import { eventsService } from "./events.service";
 
-export const getEvent: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const event = await eventsService.getEventById(req.params.id as string);
-		ok(res, event);
-	},
-);
+export class EventsController {
+	async list(req: Request, res: Response) {
+		const query = eventFilterSchema.parse(req.query);
+		const events = await eventsService.list(query);
+		res.status(200).json(events);
+	}
 
-export const getEventBySlug: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const event = await eventsService.getEventBySlug(req.params.slug as string);
-		ok(res, event);
-	},
-);
+	async getById(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const event = await eventsService.getById(params.id);
+		res.status(200).json(event);
+	}
 
-export const listEvents: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await eventsService.listEvents(req.query as any);
-		ok(res, result);
-	},
-);
+	async create(req: Request, res: Response) {
+		const body = createEventSchema.parse(req.body);
+		const event = await eventsService.create(body);
+		res.status(201).json(event);
+	}
 
-export const updateEvent: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const event = await eventsService.updateEvent(
-			req.params.id as string,
-			req.body,
-		);
-		ok(res, event);
-	},
-);
+	async update(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = updateEventSchema.parse(req.body);
+		const event = await eventsService.update(params.id, body);
+		res.status(200).json(event);
+	}
+}
 
-export const deleteEvent: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		await eventsService.deleteEvent(req.params.id as string);
-		ok(res, { deleted: true });
-	},
-);
-
-export const createTicketTier: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const tier = await eventsService.createTicketTier(req.body);
-		created(res, tier);
-	},
-);
-
-export const updateTicketTier: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const tier = await eventsService.updateTicketTier(
-			req.params.id as string,
-			req.body,
-		);
-		ok(res, tier);
-	},
-);
-
-export const deleteTicketTier: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		await eventsService.deleteTicketTier(req.params.id as string);
-		ok(res, { deleted: true });
-	},
-);
-
-export const getTicketTiers: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const tiers = await eventsService.getTicketTiers(
-			req.params.eventId as string,
-		);
-		ok(res, tiers);
-	},
-);
-
-export {
-	createEventSchema,
-	createTicketTierSchema,
-	eventFilterSchema,
-	updateEventSchema,
-	updateTicketTierSchema,
-	validateBody,
-};
+export const eventsController = new EventsController();

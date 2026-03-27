@@ -1,86 +1,38 @@
-import type { Request, RequestHandler, Response } from "express";
-import { z } from "zod";
-import { controller, created, ok, validateBody } from "../../lib/controller.js";
-import * as ticketsService from "./tickets.service.js";
+import {
+	createTicketSchema,
+	idParamSchema,
+	ticketFilterSchema,
+	updateTicketSchema,
+} from "@voltaze/schema";
+import type { Request, Response } from "express";
 
-const generatePassSchema = z.object({
-	passType: z.enum(["GENERAL", "VIP", "BACKSTAGE", "SPEAKER"]).optional(),
-});
+import { ticketsService } from "./tickets.service";
 
-export const getTicket: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const ticket = await ticketsService.getTicketById(req.params.id as string);
-		ok(res, ticket);
-	},
-);
+export class TicketsController {
+	async list(req: Request, res: Response) {
+		const query = ticketFilterSchema.parse(req.query);
+		const tickets = await ticketsService.list(query);
+		res.status(200).json(tickets);
+	}
 
-export const getTicketsByOrderId: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const tickets = await ticketsService.getTicketsByOrderId(
-			req.params.orderId as string,
-		);
-		ok(res, tickets);
-	},
-);
+	async getById(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const ticket = await ticketsService.getById(params.id);
+		res.status(200).json(ticket);
+	}
 
-export const getTicketsByAttendeeId: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const tickets = await ticketsService.getTicketsByAttendeeId(
-			req.params.attendeeId as string,
-		);
-		ok(res, tickets);
-	},
-);
+	async create(req: Request, res: Response) {
+		const body = createTicketSchema.parse(req.body);
+		const ticket = await ticketsService.create(body);
+		res.status(201).json(ticket);
+	}
 
-export const getTicketsByEventId: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const tickets = await ticketsService.getTicketsByEventId(
-			req.params.eventId as string,
-		);
-		ok(res, tickets);
-	},
-);
+	async update(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = updateTicketSchema.parse(req.body);
+		const ticket = await ticketsService.update(params.id, body);
+		res.status(200).json(ticket);
+	}
+}
 
-export const generatePass: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const pass = await ticketsService.generatePass(
-			req.params.ticketId as string,
-			req.body.passType,
-		);
-		created(res, pass);
-	},
-);
-
-export const getPassByCode: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const pass = await ticketsService.getPassByCode(req.params.code as string);
-		if (!pass) {
-			res.status(404).json({
-				success: false,
-				error: { message: "Pass not found", code: "NOT_FOUND" },
-			});
-			return;
-		}
-		ok(res, pass);
-	},
-);
-
-export const getPassesByEventId: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const passes = await ticketsService.getPassesByEventId(
-			req.params.eventId as string,
-		);
-		ok(res, passes);
-	},
-);
-
-export const getPassesByAttendeeId: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const passes = await ticketsService.getPassesByAttendeeId(
-			req.params.attendeeId as string,
-		);
-		ok(res, passes);
-	},
-);
-
-export { generatePassSchema, validateBody };
+export const ticketsController = new TicketsController();

@@ -1,53 +1,38 @@
 import {
 	createOrderSchema,
+	idParamSchema,
 	orderFilterSchema,
 	updateOrderSchema,
 } from "@voltaze/schema";
-import type { Request, RequestHandler, Response } from "express";
-import { controller, created, ok, validateBody } from "../../lib/controller.js";
-import * as ordersService from "./orders.service.js";
+import type { Request, Response } from "express";
 
-export const createOrder: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const order = await ordersService.createOrder(req.body);
-		created(res, order);
-	},
-);
+import { ordersService } from "./orders.service";
 
-export const getOrder: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const order = await ordersService.getOrderById(req.params.id as string);
-		ok(res, order);
-	},
-);
+export class OrdersController {
+	async list(req: Request, res: Response) {
+		const query = orderFilterSchema.parse(req.query);
+		const orders = await ordersService.list(query);
+		res.status(200).json(orders);
+	}
 
-export const listOrders: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await ordersService.listOrders(req.query as any);
-		ok(res, result);
-	},
-);
+	async getById(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const order = await ordersService.getById(params.id);
+		res.status(200).json(order);
+	}
 
-export const updateOrderStatus: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const order = await ordersService.updateOrderStatus(
-			req.params.id as string,
-			req.body.status,
-		);
-		ok(res, order);
-	},
-);
+	async create(req: Request, res: Response) {
+		const body = createOrderSchema.parse(req.body);
+		const order = await ordersService.create(body);
+		res.status(201).json(order);
+	}
 
-export const cancelOrder: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const order = await ordersService.cancelOrder(req.params.id as string);
-		ok(res, order);
-	},
-);
+	async update(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = updateOrderSchema.parse(req.body);
+		const order = await ordersService.update(params.id, body);
+		res.status(200).json(order);
+	}
+}
 
-export {
-	createOrderSchema,
-	orderFilterSchema,
-	updateOrderSchema,
-	validateBody,
-};
+export const ordersController = new OrdersController();

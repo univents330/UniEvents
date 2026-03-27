@@ -1,60 +1,36 @@
-import type { Request, RequestHandler, Response } from "express";
-import { controller, ok } from "../../lib/controller";
-import { getAuth } from "./auth.service";
+import {
+	createUserSchema,
+	idParamSchema,
+	updateUserSchema,
+} from "@voltaze/schema";
+import type { Request, Response } from "express";
 
-const authRouter = getAuth() as any;
+import { authService } from "./auth.service";
 
-export const signUp: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await authRouter.api.signUp({ body: req.body });
-		ok(res, result);
-	},
-);
+export class AuthController {
+	async listUsers(_req: Request, res: Response) {
+		const users = await authService.listUsers();
+		res.status(200).json(users);
+	}
 
-export const signIn: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await authRouter.api.signIn({ body: req.body });
-		ok(res, result);
-	},
-);
+	async getUserById(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const user = await authService.getUserById(params.id);
+		res.status(200).json(user);
+	}
 
-export const signOut: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		await authRouter.api.signOut({
-			headers: req.headers as Record<string, string>,
-		});
-		ok(res, { success: true });
-	},
-);
+	async createUser(req: Request, res: Response) {
+		const body = createUserSchema.parse(req.body);
+		const user = await authService.createUser(body);
+		res.status(201).json(user);
+	}
 
-export const getSession: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await authRouter.api.getSession({
-			headers: req.headers as Record<string, string>,
-		});
-		if (!result) {
-			res.status(401).json({ user: null, session: null });
-			return;
-		}
-		ok(res, result);
-	},
-);
+	async updateUser(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = updateUserSchema.parse(req.body);
+		const user = await authService.updateUser(params.id, body);
+		res.status(200).json(user);
+	}
+}
 
-export const listSessions: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		const result = await authRouter.api.listSessions({
-			headers: req.headers as Record<string, string>,
-		});
-		ok(res, result);
-	},
-);
-
-export const deleteSession: RequestHandler = controller(
-	async (req: Request, res: Response) => {
-		await authRouter.api.deleteSession({
-			headers: req.headers as Record<string, string>,
-			body: { sessionId: req.params.sessionId },
-		});
-		ok(res, { success: true });
-	},
-);
+export const authController = new AuthController();
