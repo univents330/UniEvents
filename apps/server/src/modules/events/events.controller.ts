@@ -6,6 +6,8 @@ import {
 } from "@voltaze/schema";
 import type { Request, Response } from "express";
 
+import type { AuthenticatedRequest } from "@/common/types/auth-request";
+
 import { eventsService } from "./events.service";
 
 export class EventsController {
@@ -22,15 +24,20 @@ export class EventsController {
 	}
 
 	async create(req: Request, res: Response) {
+		const authReq = req as AuthenticatedRequest;
 		const body = createEventSchema.parse(req.body);
-		const event = await eventsService.create(body);
+		const event = await eventsService.create(body, authReq.auth.userId);
 		res.status(201).json(event);
 	}
 
 	async update(req: Request, res: Response) {
+		const authReq = req as AuthenticatedRequest;
 		const params = idParamSchema.parse(req.params);
 		const body = updateEventSchema.parse(req.body);
-		const event = await eventsService.update(params.id, body);
+		const event = await eventsService.update(params.id, body, {
+			userId: authReq.auth.userId,
+			role: authReq.auth.role,
+		});
 		res.status(200).json(event);
 	}
 }

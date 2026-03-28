@@ -102,7 +102,7 @@ model User {
 model Session {
   id        String   @id @default(ulid())
   expiresAt DateTime
-  token     String  
+  token     String   // stores the hashed refresh token
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
@@ -132,6 +132,7 @@ model Account {
   updatedAt             DateTime  @updatedAt
 
   @@index([userId])
+  @@unique([providerId, accountId])
   @@map("account")
 }
 

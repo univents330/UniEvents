@@ -6,6 +6,10 @@ import {
 } from "@voltaze/schema";
 import { Router } from "express";
 
+import {
+	requireAuth,
+	requireRoles,
+} from "@/common/middlewares/auth.middleware";
 import { validatePipe } from "@/common/pipes/validate.pipe";
 import { asyncHandler } from "@/common/utils/async-handler";
 
@@ -26,11 +30,15 @@ export function createEventsRouter(): Router {
 	);
 	router.post(
 		"/",
+		requireAuth,
+		requireRoles("ADMIN", "HOST"),
 		validatePipe({ body: createEventSchema }),
 		asyncHandler((req, res) => eventsController.create(req, res)),
 	);
 	router.patch(
 		"/:id",
+		requireAuth,
+		requireRoles("ADMIN", "HOST"),
 		validatePipe({ params: idParamSchema, body: updateEventSchema }),
 		asyncHandler((req, res) => eventsController.update(req, res)),
 	);

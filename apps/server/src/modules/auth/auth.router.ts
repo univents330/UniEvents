@@ -1,10 +1,12 @@
 import {
-	createUserSchema,
-	idParamSchema,
-	updateUserSchema,
+	loginSchema,
+	logoutSchema,
+	refreshSessionSchema,
+	registerSchema,
 } from "@voltaze/schema";
 import { Router } from "express";
 
+import { requireAuth } from "@/common/middlewares/auth.middleware";
 import { validatePipe } from "@/common/pipes/validate.pipe";
 import { asyncHandler } from "@/common/utils/async-handler";
 
@@ -14,23 +16,29 @@ export function createAuthRouter(): Router {
 	const router = Router();
 
 	router.get(
-		"/users",
-		asyncHandler((req, res) => authController.listUsers(req, res)),
-	);
-	router.get(
-		"/users/:id",
-		validatePipe({ params: idParamSchema }),
-		asyncHandler((req, res) => authController.getUserById(req, res)),
+		"/me",
+		requireAuth,
+		asyncHandler((req, res) => authController.me(req, res)),
 	);
 	router.post(
-		"/users",
-		validatePipe({ body: createUserSchema }),
-		asyncHandler((req, res) => authController.createUser(req, res)),
+		"/register",
+		validatePipe({ body: registerSchema }),
+		asyncHandler((req, res) => authController.register(req, res)),
 	);
-	router.patch(
-		"/users/:id",
-		validatePipe({ params: idParamSchema, body: updateUserSchema }),
-		asyncHandler((req, res) => authController.updateUser(req, res)),
+	router.post(
+		"/login",
+		validatePipe({ body: loginSchema }),
+		asyncHandler((req, res) => authController.login(req, res)),
+	);
+	router.post(
+		"/refresh",
+		validatePipe({ body: refreshSessionSchema }),
+		asyncHandler((req, res) => authController.refresh(req, res)),
+	);
+	router.post(
+		"/logout",
+		validatePipe({ body: logoutSchema }),
+		asyncHandler((req, res) => authController.logout(req, res)),
 	);
 
 	return router;
