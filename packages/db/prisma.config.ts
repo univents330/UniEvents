@@ -10,6 +10,7 @@ dotenv.config({
 export default defineConfig({
 	schema: path.join("prisma", "schema"),
 	migrations: {
+		seed: "bun run prisma/seed.ts",
 		path: path.join("prisma", "migrations"),
 	},
 	datasource: {
