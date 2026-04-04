@@ -1,15 +1,11 @@
 import "@mantine/core/styles.css";
-
-import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
+import "./globals.css";
 import type { Metadata } from "next";
-
-import { AppProviders } from "@/common/components/providers";
-
-import "../index.css";
+import { AppProviders } from "@/shared/providers";
 
 export const metadata: Metadata = {
-	title: "Voltaze",
-	description: "Voltaze web app",
+	title: "Voltaze - Event Ticketing Platform",
+	description: "Create, manage, and attend events with Voltaze",
 };
 
 export default function RootLayout({
@@ -18,10 +14,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" {...mantineHtmlProps}>
-			<head>
-				<ColorSchemeScript defaultColorScheme="auto" />
-			</head>
+		<html lang="en">
 			<body>
 				<AppProviders>{children}</AppProviders>
 			</body>
