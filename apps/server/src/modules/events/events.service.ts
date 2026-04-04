@@ -1,11 +1,12 @@
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
-import type {
-	CreateEventInput,
-	CreateEventTicketTierInput,
-	EventFilterInput,
-	TicketTierFilterInput,
-	UpdateEventInput,
-	UpdateEventTicketTierInput,
+import {
+	type CreateEventInput,
+	type CreateEventTicketTierInput,
+	createPaginationMeta,
+	type EventFilterInput,
+	type TicketTierFilterInput,
+	type UpdateEventInput,
+	type UpdateEventTicketTierInput,
 } from "@voltaze/schema";
 
 import {
@@ -155,32 +156,42 @@ export class EventsService {
 		const skip = (page - 1) * limit;
 		const accessWhere = this.buildReadAccessWhere(actor);
 
-		return prisma.event.findMany({
-			where: {
-				AND: [
-					accessWhere,
-					{
-						...filters,
-						startDate:
-							startDateFrom || startDateTo
-								? {
-										gte: startDateFrom,
-										lte: startDateTo,
-									}
-								: undefined,
-						name: search
+		const where: Prisma.EventWhereInput = {
+			AND: [
+				accessWhere,
+				{
+					...filters,
+					startDate:
+						startDateFrom || startDateTo
 							? {
-									contains: search,
-									mode: "insensitive",
+									gte: startDateFrom,
+									lte: startDateTo,
 								}
 							: undefined,
-					},
-				],
-			},
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+					name: search
+						? {
+								contains: search,
+								mode: "insensitive",
+							}
+						: undefined,
+				},
+			],
+		};
+
+		const [data, total] = await Promise.all([
+			prisma.event.findMany({
+				where,
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.event.count({ where }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getById(id: string, actor?: EventActor) {
@@ -288,12 +299,20 @@ export class EventsService {
 		const { page, limit, sortBy, sortOrder } = input;
 		const skip = (page - 1) * limit;
 
-		return prisma.ticketTier.findMany({
-			where: { eventId },
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+		const [data, total] = await Promise.all([
+			prisma.ticketTier.findMany({
+				where: { eventId },
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.ticketTier.count({ where: { eventId } }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getTicketTierById(eventId: string, tierId: string, actor?: EventActor) {

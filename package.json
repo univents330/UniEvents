@@ -38,7 +38,10 @@
 	},
 	"dependencies": {
 		"@voltaze/env": "workspace:*",
+		"dayjs": "^1.11.20",
 		"dotenv": "catalog:",
+		"html5-qrcode": "^2.3.8",
+		"qrcode.react": "^4.2.0",
 		"zod": "catalog:"
 	},
 	"devDependencies": {

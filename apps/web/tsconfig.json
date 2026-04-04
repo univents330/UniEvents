@@ -20,7 +20,11 @@
 			}
 		],
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@common": ["./src/common/index.ts"],
+			"@common/*": ["./src/common/*"],
+			"@modules": ["./src/modules/index.ts"],
+			"@modules/*": ["./src/modules/*"]
 		}
 	},
 	"include": [

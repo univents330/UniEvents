@@ -179,6 +179,28 @@ export const refreshSessionSchema = z.object({
 
 export const logoutSchema = refreshSessionSchema;
 
+export const forgotPasswordSchema = z.object({
+	email: z.string().trim().email(),
+});
+
+export const resetPasswordSchema = z.object({
+	token: z.string().min(1),
+	password: z.string().min(8).max(72),
+});
+
+export const changePasswordSchema = z.object({
+	currentPassword: z.string().min(8).max(72),
+	newPassword: z.string().min(8).max(72),
+});
+
+export const requestEmailVerificationSchema = z.object({
+	email: z.string().trim().email().optional(),
+});
+
+export const verifyEmailSchema = z.object({
+	token: z.string().min(1),
+});
+
 export const authTokensSchema = z.object({
 	accessToken: z.string().min(1),
 	refreshToken: z.string().min(1),
@@ -203,3 +225,10 @@ export type LogoutInput = z.infer<typeof logoutSchema>;
 export type AuthTokens = z.infer<typeof authTokensSchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type AuthSession = z.infer<typeof authSessionSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type RequestEmailVerificationInput = z.infer<
+	typeof requestEmailVerificationSchema
+>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;

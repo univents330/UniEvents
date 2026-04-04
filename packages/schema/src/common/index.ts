@@ -35,3 +35,35 @@ export const paymentIdParamSchema = z.object({
 export const userIdParamSchema = z.object({
 	userId: ulidSchema,
 });
+
+export const paginationMetaSchema = z.object({
+	page: z.number().int().positive(),
+	limit: z.number().int().positive(),
+	total: z.number().int().nonnegative(),
+	totalPages: z.number().int().nonnegative(),
+	hasNextPage: z.boolean(),
+	hasPreviousPage: z.boolean(),
+});
+
+export type PaginationMeta = z.infer<typeof paginationMetaSchema>;
+
+export function createPaginationMeta(
+	page: number,
+	limit: number,
+	total: number,
+): PaginationMeta {
+	const totalPages = Math.ceil(total / limit);
+	return {
+		page,
+		limit,
+		total,
+		totalPages,
+		hasNextPage: page < totalPages,
+		hasPreviousPage: page > 1,
+	};
+}
+
+export type PaginatedResponse<T> = {
+	data: T[];
+	meta: PaginationMeta;
+};

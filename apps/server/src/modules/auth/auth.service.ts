@@ -1,12 +1,17 @@
 import { Prisma, prisma, type User } from "@voltaze/db";
 import type {
 	AuthSession,
+	ChangePasswordInput,
+	ForgotPasswordInput,
 	LoginInput,
 	RefreshSessionInput,
 	RegisterInput,
+	ResetPasswordInput,
+	VerifyEmailInput,
 } from "@voltaze/schema";
 
 import {
+	BadRequestError,
 	ConflictError,
 	NotFoundError,
 	UnauthorizedError,
@@ -14,10 +19,14 @@ import {
 
 import {
 	createAccessToken,
+	createPasswordResetExpiryDate,
 	createRefreshExpiryDate,
 	createRefreshToken,
+	createVerificationExpiryDate,
+	createVerificationToken,
 	hashPassword,
 	hashRefreshToken,
+	hashVerificationToken,
 	verifyPassword,
 } from "./auth.utils";
 
@@ -305,6 +314,212 @@ export class AuthService {
 		}
 
 		return toPublicUser(user);
+	}
+
+	async forgotPassword(input: ForgotPasswordInput) {
+		const email = this.normalizeEmail(input.email);
+		const user = await prisma.user.findUnique({ where: { email } });
+
+		// Always return success to prevent email enumeration
+		if (!user) {
+			return { message: "If the email exists, a reset link will be sent" };
+		}
+
+		const token = createVerificationToken();
+		const hashedToken = await hashVerificationToken(token);
+		const expiresAt = createPasswordResetExpiryDate();
+
+		await prisma.verification.upsert({
+			where: { id: `password-reset:${user.id}` },
+			update: {
+				value: hashedToken,
+				expiresAt,
+			},
+			create: {
+				id: `password-reset:${user.id}`,
+				identifier: email,
+				value: hashedToken,
+				expiresAt,
+			},
+		});
+
+		// In production, send email with reset link containing the token
+		// For now, return the token for testing purposes in development
+		return {
+			message: "If the email exists, a reset link will be sent",
+			// Only include token in development for testing
+			...(process.env.NODE_ENV !== "production" && { token }),
+		};
+	}
+
+	async resetPassword(input: ResetPasswordInput) {
+		const hashedToken = await hashVerificationToken(input.token);
+
+		const verification = await prisma.verification.findFirst({
+			where: {
+				id: { startsWith: "password-reset:" },
+				value: hashedToken,
+				expiresAt: { gt: new Date() },
+			},
+		});
+
+		if (!verification) {
+			throw new BadRequestError("Invalid or expired reset token");
+		}
+
+		const userId = verification.id.replace("password-reset:", "");
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			include: {
+				accounts: {
+					where: { providerId: CREDENTIALS_PROVIDER_ID },
+					take: 1,
+				},
+			},
+		});
+
+		if (!user || !user.accounts[0]) {
+			throw new BadRequestError("Invalid or expired reset token");
+		}
+
+		const passwordHash = await hashPassword(input.password);
+
+		await prisma.$transaction([
+			prisma.account.update({
+				where: { id: user.accounts[0].id },
+				data: { password: passwordHash },
+			}),
+			prisma.verification.delete({ where: { id: verification.id } }),
+			// Invalidate all sessions for security
+			prisma.session.deleteMany({ where: { userId: user.id } }),
+		]);
+
+		return { message: "Password reset successful. Please login again." };
+	}
+
+	async changePassword(
+		userId: string,
+		input: ChangePasswordInput,
+		context: AuthContext,
+	) {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			include: {
+				accounts: {
+					where: { providerId: CREDENTIALS_PROVIDER_ID },
+					take: 1,
+				},
+			},
+		});
+
+		if (!user || !user.accounts[0]?.password) {
+			throw new BadRequestError(
+				"Password change not supported for this account",
+			);
+		}
+
+		const isCurrentPasswordValid = await verifyPassword(
+			input.currentPassword,
+			user.accounts[0].password,
+		);
+
+		if (!isCurrentPasswordValid) {
+			throw new UnauthorizedError("Current password is incorrect");
+		}
+
+		const passwordHash = await hashPassword(input.newPassword);
+
+		await prisma.$transaction([
+			prisma.account.update({
+				where: { id: user.accounts[0].id },
+				data: { password: passwordHash },
+			}),
+			// Invalidate all other sessions for security
+			prisma.session.deleteMany({ where: { userId: user.id } }),
+		]);
+
+		// Create a new session for the current user
+		const { accounts: _accounts, ...userRow } = user;
+		return this.createSession(userRow, context);
+	}
+
+	async requestEmailVerification(userId: string, email?: string) {
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+
+		if (!user) {
+			throw new UnauthorizedError("User not found");
+		}
+
+		if (user.emailVerified) {
+			throw new BadRequestError("Email is already verified");
+		}
+
+		const targetEmail = email ?? user.email;
+		if (targetEmail !== user.email) {
+			// If changing email, check it's not already in use
+			const existingUser = await prisma.user.findUnique({
+				where: { email: targetEmail },
+			});
+			if (existingUser) {
+				throw new ConflictError("Email is already in use");
+			}
+		}
+
+		const token = createVerificationToken();
+		const hashedToken = await hashVerificationToken(token);
+		const expiresAt = createVerificationExpiryDate();
+
+		await prisma.verification.upsert({
+			where: { id: `email-verify:${user.id}` },
+			update: {
+				identifier: targetEmail,
+				value: hashedToken,
+				expiresAt,
+			},
+			create: {
+				id: `email-verify:${user.id}`,
+				identifier: targetEmail,
+				value: hashedToken,
+				expiresAt,
+			},
+		});
+
+		// In production, send email with verification link
+		return {
+			message: "Verification email sent",
+			...(process.env.NODE_ENV !== "production" && { token }),
+		};
+	}
+
+	async verifyEmail(input: VerifyEmailInput) {
+		const hashedToken = await hashVerificationToken(input.token);
+
+		const verification = await prisma.verification.findFirst({
+			where: {
+				id: { startsWith: "email-verify:" },
+				value: hashedToken,
+				expiresAt: { gt: new Date() },
+			},
+		});
+
+		if (!verification) {
+			throw new BadRequestError("Invalid or expired verification token");
+		}
+
+		const userId = verification.id.replace("email-verify:", "");
+
+		await prisma.$transaction([
+			prisma.user.update({
+				where: { id: userId },
+				data: {
+					email: verification.identifier,
+					emailVerified: true,
+				},
+			}),
+			prisma.verification.delete({ where: { id: verification.id } }),
+		]);
+
+		return { message: "Email verified successfully" };
 	}
 }
 

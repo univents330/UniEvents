@@ -1,8 +1,9 @@
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
-import type {
-	CreateOrderInput,
-	OrderFilterInput,
-	UpdateOrderInput,
+import {
+	type CreateOrderInput,
+	createPaginationMeta,
+	type OrderFilterInput,
+	type UpdateOrderInput,
 } from "@voltaze/schema";
 
 import {
@@ -132,16 +133,27 @@ export class OrdersService {
 	async list(input: OrderFilterInput, actor: OrderActor) {
 		const { page, limit, sortBy, sortOrder, ...filters } = input;
 		const skip = (page - 1) * limit;
-		return prisma.order.findMany({
-			where: {
-				...filters,
-				deletedAt: null,
-				...this.buildAccessWhere(actor),
-			},
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+
+		const where = {
+			...filters,
+			deletedAt: null,
+			...this.buildAccessWhere(actor),
+		};
+
+		const [data, total] = await Promise.all([
+			prisma.order.findMany({
+				where,
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.order.count({ where }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getById(id: string, actor: OrderActor) {

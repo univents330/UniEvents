@@ -1,9 +1,11 @@
 import {
-	createPaymentSchema,
 	idParamSchema,
+	initiatePaymentSchema,
 	paymentFilterSchema,
 	razorpayWebhookSchema,
+	refundPaymentSchema,
 	updatePaymentSchema,
+	verifyPaymentSchema,
 } from "@voltaze/schema";
 import type { Request, Response } from "express";
 
@@ -35,10 +37,27 @@ export class PaymentsController {
 		res.status(200).json(payment);
 	}
 
-	async create(req: Request, res: Response) {
-		const body = createPaymentSchema.parse(req.body);
-		const payment = await paymentsService.create(body, this.getActor(req));
-		res.status(201).json(payment);
+	async initiate(req: Request, res: Response) {
+		const body = initiatePaymentSchema.parse(req.body);
+		const result = await paymentsService.create(body, this.getActor(req));
+		res.status(201).json(result);
+	}
+
+	async verify(req: Request, res: Response) {
+		const body = verifyPaymentSchema.parse(req.body);
+		const result = await paymentsService.verify(body, this.getActor(req));
+		res.status(200).json(result);
+	}
+
+	async refund(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = refundPaymentSchema.parse(req.body);
+		const result = await paymentsService.refund(
+			params.id,
+			body,
+			this.getActor(req),
+		);
+		res.status(200).json(result);
 	}
 
 	async update(req: Request, res: Response) {

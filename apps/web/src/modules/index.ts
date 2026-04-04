@@ -1,7 +1,13 @@
 /**
- * Feature modules mirror `apps/server/src/modules`.
- * UI: Mantine. Data: TanStack Query; tables/forms via TanStack Table & Form.
- * HTTP: `apiClient` from `@/common/lib` (Axios).
+ * Domain module entry points.
+ * Import from `@modules/<module>` instead of deep internal paths.
  */
 
-export {};
+export * from "./attendees";
+export * from "./auth";
+export * from "./check-ins";
+export * from "./events";
+export * from "./orders";
+export * from "./passes";
+export * from "./payments";
+export * from "./tickets";

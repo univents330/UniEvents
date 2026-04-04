@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
-import type {
-	CreatePassInput,
-	PassFilterInput,
-	UpdatePassInput,
-	ValidatePassInput,
+import {
+	type CreatePassInput,
+	createPaginationMeta,
+	type PassFilterInput,
+	type UpdatePassInput,
+	type ValidatePassInput,
 } from "@voltaze/schema";
 
 import {
@@ -96,15 +97,25 @@ export class PassesService {
 		const { page, limit, sortBy, sortOrder, ...filters } = input;
 		const skip = (page - 1) * limit;
 
-		return prisma.pass.findMany({
-			where: {
-				...filters,
-				...this.buildAccessWhere(actor),
-			},
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+		const where = {
+			...filters,
+			...this.buildAccessWhere(actor),
+		};
+
+		const [data, total] = await Promise.all([
+			prisma.pass.findMany({
+				where,
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.pass.count({ where }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getById(id: string, actor: PassActor) {

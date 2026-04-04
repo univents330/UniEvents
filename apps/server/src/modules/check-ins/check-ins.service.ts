@@ -1,5 +1,9 @@
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
-import type { CheckInFilterInput, CreateCheckInInput } from "@voltaze/schema";
+import {
+	type CheckInFilterInput,
+	type CreateCheckInInput,
+	createPaginationMeta,
+} from "@voltaze/schema";
 
 import {
 	BadRequestError,
@@ -71,22 +75,33 @@ export class CheckInsService {
 		const { page, limit, sortBy, sortOrder, dateFrom, dateTo, ...filters } =
 			input;
 		const skip = (page - 1) * limit;
-		return prisma.checkIn.findMany({
-			where: {
-				...filters,
-				...this.buildAccessWhere(actor),
-				timestamp:
-					dateFrom || dateTo
-						? {
-								gte: dateFrom,
-								lte: dateTo,
-							}
-						: undefined,
-			},
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+
+		const where = {
+			...filters,
+			...this.buildAccessWhere(actor),
+			timestamp:
+				dateFrom || dateTo
+					? {
+							gte: dateFrom,
+							lte: dateTo,
+						}
+					: undefined,
+		};
+
+		const [data, total] = await Promise.all([
+			prisma.checkIn.findMany({
+				where,
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.checkIn.count({ where }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getById(id: string, actor: CheckInActor) {

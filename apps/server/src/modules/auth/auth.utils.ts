@@ -129,3 +129,28 @@ export async function hashRefreshToken(token: string) {
 export function createRefreshExpiryDate() {
 	return new Date(Date.now() + env.REFRESH_TOKEN_TTL_SECONDS * 1000);
 }
+
+export function createVerificationToken() {
+	return encodeBase64Url(crypto.getRandomValues(new Uint8Array(32)));
+}
+
+export async function hashVerificationToken(token: string) {
+	const mac = await crypto.subtle.sign(
+		"HMAC",
+		await refreshKeyPromise,
+		textEncoder.encode(token),
+	);
+	return Buffer.from(mac).toString("hex");
+}
+
+const VERIFICATION_TOKEN_TTL_SECONDS = 3600; // 1 hour
+
+export function createVerificationExpiryDate() {
+	return new Date(Date.now() + VERIFICATION_TOKEN_TTL_SECONDS * 1000);
+}
+
+const PASSWORD_RESET_TOKEN_TTL_SECONDS = 1800; // 30 minutes
+
+export function createPasswordResetExpiryDate() {
+	return new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_SECONDS * 1000);
+}

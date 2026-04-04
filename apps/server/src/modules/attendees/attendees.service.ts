@@ -1,8 +1,9 @@
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
-import type {
-	AttendeeFilterInput,
-	CreateAttendeeInput,
-	UpdateAttendeeInput,
+import {
+	type AttendeeFilterInput,
+	type CreateAttendeeInput,
+	createPaginationMeta,
+	type UpdateAttendeeInput,
 } from "@voltaze/schema";
 
 import {
@@ -78,21 +79,31 @@ export class AttendeesService {
 		const { page, limit, sortBy, sortOrder, search, ...filters } = input;
 		const skip = (page - 1) * limit;
 
-		return prisma.attendee.findMany({
-			where: {
-				...filters,
-				...this.buildAccessWhere(actor),
-				OR: search
-					? [
-							{ name: { contains: search, mode: "insensitive" } },
-							{ email: { contains: search, mode: "insensitive" } },
-						]
-					: undefined,
-			},
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+		const where = {
+			...filters,
+			...this.buildAccessWhere(actor),
+			OR: search
+				? [
+						{ name: { contains: search, mode: "insensitive" } },
+						{ email: { contains: search, mode: "insensitive" } },
+					]
+				: undefined,
+		};
+
+		const [data, total] = await Promise.all([
+			prisma.attendee.findMany({
+				where,
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.attendee.count({ where }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getById(id: string, actor: AttendeeActor) {

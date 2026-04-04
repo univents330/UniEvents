@@ -107,6 +107,60 @@ voltaze/
 │   └── db/          # Database schema & queries
 ```
 
+## API Endpoints
+
+### Auth (`/auth`)
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User login
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/logout` - Logout (single session)
+- `POST /auth/logout-all` - Logout all sessions
+- `GET /auth/me` - Get current user
+- `GET /auth/sessions` - List active sessions
+- `DELETE /auth/sessions/:sessionId` - Revoke specific session
+- `POST /auth/forgot-password` - Request password reset
+- `POST /auth/reset-password` - Reset password with token
+- `POST /auth/change-password` - Change password (authenticated)
+- `POST /auth/request-email-verification` - Request email verification
+- `POST /auth/verify-email` - Verify email with token
+
+### Events (`/events`)
+- `GET /events` - List events (with pagination)
+- `GET /events/:eventId` - Get event by ID
+- `POST /events` - Create event (HOST/ADMIN)
+- `PATCH /events/:eventId` - Update event (HOST/ADMIN)
+- `DELETE /events/:eventId` - Delete event (HOST/ADMIN)
+- `GET /events/:eventId/ticket-tiers` - List ticket tiers
+- `POST /events/:eventId/ticket-tiers` - Create ticket tier
+- `PATCH /events/:eventId/ticket-tiers/:tierId` - Update ticket tier
+- `DELETE /events/:eventId/ticket-tiers/:tierId` - Delete ticket tier
+
+### Payments (`/payments`)
+- `GET /payments` - List payments (with pagination)
+- `GET /payments/:id` - Get payment by ID
+- `POST /payments/initiate` - Initiate payment (creates Razorpay order)
+- `POST /payments/verify` - Verify payment after Razorpay checkout
+- `POST /payments/:id/refund` - Refund payment (HOST/ADMIN)
+- `PATCH /payments/:id` - Update payment (HOST/ADMIN)
+- `DELETE /payments/:id` - Delete payment (HOST/ADMIN)
+- `POST /payments/webhook/razorpay` - Razorpay webhook handler
+
+### Other Endpoints
+- Attendees, Orders, Tickets, Passes, Check-ins follow similar CRUD patterns
+
+## Environment Variables
+
+### Server (`apps/server/.env`)
+```bash
+DATABASE_URL=postgresql://...
+CORS_ORIGIN=http://localhost:3001
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+RAZORPAY_WEBHOOK_SECRET=...
+JWT_ACCESS_SECRET=...  # min 32 chars
+JWT_REFRESH_SECRET=... # min 32 chars
+```
+
 ## Available Scripts
 
 - `bun run dev`: Start all applications in development mode

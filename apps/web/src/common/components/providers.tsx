@@ -1,20 +1,12 @@
 "use client";
 
+import { createQueryClient } from "@common/lib";
 import { MantineProvider } from "@mantine/core";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
-	const [queryClient] = useState(
-		() =>
-			new QueryClient({
-				defaultOptions: {
-					queries: {
-						staleTime: 60 * 1000,
-					},
-				},
-			}),
-	);
+	const [queryClient] = useState(() => createQueryClient());
 
 	return (
 		<MantineProvider>

@@ -1,9 +1,14 @@
+import crypto from "node:crypto";
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
-import type {
-	CreatePaymentInput,
-	PaymentFilterInput,
-	RazorpayWebhookInput,
-	UpdatePaymentInput,
+import { env } from "@voltaze/env/server";
+import {
+	createPaginationMeta,
+	type InitiatePaymentInput,
+	type PaymentFilterInput,
+	type RazorpayWebhookInput,
+	type RefundPaymentInput,
+	type UpdatePaymentInput,
+	type VerifyPaymentInput,
 } from "@voltaze/schema";
 
 import {
@@ -12,6 +17,11 @@ import {
 	ForbiddenError,
 	NotFoundError,
 } from "@/common/exceptions/app-error";
+import {
+	createRazorpayOrder,
+	createRazorpayRefund,
+	fetchRazorpayPayment,
+} from "@/common/utils/razorpay";
 
 type PaymentActor = {
 	userId: string;
@@ -189,12 +199,20 @@ export class PaymentsService {
 			...this.buildAccessWhere(actor),
 		};
 
-		return prisma.payment.findMany({
-			where,
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+		const [data, total] = await Promise.all([
+			prisma.payment.findMany({
+				where,
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.payment.count({ where }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getById(id: string, actor: PaymentActor) {
@@ -213,7 +231,7 @@ export class PaymentsService {
 		return payment;
 	}
 
-	async create(input: CreatePaymentInput, actor: PaymentActor) {
+	async create(input: InitiatePaymentInput, actor: PaymentActor) {
 		const orderWhere: Prisma.OrderWhereInput = {
 			id: input.orderId,
 			deletedAt: null,
@@ -231,6 +249,15 @@ export class PaymentsService {
 
 		const order = await prisma.order.findFirst({
 			where: orderWhere,
+			include: {
+				tickets: {
+					include: {
+						tier: true,
+					},
+				},
+				event: true,
+				attendee: true,
+			},
 		});
 
 		if (!order) {
@@ -241,23 +268,237 @@ export class PaymentsService {
 			throw new BadRequestError("Can only create payments for pending orders");
 		}
 
-		try {
-			return await prisma.payment.create({ data: input });
-		} catch (error) {
-			if (error instanceof Prisma.PrismaClientKnownRequestError) {
-				if (error.code === "P2002") {
-					throw new ConflictError(
-						"A payment already exists for this order or transaction",
-					);
-				}
+		const existingPayment = await prisma.payment.findFirst({
+			where: {
+				orderId: order.id,
+				deletedAt: null,
+				status: { in: ["PENDING", "SUCCESS"] },
+			},
+		});
 
-				if (error.code === "P2003") {
-					throw new BadRequestError("Payment references invalid relations");
-				}
+		if (existingPayment) {
+			throw new ConflictError(
+				"A payment already exists for this order. Use verify endpoint to complete it.",
+			);
+		}
+
+		const totalAmount = order.tickets.reduce(
+			(sum, ticket) => sum + ticket.pricePaid,
+			0,
+		);
+
+		if (totalAmount <= 0) {
+			throw new BadRequestError(
+				"Order total is zero. Free orders do not require payment.",
+			);
+		}
+
+		const razorpayOrder = await createRazorpayOrder({
+			amount: totalAmount,
+			currency: input.currency,
+			receipt: order.id,
+			notes: {
+				orderId: order.id,
+				eventId: order.eventId,
+				eventName: order.event.name,
+				attendeeEmail: order.attendee.email,
+			},
+		});
+
+		const payment = await prisma.payment.create({
+			data: {
+				orderId: order.id,
+				amount: totalAmount,
+				currency: input.currency,
+				gateway: "RAZORPAY",
+				gatewayMeta: {
+					razorpayOrderId: razorpayOrder.id,
+					razorpayOrderStatus: razorpayOrder.status,
+				} as Prisma.InputJsonValue,
+			},
+		});
+
+		return {
+			payment,
+			razorpayOrderId: razorpayOrder.id,
+			razorpayKeyId: env.RAZORPAY_KEY_ID,
+			amount: totalAmount,
+			currency: input.currency,
+			prefill: {
+				name: order.attendee.name,
+				email: order.attendee.email,
+				contact: order.attendee.phone ?? undefined,
+			},
+			notes: {
+				orderId: order.id,
+				eventName: order.event.name,
+			},
+		};
+	}
+
+	async verify(input: VerifyPaymentInput, actor: PaymentActor) {
+		const expectedSignature = crypto
+			.createHmac("sha256", env.RAZORPAY_KEY_SECRET)
+			.update(`${input.razorpayOrderId}|${input.razorpayPaymentId}`)
+			.digest("hex");
+
+		const isSignatureValid = crypto.timingSafeEqual(
+			Buffer.from(expectedSignature),
+			Buffer.from(input.razorpaySignature),
+		);
+
+		if (!isSignatureValid) {
+			throw new BadRequestError("Invalid payment signature");
+		}
+
+		const payment = await prisma.payment.findFirst({
+			where: {
+				deletedAt: null,
+				gatewayMeta: {
+					path: ["razorpayOrderId"],
+					equals: input.razorpayOrderId,
+				},
+				...this.buildAccessWhere(actor),
+			},
+			include: {
+				order: true,
+			},
+		});
+
+		if (!payment) {
+			throw new NotFoundError("Payment not found for this Razorpay order");
+		}
+
+		if (payment.status === "SUCCESS") {
+			return { payment, alreadyVerified: true };
+		}
+
+		const razorpayPayment = await fetchRazorpayPayment(input.razorpayPaymentId);
+
+		if (razorpayPayment.order_id !== input.razorpayOrderId) {
+			throw new BadRequestError("Payment order ID mismatch");
+		}
+
+		if (razorpayPayment.amount !== payment.amount) {
+			throw new BadRequestError("Payment amount mismatch");
+		}
+
+		const isCaptured =
+			razorpayPayment.status === "captured" || razorpayPayment.captured;
+
+		if (!isCaptured) {
+			throw new BadRequestError(
+				`Payment not captured. Current status: ${razorpayPayment.status}`,
+			);
+		}
+
+		const updatedPayment = await prisma.$transaction(async (tx) => {
+			const updated = await tx.payment.update({
+				where: { id: payment.id },
+				data: {
+					status: "SUCCESS",
+					transactionId: input.razorpayPaymentId,
+					gatewayMeta: {
+						...(payment.gatewayMeta as object),
+						razorpayPaymentId: input.razorpayPaymentId,
+						verifiedAt: new Date().toISOString(),
+					} as Prisma.InputJsonValue,
+				},
+			});
+
+			await tx.order.update({
+				where: { id: payment.orderId },
+				data: { status: "COMPLETED" },
+			});
+
+			return updated;
+		});
+
+		return { payment: updatedPayment, alreadyVerified: false };
+	}
+
+	async refund(id: string, input: RefundPaymentInput, actor: PaymentActor) {
+		if (actor.role === "USER") {
+			throw new ForbiddenError("Users cannot initiate refunds");
+		}
+
+		const payment = await prisma.payment.findFirst({
+			where: {
+				id,
+				deletedAt: null,
+				...this.buildAccessWhere(actor),
+			},
+			include: {
+				order: true,
+			},
+		});
+
+		if (!payment) {
+			throw new NotFoundError("Payment not found");
+		}
+
+		if (payment.status !== "SUCCESS") {
+			throw new BadRequestError("Can only refund successful payments");
+		}
+
+		if (!payment.transactionId) {
+			throw new BadRequestError(
+				"Payment has no transaction ID. Cannot process refund.",
+			);
+		}
+
+		const refundAmount = input.amount ?? payment.amount;
+
+		if (refundAmount > payment.amount) {
+			throw new BadRequestError("Refund amount cannot exceed payment amount");
+		}
+
+		const razorpayRefund = await createRazorpayRefund(payment.transactionId, {
+			amount: refundAmount,
+			notes: input.notes,
+		});
+
+		const isFullRefund = refundAmount === payment.amount;
+
+		const updatedPayment = await prisma.$transaction(async (tx) => {
+			const updated = await tx.payment.update({
+				where: { id: payment.id },
+				data: {
+					status: isFullRefund ? "REFUNDED" : "SUCCESS",
+					gatewayMeta: {
+						...(payment.gatewayMeta as object),
+						refunds: [
+							...((payment.gatewayMeta as { refunds?: unknown[] })?.refunds ??
+								[]),
+							{
+								refundId: razorpayRefund.id,
+								amount: refundAmount,
+								status: razorpayRefund.status,
+								createdAt: new Date().toISOString(),
+							},
+						],
+					} as Prisma.InputJsonValue,
+				},
+			});
+
+			if (isFullRefund) {
+				await tx.order.update({
+					where: { id: payment.orderId },
+					data: { status: "CANCELLED" },
+				});
 			}
 
-			throw error;
-		}
+			return updated;
+		});
+
+		return {
+			payment: updatedPayment,
+			refund: {
+				id: razorpayRefund.id,
+				amount: refundAmount,
+				status: razorpayRefund.status,
+			},
+		};
 	}
 
 	async update(id: string, input: UpdatePaymentInput, actor: PaymentActor) {

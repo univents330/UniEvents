@@ -1,8 +1,9 @@
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
-import type {
-	CreateTicketInput,
-	TicketFilterInput,
-	UpdateTicketInput,
+import {
+	type CreateTicketInput,
+	createPaginationMeta,
+	type TicketFilterInput,
+	type UpdateTicketInput,
 } from "@voltaze/schema";
 
 import {
@@ -140,15 +141,26 @@ export class TicketsService {
 	async list(input: TicketFilterInput, actor: TicketActor) {
 		const { page, limit, sortBy, sortOrder, ...filters } = input;
 		const skip = (page - 1) * limit;
-		return prisma.ticket.findMany({
-			where: {
-				...filters,
-				...this.buildAccessWhere(actor),
-			},
-			orderBy: { [sortBy]: sortOrder },
-			skip,
-			take: limit,
-		});
+
+		const where = {
+			...filters,
+			...this.buildAccessWhere(actor),
+		};
+
+		const [data, total] = await Promise.all([
+			prisma.ticket.findMany({
+				where,
+				orderBy: { [sortBy]: sortOrder },
+				skip,
+				take: limit,
+			}),
+			prisma.ticket.count({ where }),
+		]);
+
+		return {
+			data,
+			meta: createPaginationMeta(page, limit, total),
+		};
 	}
 
 	async getById(id: string, actor: TicketActor) {

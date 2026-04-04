@@ -1,9 +1,11 @@
 import {
-	createPaymentSchema,
 	idParamSchema,
+	initiatePaymentSchema,
 	paymentFilterSchema,
 	razorpayWebhookSchema,
+	refundPaymentSchema,
 	updatePaymentSchema,
+	verifyPaymentSchema,
 } from "@voltaze/schema";
 import { Router } from "express";
 
@@ -33,10 +35,23 @@ export function createPaymentsRouter(): Router {
 		asyncHandler((req, res) => paymentsController.getById(req, res)),
 	);
 	router.post(
-		"/",
+		"/initiate",
 		requireAuth,
-		validatePipe({ body: createPaymentSchema }),
-		asyncHandler((req, res) => paymentsController.create(req, res)),
+		validatePipe({ body: initiatePaymentSchema }),
+		asyncHandler((req, res) => paymentsController.initiate(req, res)),
+	);
+	router.post(
+		"/verify",
+		requireAuth,
+		validatePipe({ body: verifyPaymentSchema }),
+		asyncHandler((req, res) => paymentsController.verify(req, res)),
+	);
+	router.post(
+		"/:id/refund",
+		requireAuth,
+		requireRoles("ADMIN", "HOST"),
+		validatePipe({ params: idParamSchema, body: refundPaymentSchema }),
+		asyncHandler((req, res) => paymentsController.refund(req, res)),
 	);
 	router.patch(
 		"/:id",
