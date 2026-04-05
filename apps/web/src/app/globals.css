@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import '@mantine/core/styles.css';
 @import '@mantine/notifications/styles.css';
 @import '@mantine/dates/styles.css';
@@ -6,7 +7,13 @@
 @import '@mantine/charts/styles.css';
 
 :root {
-  --mantine-color-body: #fff;
+  --background: #ffffff;
+  --foreground: #171717;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.font-poppins {
+  font-family: var(--font-poppins), sans-serif;
 }
 
 * {
@@ -24,4 +31,12 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.btn-hero{
+  padding: 12px;
+}
+
+.search-bar{
+  padding: 16px;
 }
