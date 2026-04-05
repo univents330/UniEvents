@@ -88,6 +88,11 @@ export const paymentFilterSchema = z.object({
 	sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
+export const initiatePaymentItemSchema = z.object({
+	tierId: z.string().cuid(),
+	quantity: z.coerce.number().int().positive().max(20),
+});
+
 export const initiatePaymentSchema = z.object({
 	orderId: z.string().cuid(),
 	currency: z
@@ -95,6 +100,7 @@ export const initiatePaymentSchema = z.object({
 		.trim()
 		.regex(/^[A-Z]{3}$/)
 		.default("INR"),
+	items: z.array(initiatePaymentItemSchema).min(1).optional(),
 });
 
 export const verifyPaymentSchema = z.object({
@@ -112,6 +118,9 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type UpdatePaymentInput = z.infer<typeof updatePaymentSchema>;
 export type RazorpayWebhookInput = z.infer<typeof razorpayWebhookSchema>;
 export type PaymentFilterInput = z.infer<typeof paymentFilterSchema>;
+export type InitiatePaymentItemInput = z.infer<
+	typeof initiatePaymentItemSchema
+>;
 export type InitiatePaymentInput = z.infer<typeof initiatePaymentSchema>;
 export type VerifyPaymentInput = z.infer<typeof verifyPaymentSchema>;
 export type RefundPaymentInput = z.infer<typeof refundPaymentSchema>;

@@ -30,6 +30,10 @@ type PaymentActor = {
 
 type WebhookMappedStatus = "PENDING" | "SUCCESS" | "FAILED" | "REFUNDED";
 type OrderSyncStatus = "PENDING" | "COMPLETED" | "CANCELLED";
+type CheckoutItem = {
+	tierId: string;
+	quantity: number;
+};
 
 const CUID_REGEX = /^c[a-z0-9]{24}$/i;
 
@@ -189,6 +193,212 @@ export class PaymentsService {
 		}
 	}
 
+	private normalizeGatewayMeta(
+		meta: Prisma.JsonValue | null,
+	): Record<string, unknown> {
+		if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+			return {};
+		}
+
+		return meta as Record<string, unknown>;
+	}
+
+	private normalizeCheckoutItems(items?: unknown[]): CheckoutItem[] {
+		if (!items || items.length === 0) {
+			return [];
+		}
+
+		const quantityByTier = new Map<string, number>();
+
+		for (const item of items) {
+			if (!item || typeof item !== "object" || Array.isArray(item)) {
+				continue;
+			}
+
+			const { tierId, quantity } = item as {
+				tierId?: unknown;
+				quantity?: unknown;
+			};
+
+			if (typeof tierId !== "string") {
+				continue;
+			}
+
+			if (
+				typeof quantity !== "number" ||
+				!Number.isInteger(quantity) ||
+				quantity < 1
+			) {
+				continue;
+			}
+
+			quantityByTier.set(tierId, (quantityByTier.get(tierId) ?? 0) + quantity);
+		}
+
+		return Array.from(quantityByTier.entries()).map(([tierId, quantity]) => ({
+			tierId,
+			quantity,
+		}));
+	}
+
+	private buildCheckoutFromExistingTickets(
+		tickets: Array<{ tierId: string; pricePaid: number }>,
+	) {
+		const quantityByTier = new Map<string, number>();
+		let totalAmount = 0;
+
+		for (const ticket of tickets) {
+			quantityByTier.set(
+				ticket.tierId,
+				(quantityByTier.get(ticket.tierId) ?? 0) + 1,
+			);
+			totalAmount += ticket.pricePaid;
+		}
+
+		return {
+			checkoutItems: Array.from(quantityByTier.entries()).map(
+				([tierId, quantity]) => ({ tierId, quantity }),
+			),
+			totalAmount,
+		};
+	}
+
+	private async buildCheckoutFromRequestedItems(
+		eventId: string,
+		checkoutItems: CheckoutItem[],
+	) {
+		if (checkoutItems.length === 0) {
+			return { checkoutItems: [], totalAmount: 0 };
+		}
+
+		const tiers = await prisma.ticketTier.findMany({
+			where: {
+				id: { in: checkoutItems.map((item) => item.tierId) },
+				eventId,
+			},
+			select: {
+				id: true,
+				price: true,
+				maxQuantity: true,
+				soldCount: true,
+			},
+		});
+
+		if (tiers.length !== checkoutItems.length) {
+			throw new BadRequestError(
+				"One or more ticket tiers are invalid for this event",
+			);
+		}
+
+		const tierById = new Map(tiers.map((tier) => [tier.id, tier]));
+		let totalAmount = 0;
+
+		for (const item of checkoutItems) {
+			const tier = tierById.get(item.tierId);
+			if (!tier) {
+				throw new BadRequestError("Invalid ticket tier in checkout request");
+			}
+
+			const remaining = tier.maxQuantity - tier.soldCount;
+			if (item.quantity > remaining) {
+				throw new BadRequestError(
+					`Requested quantity exceeds remaining inventory for tier ${tier.id}`,
+				);
+			}
+
+			totalAmount += tier.price * item.quantity;
+		}
+
+		return { checkoutItems, totalAmount };
+	}
+
+	private async issueTicketsAndPassesForCheckout(
+		tx: Prisma.TransactionClient,
+		order: { id: string; eventId: string; attendeeId: string },
+		checkoutItems: CheckoutItem[],
+	) {
+		if (checkoutItems.length === 0) {
+			throw new BadRequestError("No checkout items found for ticket issuance");
+		}
+
+		const existingTicketsCount = await tx.ticket.count({
+			where: {
+				orderId: order.id,
+			},
+		});
+
+		if (existingTicketsCount > 0) {
+			return;
+		}
+
+		const tiers = await tx.ticketTier.findMany({
+			where: {
+				id: { in: checkoutItems.map((item) => item.tierId) },
+				eventId: order.eventId,
+			},
+			select: {
+				id: true,
+				price: true,
+				maxQuantity: true,
+			},
+		});
+
+		if (tiers.length !== checkoutItems.length) {
+			throw new BadRequestError(
+				"One or more ticket tiers are invalid for this order",
+			);
+		}
+
+		const tierById = new Map(tiers.map((tier) => [tier.id, tier]));
+
+		for (const item of checkoutItems) {
+			const tier = tierById.get(item.tierId);
+			if (!tier) {
+				throw new BadRequestError("Invalid ticket tier in checkout payload");
+			}
+
+			const updatedTier = await tx.ticketTier.updateMany({
+				where: {
+					id: tier.id,
+					eventId: order.eventId,
+					soldCount: {
+						lte: tier.maxQuantity - item.quantity,
+					},
+				},
+				data: {
+					soldCount: {
+						increment: item.quantity,
+					},
+				},
+			});
+
+			if (updatedTier.count === 0) {
+				throw new BadRequestError("Ticket tier sold out during checkout");
+			}
+
+			for (let index = 0; index < item.quantity; index++) {
+				const ticket = await tx.ticket.create({
+					data: {
+						orderId: order.id,
+						eventId: order.eventId,
+						tierId: tier.id,
+						pricePaid: tier.price,
+					},
+				});
+
+				await tx.pass.create({
+					data: {
+						eventId: order.eventId,
+						attendeeId: order.attendeeId,
+						ticketId: ticket.id,
+						type: "GENERAL",
+						code: `pass_${crypto.randomUUID()}`,
+					},
+				});
+			}
+		}
+	}
+
 	async list(input: PaymentFilterInput, actor: PaymentActor) {
 		const { page, limit, sortBy, sortOrder, ...filters } = input;
 		const skip = (page - 1) * limit;
@@ -282,10 +492,22 @@ export class PaymentsService {
 			);
 		}
 
-		const totalAmount = order.tickets.reduce(
-			(sum, ticket) => sum + ticket.pricePaid,
-			0,
-		);
+		const requestedCheckoutItems = this.normalizeCheckoutItems(input.items);
+		if (requestedCheckoutItems.length > 0 && order.tickets.length > 0) {
+			throw new BadRequestError(
+				"Order already contains issued tickets. Initiate payment without checkout items.",
+			);
+		}
+
+		const issueTicketsOnVerify = requestedCheckoutItems.length > 0;
+		const checkoutPlan = issueTicketsOnVerify
+			? await this.buildCheckoutFromRequestedItems(
+					order.eventId,
+					requestedCheckoutItems,
+				)
+			: this.buildCheckoutFromExistingTickets(order.tickets);
+
+		const { checkoutItems, totalAmount } = checkoutPlan;
 
 		if (totalAmount <= 0) {
 			throw new BadRequestError(
@@ -314,6 +536,8 @@ export class PaymentsService {
 				gatewayMeta: {
 					razorpayOrderId: razorpayOrder.id,
 					razorpayOrderStatus: razorpayOrder.status,
+					checkoutItems,
+					issueTicketsOnVerify,
 				} as Prisma.InputJsonValue,
 			},
 		});
@@ -324,6 +548,7 @@ export class PaymentsService {
 			razorpayKeyId: env.RAZORPAY_KEY_ID,
 			amount: totalAmount,
 			currency: input.currency,
+			checkoutItems,
 			prefill: {
 				name: order.attendee.name,
 				email: order.attendee.email,
@@ -369,7 +594,29 @@ export class PaymentsService {
 			throw new NotFoundError("Payment not found for this Razorpay order");
 		}
 
+		const gatewayMeta = this.normalizeGatewayMeta(payment.gatewayMeta);
+		const checkoutItems = this.normalizeCheckoutItems(
+			Array.isArray(gatewayMeta.checkoutItems)
+				? gatewayMeta.checkoutItems
+				: undefined,
+		);
+		const issueTicketsOnVerify = gatewayMeta.issueTicketsOnVerify === true;
+
 		if (payment.status === "SUCCESS") {
+			if (issueTicketsOnVerify) {
+				await prisma.$transaction(async (tx) => {
+					await this.issueTicketsAndPassesForCheckout(
+						tx,
+						{
+							id: payment.order.id,
+							eventId: payment.order.eventId,
+							attendeeId: payment.order.attendeeId,
+						},
+						checkoutItems,
+					);
+				});
+			}
+
 			return { payment, alreadyVerified: true };
 		}
 
@@ -393,13 +640,25 @@ export class PaymentsService {
 		}
 
 		const updatedPayment = await prisma.$transaction(async (tx) => {
+			if (issueTicketsOnVerify) {
+				await this.issueTicketsAndPassesForCheckout(
+					tx,
+					{
+						id: payment.order.id,
+						eventId: payment.order.eventId,
+						attendeeId: payment.order.attendeeId,
+					},
+					checkoutItems,
+				);
+			}
+
 			const updated = await tx.payment.update({
 				where: { id: payment.id },
 				data: {
 					status: "SUCCESS",
 					transactionId: input.razorpayPaymentId,
 					gatewayMeta: {
-						...(payment.gatewayMeta as object),
+						...gatewayMeta,
 						razorpayPaymentId: input.razorpayPaymentId,
 						verifiedAt: new Date().toISOString(),
 					} as Prisma.InputJsonValue,
@@ -631,12 +890,15 @@ export class PaymentsService {
 				amount: true,
 				currency: true,
 				gateway: true,
+				gatewayMeta: true,
 				transactionId: true,
 				status: true,
 				deletedAt: true,
 				order: {
 					select: {
 						id: true,
+						eventId: true,
+						attendeeId: true,
 						status: true,
 					},
 				},
@@ -655,12 +917,15 @@ export class PaymentsService {
 					amount: true,
 					currency: true,
 					gateway: true,
+					gatewayMeta: true,
 					transactionId: true,
 					status: true,
 					deletedAt: true,
 					order: {
 						select: {
 							id: true,
+							eventId: true,
+							attendeeId: true,
 							status: true,
 						},
 					},
@@ -691,10 +956,38 @@ export class PaymentsService {
 			throw new BadRequestError("Webhook payment currency mismatch");
 		}
 
+		const existingGatewayMeta = this.normalizeGatewayMeta(payment.gatewayMeta);
+		const checkoutItems = this.normalizeCheckoutItems(
+			Array.isArray(existingGatewayMeta.checkoutItems)
+				? existingGatewayMeta.checkoutItems
+				: undefined,
+		);
+		const issueTicketsOnVerify =
+			existingGatewayMeta.issueTicketsOnVerify === true;
+
+		const ensureDeferredIssuance = async () => {
+			if (!issueTicketsOnVerify || mappedStatus !== "SUCCESS") {
+				return;
+			}
+
+			await prisma.$transaction(async (tx) => {
+				await this.issueTicketsAndPassesForCheckout(
+					tx,
+					{
+						id: payment.order.id,
+						eventId: payment.order.eventId,
+						attendeeId: payment.order.attendeeId,
+					},
+					checkoutItems,
+				);
+			});
+		};
+
 		if (
 			payment.status === mappedStatus &&
 			payment.transactionId === transactionId
 		) {
+			await ensureDeferredIssuance();
 			return payment;
 		}
 
@@ -703,10 +996,16 @@ export class PaymentsService {
 		}
 
 		if (payment.status === "SUCCESS" && mappedStatus !== "REFUNDED") {
+			await ensureDeferredIssuance();
 			return payment;
 		}
 
-		const normalizedGatewayMeta = input as Prisma.InputJsonValue;
+		const normalizedGatewayMeta = {
+			...existingGatewayMeta,
+			webhookEvent: input.event,
+			webhookPayload: input,
+			webhookReceivedAt: new Date().toISOString(),
+		} as Prisma.InputJsonValue;
 
 		return prisma.$transaction(async (tx) => {
 			const updatedPayment = await tx.payment.update({
@@ -717,6 +1016,18 @@ export class PaymentsService {
 					gatewayMeta: normalizedGatewayMeta,
 				},
 			});
+
+			if (mappedStatus === "SUCCESS" && issueTicketsOnVerify) {
+				await this.issueTicketsAndPassesForCheckout(
+					tx,
+					{
+						id: payment.order.id,
+						eventId: payment.order.eventId,
+						attendeeId: payment.order.attendeeId,
+					},
+					checkoutItems,
+				);
+			}
 
 			await this.syncOrderStatusForPayment(tx, payment.order, mappedStatus);
 

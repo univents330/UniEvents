@@ -24,8 +24,10 @@ export const ticketsService = {
 	 */
 	async getOrderTickets(orderId: string, params?: TicketFilterInput) {
 		const response = await apiClient.get<PaginatedResponse<Ticket>>(
-			`/orders/${orderId}/tickets`,
-			{ params },
+			"/tickets",
+			{
+				params: { ...params, orderId },
+			},
 		);
 		return response.data;
 	},
@@ -35,8 +37,10 @@ export const ticketsService = {
 	 */
 	async getEventTickets(eventId: string, params?: TicketFilterInput) {
 		const response = await apiClient.get<PaginatedResponse<Ticket>>(
-			`/events/${eventId}/tickets`,
-			{ params },
+			"/tickets",
+			{
+				params: { ...params, eventId },
+			},
 		);
 		return response.data;
 	},

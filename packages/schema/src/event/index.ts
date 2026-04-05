@@ -132,6 +132,10 @@ export const eventTicketTierParamsSchema = z.object({
 	eventId: z.string().cuid(),
 });
 
+export const eventSlugParamSchema = z.object({
+	slug: z.string().trim().min(1).max(255),
+});
+
 export const eventTicketTierIdParamsSchema = z.object({
 	eventId: z.string().cuid(),
 	tierId: z.string().cuid(),

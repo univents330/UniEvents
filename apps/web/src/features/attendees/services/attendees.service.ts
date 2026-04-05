@@ -24,8 +24,10 @@ export const attendeesService = {
 	 */
 	async getEventAttendees(eventId: string, params?: AttendeeFilterInput) {
 		const response = await apiClient.get<PaginatedResponse<Attendee>>(
-			`/events/${eventId}/attendees`,
-			{ params },
+			"/attendees",
+			{
+				params: { ...params, eventId },
+			},
 		);
 		return response.data;
 	},

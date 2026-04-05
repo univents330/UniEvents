@@ -2,6 +2,7 @@ import {
 	createEventSchema,
 	createEventTicketTierSchema,
 	eventFilterSchema,
+	eventSlugParamSchema,
 	eventTicketTierIdParamsSchema,
 	eventTicketTierParamsSchema,
 	idParamSchema,
@@ -44,6 +45,12 @@ export function createEventsRouter(): Router {
 		optionalAuth,
 		validatePipe({ params: eventTicketTierIdParamsSchema }),
 		asyncHandler((req, res) => eventsController.getTicketTierById(req, res)),
+	);
+	router.get(
+		"/slug/:slug",
+		optionalAuth,
+		validatePipe({ params: eventSlugParamSchema }),
+		asyncHandler((req, res) => eventsController.getBySlug(req, res)),
 	);
 	router.get(
 		"/:id",

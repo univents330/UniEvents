@@ -92,3 +92,30 @@ export function useCreateCheckIn() {
 		},
 	});
 }
+
+/**
+ * Hook to delete a check-in
+ */
+export function useDeleteCheckIn() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (id: string) => checkInsService.deleteCheckIn(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: CHECKINS_KEYS.lists() });
+			queryClient.invalidateQueries({ queryKey: CHECKINS_KEYS.all });
+			notifications.show({
+				title: "Success",
+				message: "Check-in deleted successfully",
+				color: "green",
+			});
+		},
+		onError: (error: unknown) => {
+			notifications.show({
+				title: "Error",
+				message: getApiErrorMessage(error, "Failed to delete check-in"),
+				color: "red",
+			});
+		},
+	});
+}

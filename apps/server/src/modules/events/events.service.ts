@@ -207,6 +207,19 @@ export class EventsService {
 		return event;
 	}
 
+	async getBySlug(slug: string, actor?: EventActor) {
+		const accessWhere = this.buildReadAccessWhere(actor);
+		const event = await prisma.event.findFirst({
+			where: {
+				AND: [{ slug }, accessWhere],
+			},
+		});
+		if (!event) {
+			throw new NotFoundError("Event not found");
+		}
+		return event;
+	}
+
 	async create(input: CreateEventInput, hostUserId: string) {
 		this.validateEventWindow(input.startDate, input.endDate);
 		const slug = input.name.toLowerCase().trim().replaceAll(/\s+/g, "-");

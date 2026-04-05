@@ -10,6 +10,7 @@ import apiClient from "@/shared/lib/api-client";
 import type {
 	InitiatePaymentResponse,
 	PaginatedResponse,
+	VerifyPaymentResponse,
 } from "@/shared/types";
 
 export const paymentsService = {
@@ -60,7 +61,10 @@ export const paymentsService = {
 	 * Verify payment from Razorpay
 	 */
 	async verifyPayment(data: VerifyPaymentInput) {
-		const response = await apiClient.post<Payment>("/payments/verify", data);
+		const response = await apiClient.post<VerifyPaymentResponse>(
+			"/payments/verify",
+			data,
+		);
 		return response.data;
 	},
 

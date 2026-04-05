@@ -59,4 +59,11 @@ export const checkInsService = {
 		const response = await apiClient.post<CheckIn>("/check-ins", data);
 		return response.data;
 	},
+
+	/**
+	 * Delete a check-in by ID
+	 */
+	async deleteCheckIn(id: string): Promise<void> {
+		await apiClient.delete(`/check-ins/${id}`);
+	},
 };

@@ -1,5 +1,6 @@
 import type {
 	AuthResponse,
+	AuthSession,
 	LoginInput,
 	PublicUser,
 	RegisterInput,
@@ -51,6 +52,21 @@ export const authService = {
 	async getCurrentUser() {
 		const response = await apiClient.get<PublicUser>("/auth/me");
 		return response.data;
+	},
+
+	/**
+	 * Get active sessions for the current user
+	 */
+	async getSessions() {
+		const response = await apiClient.get<AuthSession[]>("/auth/sessions");
+		return response.data;
+	},
+
+	/**
+	 * Revoke a specific session
+	 */
+	async revokeSession(sessionId: string): Promise<void> {
+		await apiClient.delete(`/auth/sessions/${sessionId}`);
 	},
 
 	/**

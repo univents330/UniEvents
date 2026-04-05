@@ -2,6 +2,7 @@ import {
 	createEventSchema,
 	createEventTicketTierSchema,
 	eventFilterSchema,
+	eventSlugParamSchema,
 	eventTicketTierIdParamsSchema,
 	eventTicketTierParamsSchema,
 	idParamSchema,
@@ -50,6 +51,15 @@ export class EventsController {
 		const params = idParamSchema.parse(req.params);
 		const event = await eventsService.getById(
 			params.id,
+			this.getOptionalActor(req),
+		);
+		res.status(200).json(event);
+	}
+
+	async getBySlug(req: Request, res: Response) {
+		const params = eventSlugParamSchema.parse(req.params);
+		const event = await eventsService.getBySlug(
+			params.slug,
 			this.getOptionalActor(req),
 		);
 		res.status(200).json(event);

@@ -1,3 +1,5 @@
+import type { AuthSession, InitiatePaymentItemInput } from "@voltaze/schema";
+
 export interface PaginatedResponse<T> {
 	data: T[];
 	meta: {
@@ -28,13 +30,23 @@ export interface InitiatePaymentResponse {
 	amount: number;
 	currency: string;
 	razorpayKeyId: string;
+	checkoutItems?: InitiatePaymentItemInput[];
+	prefill?: {
+		name?: string;
+		email?: string;
+		contact?: string;
+	};
+	notes?: Record<string, string>;
 }
 
-export interface ValidatePassResponse {
-	valid: boolean;
-	pass?: import("@voltaze/schema").Pass;
-	message?: string;
-}
+export type VerifyPaymentResponse = {
+	payment: import("@voltaze/schema").Payment;
+	alreadyVerified: boolean;
+};
+
+export type ValidatePassResponse = import("@voltaze/schema").Pass;
+
+export type AuthSessionResponse = AuthSession;
 
 export interface CheckInStats {
 	totalCheckIns: number;

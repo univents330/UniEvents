@@ -10,6 +10,8 @@ import type {
 import apiClient from "@/shared/lib/api-client";
 import type { PaginatedResponse } from "@/shared/types";
 
+const CUID_REGEX = /^c[a-z0-9]{24}$/i;
+
 export const eventsService = {
 	/**
 	 * Get all events (public)
@@ -25,7 +27,10 @@ export const eventsService = {
 	 * Get a single event by ID or slug
 	 */
 	async getEvent(idOrSlug: string) {
-		const response = await apiClient.get<Event>(`/events/${idOrSlug}`);
+		const endpoint = CUID_REGEX.test(idOrSlug)
+			? `/events/${idOrSlug}`
+			: `/events/slug/${encodeURIComponent(idOrSlug)}`;
+		const response = await apiClient.get<Event>(endpoint);
 		return response.data;
 	},
 
@@ -56,7 +61,7 @@ export const eventsService = {
 	 * Get ticket tiers for an event
 	 */
 	async getTicketTiers(eventId: string) {
-		const response = await apiClient.get<TicketTier[]>(
+		const response = await apiClient.get<PaginatedResponse<TicketTier>>(
 			`/events/${eventId}/ticket-tiers`,
 		);
 		return response.data;

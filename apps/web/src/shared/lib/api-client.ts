@@ -1,6 +1,7 @@
+import { env } from "@voltaze/env/web";
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = env.NEXT_PUBLIC_SERVER_URL;
 
 export const apiClient = axios.create({
 	baseURL: API_URL,
