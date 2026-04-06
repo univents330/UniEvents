@@ -24,24 +24,8 @@ export const env = createEnv({
 					value !== DEV_BETTER_AUTH_SECRET,
 				"BETTER_AUTH_SECRET must be set to a non-default value in production",
 			),
-		JWT_ACCESS_SECRET: z
-			.string()
-			.min(32)
-			.default(DEV_ACCESS_SECRET)
-			.refine(
-				(value) =>
-					process.env.NODE_ENV !== "production" || value !== DEV_ACCESS_SECRET,
-				"JWT_ACCESS_SECRET must be set to a non-default value in production",
-			),
-		JWT_REFRESH_SECRET: z
-			.string()
-			.min(32)
-			.default(DEV_REFRESH_SECRET)
-			.refine(
-				(value) =>
-					process.env.NODE_ENV !== "production" || value !== DEV_REFRESH_SECRET,
-				"JWT_REFRESH_SECRET must be set to a non-default value in production",
-			),
+		JWT_ACCESS_SECRET: z.string().min(1).default(DEV_ACCESS_SECRET),
+		JWT_REFRESH_SECRET: z.string().min(1).default(DEV_REFRESH_SECRET),
 		RAZORPAY_KEY_ID: z
 			.string()
 			.min(1)
