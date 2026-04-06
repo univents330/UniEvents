@@ -5,6 +5,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { getAllowedCorsOrigins } from "./cors-origins";
 
 export const auth = betterAuth({
+	baseURL: env.BETTER_AUTH_URL,
 	secret: env.BETTER_AUTH_SECRET,
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
@@ -12,6 +13,15 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 	},
+	advanced:
+		process.env.NODE_ENV === "production"
+			? {
+					defaultCookieAttributes: {
+						sameSite: "none",
+						secure: true,
+					},
+				}
+			: undefined,
 	user: {
 		additionalFields: {
 			role: {
