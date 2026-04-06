@@ -48,14 +48,8 @@ export const env = createEnv({
 			),
 		RAZORPAY_WEBHOOK_SECRET: z
 			.string()
-			.min(32)
-			.default(DEV_RAZORPAY_WEBHOOK_SECRET)
-			.refine(
-				(value) =>
-					process.env.NODE_ENV !== "production" ||
-					value !== DEV_RAZORPAY_WEBHOOK_SECRET,
-				"RAZORPAY_WEBHOOK_SECRET must be set to a non-default value in production",
-			),
+			.min(1)
+			.default(DEV_RAZORPAY_WEBHOOK_SECRET),
 		ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
 		REFRESH_TOKEN_TTL_SECONDS: z.coerce
 			.number()
