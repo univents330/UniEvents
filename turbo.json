@@ -1,6 +1,12 @@
 {
 	"$schema": "https://turbo.build/schema.json",
 	"ui": "tui",
+	"globalEnv": [
+		"NEXT_PUBLIC_SERVER_URL",
+		"NEON_AUTH_BASE_URL",
+		"NEON_AUTH_COOKIE_SECRET",
+		"DATABASE_URL"
+	],
 	"tasks": {
 		"build": {
 			"dependsOn": ["^build"],
