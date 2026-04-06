@@ -26,7 +26,6 @@ export function useCurrentUser() {
  * Hook for user registration
  */
 export function useRegister() {
-	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -38,7 +37,7 @@ export function useRegister() {
 				message: "Your account has been created successfully.",
 				color: "green",
 			});
-			router.push("/dashboard");
+			window.location.assign("/");
 		},
 		onError: (error: unknown) => {
 			notifications.show({
@@ -54,7 +53,6 @@ export function useRegister() {
  * Hook for user login
  */
 export function useLogin() {
-	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -66,7 +64,7 @@ export function useLogin() {
 				message: `Logged in as ${data?.user?.email ?? "your account"}`,
 				color: "green",
 			});
-			router.push("/dashboard");
+			window.location.assign("/");
 		},
 		onError: (error: unknown) => {
 			notifications.show({

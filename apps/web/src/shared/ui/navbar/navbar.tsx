@@ -1,21 +1,38 @@
 "use client";
 
-import { MapPin, Search } from "lucide-react";
+import { ChevronDown, LogOut, MapPin, Search, UserCircle2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useCurrentUser, useLogout } from "@/features/auth";
+
+function getProfileInitial(
+	name: string | null | undefined,
+	email: string | null | undefined,
+) {
+	const base = name?.trim() || email?.trim() || "U";
+	return base.charAt(0).toUpperCase();
+}
 
 export function Navbar() {
 	const router = useRouter();
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const { data: user } = useCurrentUser();
+	const logoutMutation = useLogout();
+	const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+	const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
 	const [showScrolledSearch, setShowScrolledSearch] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [location, setLocation] = useState("patiala");
+	const profileMenuRef = useRef<HTMLDivElement | null>(null);
+	const mobileProfileMenuRef = useRef<HTMLDivElement | null>(null);
+	const profileCloseTimerRef = useRef<number | null>(null);
 
-	const closeMobileMenu = () => setIsMobileMenuOpen(false);
+	const closeMobileMenu = () => {
+		setIsMobileProfileMenuOpen(false);
+	};
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -30,6 +47,33 @@ export function Navbar() {
 		return () => {
 			window.removeEventListener("scroll", handleScroll);
 			window.removeEventListener("resize", handleScroll);
+		};
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (profileCloseTimerRef.current) {
+				window.clearTimeout(profileCloseTimerRef.current);
+			}
+		};
+	}, []);
+
+	useEffect(() => {
+		const handleOutsideClick = (event: MouseEvent) => {
+			const target = event.target as Node;
+			const isInsideDesktopMenu = profileMenuRef.current?.contains(target);
+			const isInsideMobileMenu = mobileProfileMenuRef.current?.contains(target);
+
+			if (!isInsideDesktopMenu && !isInsideMobileMenu) {
+				setIsProfileMenuOpen(false);
+				setIsMobileProfileMenuOpen(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleOutsideClick);
+
+		return () => {
+			document.removeEventListener("mousedown", handleOutsideClick);
 		};
 	}, []);
 
@@ -53,6 +97,53 @@ export function Navbar() {
 			handleSearch();
 		}
 	};
+
+	const openProfileMenu = () => {
+		if (profileCloseTimerRef.current) {
+			window.clearTimeout(profileCloseTimerRef.current);
+			profileCloseTimerRef.current = null;
+		}
+		setIsProfileMenuOpen(true);
+	};
+
+	const closeProfileMenuWithSlide = () => {
+		if (profileCloseTimerRef.current) {
+			window.clearTimeout(profileCloseTimerRef.current);
+		}
+
+		profileCloseTimerRef.current = window.setTimeout(() => {
+			setIsProfileMenuOpen(false);
+			profileCloseTimerRef.current = null;
+		}, 120);
+	};
+
+	const handleNavigateFromProfileMenu = (href: string) => {
+		window.location.assign(href);
+		setIsProfileMenuOpen(false);
+		setIsMobileProfileMenuOpen(false);
+		closeMobileMenu();
+	};
+
+	const handleLogout = () => {
+		setIsProfileMenuOpen(false);
+		setIsMobileProfileMenuOpen(false);
+		closeMobileMenu();
+		logoutMutation.mutate();
+	};
+
+	const profileMenuItems = useMemo(() => {
+		const items = [
+			{ label: "Profile", href: "/" },
+			{ label: "Discover Events", href: "/events" },
+			{ label: "My Orders", href: "/orders" },
+			{ label: "My Passes", href: "/passes" },
+			{ label: "Session Settings", href: "/settings/sessions" },
+		];
+
+		return items;
+	}, []);
+
+	const profileInitial = getProfileInitial(user?.name, user?.email);
 
 	return (
 		<header className="fixed top-0 right-0 left-0 z-50 border-slate-100 border-b bg-white/80 backdrop-blur-md">
@@ -140,104 +231,253 @@ export function Navbar() {
 				</nav>
 
 				<div className="hidden items-center gap-3 md:flex">
-					<Button
-						asChild
-						variant="ghost"
-						className="rounded-4xl border-2 border-gray-400 font-bold text-slate-600 hover:text-[#030370]"
-					>
-						<Link href="/login">Login</Link>
-					</Button>
-					<Button
-						asChild
-						className="rounded-full bg-[#030370] px-6 font-bold text-white shadow-[0_0_5px_0_rgba(71,114,230,1)] transition-all hover:bg-[#030370]/90 active:scale-95"
-					>
-						<Link href="/signup">Sign Up</Link>
-					</Button>
-				</div>
+					{user ? (
+						<div ref={profileMenuRef} className="relative">
+							<button
+								type="button"
+								className="group flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pr-2 pl-1.5 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff]"
+								onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+								onMouseEnter={openProfileMenu}
+								aria-label="Open profile menu"
+								aria-expanded={isProfileMenuOpen}
+							>
+								{user.image ? (
+									<Image
+										src={user.image}
+										alt={user.name ? `${user.name} profile` : "User profile"}
+										width={32}
+										height={32}
+										className="h-8 w-8 rounded-full border border-slate-200 object-cover"
+									/>
+								) : (
+									<span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#e9edff] font-bold text-[#070190] text-sm">
+										{profileInitial}
+									</span>
+								)}
+								<ChevronDown
+									className={`h-4 w-4 text-[#070190] transition-transform ${
+										isProfileMenuOpen ? "rotate-180" : "rotate-0"
+									}`}
+								/>
+							</button>
 
-				<button
-					type="button"
-					className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 text-[#070190] md:hidden"
-					onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-					aria-label="Toggle navigation menu"
-					aria-expanded={isMobileMenuOpen}
-				>
-					<span className="flex flex-col gap-1">
-						<span className="block h-0.5 w-5 bg-current" />
-						<span className="block h-0.5 w-5 bg-current" />
-						<span className="block h-0.5 w-5 bg-current" />
-					</span>
-				</button>
-			</div>
-
-			{isMobileMenuOpen && (
-				<div className="border-slate-100 border-t bg-white px-6 pb-6 md:hidden">
-					<div className="flex flex-col gap-4 pt-4">
-						<Link
-							href="/"
-							className="font-black text-2xl text-[#070190] tracking-tight"
-							onClick={closeMobileMenu}
-						>
-							UniEvent
-						</Link>
-						<Link
-							href="/events"
-							className="font-bold text-slate-700 text-sm"
-							onClick={closeMobileMenu}
-						>
-							Discover
-						</Link>
-						<Link
-							href="/events"
-							className="font-bold text-slate-700 text-sm"
-							onClick={closeMobileMenu}
-						>
-							Create Event +
-						</Link>
-						<div className="mt-2 flex flex-col gap-3">
-							<div className="rounded-full border border-slate-200 bg-white p-1.5 shadow-[0_8px_24px_rgba(7,1,144,0.08)]">
-								<div className="flex items-center gap-2">
-									<div className="flex min-w-0 flex-1 items-center gap-2 px-3">
-										<Search className="h-4 w-4 shrink-0 text-slate-500" />
-										<Input
-											value={searchQuery}
-											onChange={(e) => setSearchQuery(e.target.value)}
-											onKeyDown={handleSearchKeyDown}
-											placeholder="Search events"
-											className="h-auto border-none bg-transparent p-0 font-medium text-slate-700 text-sm shadow-none placeholder:text-slate-400 focus-visible:ring-0"
-										/>
+							<div
+								role="menu"
+								onMouseEnter={openProfileMenu}
+								onMouseLeave={closeProfileMenuWithSlide}
+								className={`absolute top-full right-0 z-50 min-w-56 pt-2 transition-all duration-200 ease-out ${
+									isProfileMenuOpen
+										? "pointer-events-auto translate-y-0 opacity-100"
+										: "pointer-events-none -translate-y-2 opacity-0"
+								}`}
+							>
+								<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(7,1,144,0.16)]">
+									<div className="border-slate-100 border-b px-3 py-2.5">
+										<p className="truncate font-semibold text-[#070190] text-sm">
+											{user.name?.trim() || "My Profile"}
+										</p>
+										<p className="truncate text-slate-500 text-xs">
+											{user.email}
+										</p>
 									</div>
-									<Button
-										type="button"
-										onClick={handleSearch}
-										className="h-9 w-9 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
-										aria-label="Search events"
-									>
-										<Search className="h-4 w-4" />
-									</Button>
+
+									<div className="p-2">
+										{profileMenuItems.map((item) => (
+											<button
+												key={item.label}
+												type="button"
+												onClick={() => handleNavigateFromProfileMenu(item.href)}
+												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+											>
+												<UserCircle2 className="h-4 w-4" />
+												{item.label}
+											</button>
+										))}
+
+										<div className="my-1 border-slate-100 border-t" />
+										<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+											Host Control
+										</p>
+										<button
+											type="button"
+											onClick={() => handleNavigateFromProfileMenu("/events")}
+											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+										>
+											<UserCircle2 className="h-4 w-4" />
+											Create Event
+										</button>
+										<button
+											type="button"
+											onClick={() => handleNavigateFromProfileMenu("/events")}
+											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+										>
+											<UserCircle2 className="h-4 w-4" />
+											Manage Events
+										</button>
+
+										<button
+											type="button"
+											onClick={handleLogout}
+											disabled={logoutMutation.isPending}
+											className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-rose-600 text-sm transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70"
+										>
+											<LogOut className="h-4 w-4" />
+											{logoutMutation.isPending ? "Logging out..." : "Logout"}
+										</button>
+									</div>
 								</div>
 							</div>
+						</div>
+					) : (
+						<>
 							<Button
 								asChild
 								variant="ghost"
-								className="justify-center rounded-4xl border-2 border-gray-400 font-bold text-slate-600 hover:text-[#030370]"
+								className="rounded-4xl border-2 border-gray-400 font-bold text-slate-600 hover:text-[#030370]"
 							>
-								<Link href="/login" onClick={closeMobileMenu}>
-									Login
-								</Link>
+								<Link href="/login">Login</Link>
 							</Button>
 							<Button
 								asChild
-								className="justify-center rounded-full bg-[#030370] px-6 font-bold text-white shadow-[0_0_5px_0_rgba(71,114,230,1)] transition-all hover:bg-[#030370]/90 active:scale-95"
+								className="rounded-full bg-[#030370] px-6 font-bold text-white shadow-[0_0_5px_0_rgba(71,114,230,1)] transition-all hover:bg-[#030370]/90 active:scale-95"
 							>
-								<Link href="/signup" onClick={closeMobileMenu}>
-									Sign Up
-								</Link>
+								<Link href="/signup">Sign Up</Link>
 							</Button>
+						</>
+					)}
+				</div>
+
+				{user ? (
+					<div
+						ref={mobileProfileMenuRef}
+						className="relative flex items-center gap-2 md:hidden"
+					>
+						{showScrolledSearch && (
+							<Button
+								type="button"
+								onClick={() => window.location.assign("/events")}
+								className="h-9 w-9 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
+								aria-label="Open events search"
+							>
+								<Search className="h-4 w-4" />
+							</Button>
+						)}
+
+						<button
+							type="button"
+							onClick={() => setIsMobileProfileMenuOpen((prev) => !prev)}
+							className="flex items-center gap-1 rounded-full border border-slate-200 bg-white py-1 pr-1.5 pl-1"
+							aria-label="Toggle profile menu"
+							aria-expanded={isMobileProfileMenuOpen}
+						>
+							{user.image ? (
+								<Image
+									src={user.image}
+									alt={user.name ? `${user.name} profile` : "User profile"}
+									width={32}
+									height={32}
+									className="h-8 w-8 rounded-full border border-slate-200 object-cover"
+								/>
+							) : (
+								<span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#e9edff] font-bold text-[#070190] text-sm">
+									{profileInitial}
+								</span>
+							)}
+							<ChevronDown
+								className={`h-4 w-4 text-[#070190] transition-transform ${
+									isMobileProfileMenuOpen ? "rotate-180" : "rotate-0"
+								}`}
+							/>
+						</button>
+
+						<div
+							className={`absolute top-full right-0 z-50 min-w-56 pt-2 transition-all duration-200 ease-out ${
+								isMobileProfileMenuOpen
+									? "pointer-events-auto translate-y-0 opacity-100"
+									: "pointer-events-none -translate-y-2 opacity-0"
+							}`}
+						>
+							<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(7,1,144,0.16)]">
+								<div className="border-slate-100 border-b px-3 py-2.5">
+									<p className="truncate font-semibold text-[#070190] text-sm">
+										{user.name?.trim() || "My Profile"}
+									</p>
+									<p className="truncate text-slate-500 text-xs">
+										{user.email}
+									</p>
+								</div>
+
+								<div className="p-2">
+									{profileMenuItems.map((item) => (
+										<button
+											key={item.label}
+											type="button"
+											onClick={() => handleNavigateFromProfileMenu(item.href)}
+											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+										>
+											<UserCircle2 className="h-4 w-4" />
+											{item.label}
+										</button>
+									))}
+
+									<div className="my-1 border-slate-100 border-t" />
+									<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+										Host Control
+									</p>
+									<button
+										type="button"
+										onClick={() => handleNavigateFromProfileMenu("/events")}
+										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+									>
+										<UserCircle2 className="h-4 w-4" />
+										Create Event
+									</button>
+									<button
+										type="button"
+										onClick={() => handleNavigateFromProfileMenu("/events")}
+										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+									>
+										<UserCircle2 className="h-4 w-4" />
+										Manage Events
+									</button>
+
+									<button
+										type="button"
+										onClick={handleLogout}
+										disabled={logoutMutation.isPending}
+										className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-rose-600 text-sm transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70"
+									>
+										<LogOut className="h-4 w-4" />
+										{logoutMutation.isPending ? "Logging out..." : "Logout"}
+									</button>
+								</div>
+							</div>
 						</div>
 					</div>
-				</div>
-			)}
+				) : (
+					<div className="flex items-center gap-2 md:hidden">
+						{showScrolledSearch && (
+							<Button
+								type="button"
+								onClick={() => window.location.assign("/events")}
+								className="h-9 w-9 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
+								aria-label="Open events search"
+							>
+								<Search className="h-4 w-4" />
+							</Button>
+						)}
+
+						<button
+							type="button"
+							className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-white text-[#070190] transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff]"
+							onClick={() => window.location.assign("/login")}
+							aria-label="Open login or signup"
+						>
+							<UserCircle2 className="h-5 w-5" />
+						</button>
+					</div>
+				)}
+			</div>
 		</header>
 	);
 }
