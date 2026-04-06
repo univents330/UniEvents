@@ -12,6 +12,11 @@ type AuthCopy = {
 	submitLabel: string;
 };
 
+type PasswordRule = {
+	label: string;
+	check: (value: string) => boolean;
+};
+
 const AUTH_COPY: Record<AuthMode, AuthCopy> = {
 	login: {
 		heading: "Log in",
@@ -26,6 +31,58 @@ const AUTH_COPY: Record<AuthMode, AuthCopy> = {
 		submitLabel: "Sign up",
 	},
 };
+
+const PASSWORD_RULES: PasswordRule[] = [
+	{
+		label: "At least 8 characters",
+		check: (value) => value.length >= 8,
+	},
+	{
+		label: "Starts with a capital letter",
+		check: (value) => /^[A-Z]/.test(value),
+	},
+	{
+		label: "Contains at least one number",
+		check: (value) => /\d/.test(value),
+	},
+	{
+		label: "Contains one special character",
+		check: (value) => /[^A-Za-z0-9]/.test(value),
+	},
+];
+
+function PasswordRuleItem({
+	label,
+	isMet,
+	isActive,
+}: {
+	label: string;
+	isMet: boolean;
+	isActive: boolean;
+}) {
+	return (
+		<li
+			className={`flex items-center gap-2 text-xs transition-all duration-300 ${
+				isMet
+					? "text-emerald-700"
+					: isActive
+						? "text-slate-700"
+						: "text-slate-500"
+			}`}
+		>
+			<span
+				className={`inline-flex h-4 w-4 items-center justify-center rounded-full border font-semibold text-[10px] transition-all duration-300 ${
+					isMet
+						? "scale-100 border-emerald-600 bg-emerald-600 text-white"
+						: "scale-95 border-slate-300 bg-white text-slate-400"
+				}`}
+			>
+				{isMet ? "\u2713" : "\u2022"}
+			</span>
+			<span>{label}</span>
+		</li>
+	);
+}
 
 function GoogleMark() {
 	return (
@@ -61,6 +118,11 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [formError, setFormError] = useState<string | null>(null);
+	const passwordRuleStates = PASSWORD_RULES.map((rule) => ({
+		label: rule.label,
+		isMet: rule.check(password),
+	}));
+	const isPasswordValid = passwordRuleStates.every((rule) => rule.isMet);
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -68,6 +130,11 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 
 		if (isSignup && password !== confirmPassword) {
 			setFormError("Passwords do not match.");
+			return;
+		}
+
+		if (isSignup && !isPasswordValid) {
+			setFormError("Password does not meet all requirements.");
 			return;
 		}
 
@@ -210,6 +277,30 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 										placeholder="Enter your password"
 										className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-slate-950 outline-none transition-shadow placeholder:text-slate-400 focus:border-[#2f57db] focus:ring-4 focus:ring-[#2f57db]/10"
 									/>
+
+									{isSignup ? (
+										<div
+											className={`overflow-hidden rounded-xl border border-[#dfe7fb] bg-[#f8faff] px-3 py-2.5 transition-all duration-300 ${
+												password.length > 0
+													? "max-h-40 opacity-100"
+													: "max-h-0 border-transparent px-0 py-0 opacity-0"
+											}`}
+										>
+											<p className="mb-2 font-medium text-[11px] text-slate-500 uppercase tracking-[0.12em]">
+												Password strength rules
+											</p>
+											<ul className="grid gap-1.5">
+												{passwordRuleStates.map((rule) => (
+													<PasswordRuleItem
+														key={rule.label}
+														label={rule.label}
+														isMet={rule.isMet}
+														isActive={password.length > 0}
+													/>
+												))}
+											</ul>
+										</div>
+									) : null}
 								</div>
 
 								{isSignup ? (

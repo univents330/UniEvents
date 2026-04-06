@@ -1,4 +1,5 @@
 import { env } from "@voltaze/env/server";
+import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
 
@@ -10,6 +11,7 @@ import {
 	apiRateLimitMiddleware,
 	securityHeadersMiddleware,
 } from "./common/middlewares/security.middleware";
+import { auth } from "./common/utils/better-auth";
 import { registerModules } from "./modules";
 
 export function createApp(): Express {
@@ -28,6 +30,7 @@ export function createApp(): Express {
 	);
 	app.use(requestIdMiddleware);
 	app.use(loggerMiddleware);
+	app.all("/api/auth/{*any}", toNodeHandler(auth));
 	app.use(
 		express.json({
 			verify: (req, _res, buf) => {

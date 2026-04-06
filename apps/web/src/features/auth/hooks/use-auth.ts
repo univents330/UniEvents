@@ -32,7 +32,7 @@ export function useRegister() {
 	return useMutation({
 		mutationFn: authService.register,
 		onSuccess: (data) => {
-			queryClient.setQueryData(AUTH_KEYS.currentUser, data.user);
+			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
 			notifications.show({
 				title: "Welcome!",
 				message: "Your account has been created successfully.",
@@ -60,10 +60,10 @@ export function useLogin() {
 	return useMutation({
 		mutationFn: authService.login,
 		onSuccess: (data) => {
-			queryClient.setQueryData(AUTH_KEYS.currentUser, data.user);
+			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
 			notifications.show({
 				title: "Welcome back!",
-				message: `Logged in as ${data.user.email}`,
+				message: `Logged in as ${data?.user?.email ?? "your account"}`,
 				color: "green",
 			});
 			router.push("/dashboard");

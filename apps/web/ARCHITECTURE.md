@@ -82,7 +82,7 @@ apps/web/src/
           [id]/orders/page.tsx         # Event orders
           [id]/check-ins/page.tsx      # Scan/manual check-ins
 
-      admin/
+      admin/  
         analytics/page.tsx
         users/page.tsx
         payments/page.tsx

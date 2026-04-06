@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const DEV_ACCESS_SECRET = "development-access-secret-change-me-12345";
 const DEV_REFRESH_SECRET = "development-refresh-secret-change-me-12345";
+const DEV_BETTER_AUTH_SECRET = "development-better-auth-secret-change-me-12345";
 const DEV_RAZORPAY_KEY_ID = "rzp_test_development_key_id";
 const DEV_RAZORPAY_KEY_SECRET = "development-razorpay-key-secret-12345";
 const DEV_RAZORPAY_WEBHOOK_SECRET =
@@ -13,6 +14,16 @@ export const env = createEnv({
 	server: {
 		DATABASE_URL: z.string().min(1),
 		CORS_ORIGIN: z.url(),
+		BETTER_AUTH_SECRET: z
+			.string()
+			.min(32)
+			.default(DEV_BETTER_AUTH_SECRET)
+			.refine(
+				(value) =>
+					process.env.NODE_ENV !== "production" ||
+					value !== DEV_BETTER_AUTH_SECRET,
+				"BETTER_AUTH_SECRET must be set to a non-default value in production",
+			),
 		JWT_ACCESS_SECRET: z
 			.string()
 			.min(32)

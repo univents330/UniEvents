@@ -1,5 +1,7 @@
 import { prisma, type UserRole } from "@voltaze/db";
+import { fromNodeHeaders } from "better-auth/node";
 import type { RequestHandler } from "express";
+import { auth } from "@/common/utils/better-auth";
 import { verifyAccessToken } from "@/modules/auth/auth.utils";
 import { ForbiddenError, UnauthorizedError } from "../exceptions/app-error";
 import type { RequestWithAuth } from "../types/auth-request";
@@ -42,9 +44,31 @@ async function attachAuthContext(authReq: RequestWithAuth, token: string) {
 	authReq.user = session.user;
 }
 
+async function attachBetterAuthContext(authReq: RequestWithAuth) {
+	const session = await auth.api.getSession({
+		headers: fromNodeHeaders(authReq.headers),
+	});
+
+	if (!session) {
+		return false;
+	}
+
+	authReq.auth = {
+		userId: session.user.id,
+		sessionId: session.session.id,
+		email: session.user.email,
+		role: session.user.role,
+	};
+	authReq.user = session.user as typeof authReq.user;
+	return true;
+}
+
 export const requireAuth: RequestHandler = async (req, _res, next) => {
 	try {
 		const authReq = req as RequestWithAuth;
+		if (await attachBetterAuthContext(authReq)) {
+			return next();
+		}
 		const token = getBearerToken(req.get("authorization"));
 		if (!token) {
 			throw new UnauthorizedError("Missing bearer token");
@@ -64,6 +88,9 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
 
 export const optionalAuth: RequestHandler = async (req, _res, next) => {
 	const authReq = req as RequestWithAuth;
+	if (await attachBetterAuthContext(authReq)) {
+		return next();
+	}
 	const token = getBearerToken(req.get("authorization"));
 
 	if (!token) {
