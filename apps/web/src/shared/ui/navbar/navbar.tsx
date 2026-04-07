@@ -1,6 +1,14 @@
 "use client";
 
-import { ChevronDown, LogOut, MapPin, Search, UserCircle2 } from "lucide-react";
+import {
+	ChevronDown,
+	Globe,
+	LocateFixed,
+	LogOut,
+	MapPin,
+	Search,
+	UserCircle2,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +16,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser, useLogout } from "@/features/auth";
+import { useLiveLocation } from "@/shared/hooks/use-live-location";
 
 function getProfileInitial(
 	name: string | null | undefined,
@@ -24,14 +33,37 @@ export function Navbar() {
 	const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 	const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
 	const [showScrolledSearch, setShowScrolledSearch] = useState(false);
+	const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [location, setLocation] = useState("patiala");
+	const { location, setLocation, detectLocation, isLocating } = useLiveLocation(
+		{
+			fallback: "Patiala",
+		},
+	);
 	const profileMenuRef = useRef<HTMLDivElement | null>(null);
 	const mobileProfileMenuRef = useRef<HTMLDivElement | null>(null);
+	const locationMenuRef = useRef<HTMLDivElement | null>(null);
 	const profileCloseTimerRef = useRef<number | null>(null);
+
+	const locationOptions = useMemo(() => {
+		const defaults = ["Patiala", "Chandigarh", "Delhi", "Mumbai"];
+
+		if (
+			location &&
+			!defaults.some((item) => item.toLowerCase() === location.toLowerCase())
+		) {
+			return [location, ...defaults];
+		}
+
+		return defaults;
+	}, [location]);
 
 	const closeMobileMenu = () => {
 		setIsMobileProfileMenuOpen(false);
+	};
+
+	const closeLocationMenu = () => {
+		setIsLocationMenuOpen(false);
 	};
 
 	useEffect(() => {
@@ -63,10 +95,15 @@ export function Navbar() {
 			const target = event.target as Node;
 			const isInsideDesktopMenu = profileMenuRef.current?.contains(target);
 			const isInsideMobileMenu = mobileProfileMenuRef.current?.contains(target);
+			const isInsideLocationMenu = locationMenuRef.current?.contains(target);
 
 			if (!isInsideDesktopMenu && !isInsideMobileMenu) {
 				setIsProfileMenuOpen(false);
 				setIsMobileProfileMenuOpen(false);
+			}
+
+			if (!isInsideLocationMenu) {
+				closeLocationMenu();
 			}
 		};
 
@@ -89,7 +126,31 @@ export function Navbar() {
 		}
 
 		router.push(`/events?${params.toString()}`);
+		closeLocationMenu();
 		closeMobileMenu();
+	};
+
+	const handleUseLiveLocation = async () => {
+		await detectLocation();
+		closeLocationMenu();
+	};
+
+	const handleBrowseOnlineEvents = () => {
+		setLocation("Online");
+		const params = new URLSearchParams();
+
+		if (searchQuery) {
+			params.set("search", searchQuery);
+		}
+
+		params.set("location", "online");
+		router.push(`/events?${params.toString()}`);
+		closeLocationMenu();
+	};
+
+	const handlePickLocation = (value: string) => {
+		setLocation(value);
+		closeLocationMenu();
 	};
 
 	const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -189,18 +250,73 @@ export function Navbar() {
 
 							<div className="h-8 w-px bg-slate-200" />
 
-							<div className="hidden items-center gap-2 px-3 md:flex">
-								<MapPin className="h-4 w-4 shrink-0 text-slate-500" />
-								<select
-									value={location}
-									onChange={(e) => setLocation(e.target.value)}
-									className="w-30 cursor-pointer border-none bg-transparent font-semibold text-[#070190] text-sm outline-none"
+							<div
+								ref={locationMenuRef}
+								className="relative hidden items-center gap-2 px-3 md:flex"
+							>
+								<button
+									type="button"
+									onClick={() => setIsLocationMenuOpen((prev) => !prev)}
+									className="flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-slate-50"
+									aria-expanded={isLocationMenuOpen}
+									aria-label="Open location menu"
 								>
-									<option value="patiala">Patiala</option>
-									<option value="chandigarh">Chandigarh</option>
-									<option value="delhi">Delhi</option>
-									<option value="mumbai">Mumbai</option>
-								</select>
+									<MapPin className="h-4 w-4 shrink-0 text-slate-500" />
+									<span className="w-24 truncate text-left font-semibold text-[#070190] text-sm">
+										{location || "Select location"}
+									</span>
+									<ChevronDown
+										className={`h-3.5 w-3.5 text-slate-500 transition-transform ${
+											isLocationMenuOpen ? "rotate-180" : "rotate-0"
+										}`}
+									/>
+								</button>
+
+								<div
+									className={`absolute top-full right-0 z-50 mt-2 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(7,1,144,0.16)] transition-all ${
+										isLocationMenuOpen
+											? "pointer-events-auto translate-y-0 opacity-100"
+											: "pointer-events-none -translate-y-1 opacity-0"
+									}`}
+								>
+									<button
+										type="button"
+										onClick={handleUseLiveLocation}
+										disabled={isLocating}
+										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff] disabled:cursor-not-allowed disabled:opacity-70"
+									>
+										<LocateFixed className="h-4 w-4" />
+										{isLocating
+											? "Fetching live location..."
+											: "Fetch live location"}
+									</button>
+
+									<button
+										type="button"
+										onClick={handleBrowseOnlineEvents}
+										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff]"
+									>
+										<Globe className="h-4 w-4" />
+										Browse online events
+									</button>
+
+									<div className="my-1 border-slate-100 border-t" />
+									<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+										Popular cities
+									</p>
+
+									{locationOptions.map((option) => (
+										<button
+											key={option.toLowerCase()}
+											type="button"
+											onClick={() => handlePickLocation(option)}
+											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+										>
+											<MapPin className="h-3.5 w-3.5" />
+											{option}
+										</button>
+									))}
+								</div>
 							</div>
 
 							<Button
