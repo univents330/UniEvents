@@ -9,12 +9,18 @@ import { Input } from "@/components/ui/input";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import { startTopLoader } from "@/shared/lib/top-loader-events";
 import { Navbar } from "@/shared/ui/navbar";
+import { useEventSearch } from "../../hooks/use-event-search";
+import { SearchSuggestions } from "../search-suggestions/search-suggestions";
 
 export function EventHero() {
 	const router = useRouter();
 	const locationMenuRef = useRef<HTMLDivElement | null>(null);
+	const searchMenuRef = useRef<HTMLDivElement | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
+	const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+	const { suggestions, isLoading: isSuggestionsLoading } =
+		useEventSearch(searchQuery);
 	const { location, setLocation, detectLocation, isLocating } = useLiveLocation(
 		{
 			fallback: "Chandigarh",
@@ -73,6 +79,9 @@ export function EventHero() {
 			if (!locationMenuRef.current?.contains(target)) {
 				setIsLocationMenuOpen(false);
 			}
+			if (!searchMenuRef.current?.contains(target)) {
+				setShowSearchSuggestions(false);
+			}
 		};
 
 		document.addEventListener("mousedown", handleOutsideClick);
@@ -125,16 +134,28 @@ export function EventHero() {
 											className="shrink-0 text-slate-700"
 											strokeWidth={2}
 										/>
-										<Input
-											type="text"
-											placeholder="Search For Events Near You"
-											value={searchQuery}
-											onChange={(e) => setSearchQuery(e.target.value)}
-											onKeyDown={(e) => {
-												if (e.key === "Enter") handleSearch();
-											}}
-											className="h-auto border-none bg-transparent p-0 font-medium text-gray-700 text-lg shadow-none focus-visible:ring-0"
-										/>
+										<div ref={searchMenuRef} className="relative w-full">
+											<Input
+												type="text"
+												placeholder="Search For Events Near You"
+												value={searchQuery}
+												onChange={(e) => setSearchQuery(e.target.value)}
+												onFocus={() => setShowSearchSuggestions(true)}
+												onKeyDown={(e) => {
+													if (e.key === "Enter") handleSearch();
+												}}
+												className="h-auto border-none bg-transparent p-0 font-medium text-gray-700 text-lg shadow-none focus-visible:ring-0"
+											/>
+											<SearchSuggestions
+												suggestions={suggestions}
+												isOpen={showSearchSuggestions && searchQuery.length > 0}
+												isLoading={isSuggestionsLoading}
+												onSuggestionSelect={() => {
+													setShowSearchSuggestions(false);
+													setSearchQuery("");
+												}}
+											/>
+										</div>
 									</div>
 
 									<div className="hidden h-10 w-px bg-gray-200 md:block" />

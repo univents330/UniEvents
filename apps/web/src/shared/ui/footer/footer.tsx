@@ -150,23 +150,23 @@ export function Footer() {
 				<div className="flex flex-col items-center justify-between gap-4 font-medium text-blue-200 text-sm md:flex-row">
 					<div>© {new Date().getFullYear()} Voltaze. All rights reserved.</div>
 					<div className="flex items-center gap-6">
-						<Link 
+						<Link
 							// biome-ignore lint/suspicious/noExplicitAny: Workaround for Next.js 15 static route typing
-							href={"/privacy" as any} 
+							href={"/privacy" as any}
 							className="transition-colors hover:text-white"
 						>
 							Privacy Policy
 						</Link>
-						<Link 
+						<Link
 							// biome-ignore lint/suspicious/noExplicitAny: Workaround for Next.js 15 static route typing
-							href={"/terms" as any} 
+							href={"/terms" as any}
 							className="transition-colors hover:text-white"
 						>
 							Terms of Service
 						</Link>
-						<Link 
+						<Link
 							// biome-ignore lint/suspicious/noExplicitAny: Workaround for Next.js 15 static route typing
-							href={"/privacy" as any} 
+							href={"/privacy" as any}
 							className="transition-colors hover:text-white"
 						>
 							Cookie Policy

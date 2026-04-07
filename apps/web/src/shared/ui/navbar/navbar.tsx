@@ -16,6 +16,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser, useLogout } from "@/features/auth";
+import { SearchSuggestions } from "@/features/events/components/search-suggestions/search-suggestions";
+import { useEventSearch } from "@/features/events/hooks/use-event-search";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import { startTopLoader } from "@/shared/lib/top-loader-events";
 
@@ -37,6 +39,7 @@ export function Navbar() {
 	const [showScrolledSearch, setShowScrolledSearch] = useState(false);
 	const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
 	const { location, setLocation, detectLocation, isLocating } = useLiveLocation(
 		{
 			fallback: "Patiala",
@@ -46,6 +49,10 @@ export function Navbar() {
 	const mobileProfileMenuRef = useRef<HTMLDivElement | null>(null);
 	const locationMenuRef = useRef<HTMLDivElement | null>(null);
 	const profileCloseTimerRef = useRef<number | null>(null);
+	const searchMenuRef = useRef<HTMLDivElement | null>(null);
+
+	const { suggestions, isLoading: isSuggestionsLoading } =
+		useEventSearch(searchQuery);
 
 	const locationOptions = useMemo(() => {
 		const defaults = ["Patiala", "Chandigarh", "Delhi", "Mumbai"];
@@ -98,13 +105,15 @@ export function Navbar() {
 			const isInsideDesktopMenu = profileMenuRef.current?.contains(target);
 			const isInsideMobileMenu = mobileProfileMenuRef.current?.contains(target);
 			const isInsideLocationMenu = locationMenuRef.current?.contains(target);
+			const isInsideSearchMenu = searchMenuRef.current?.contains(target);
 
-			if (!isInsideDesktopMenu && !isInsideMobileMenu) {
+			if (!isInsideDesktopMenu && !isInsideMobileMenu && !isInsideSearchMenu) {
 				setIsProfileMenuOpen(false);
 				setIsMobileProfileMenuOpen(false);
+				setShowSearchSuggestions(false);
 			}
 
-			if (!isInsideLocationMenu) {
+			if (!isInsideLocationMenu && !isInsideSearchMenu) {
 				setIsLocationMenuOpen(false);
 			}
 		};
@@ -247,13 +256,25 @@ export function Navbar() {
 						<div className="flex items-center gap-2">
 							<div className="flex min-w-0 flex-1 items-center gap-2 px-3">
 								<Search className="h-4 w-4 shrink-0 text-slate-500" />
-								<Input
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									onKeyDown={handleSearchKeyDown}
-									placeholder="Search events"
-									className="h-auto border-none bg-transparent p-0 font-medium text-[15px] text-slate-700 shadow-none placeholder:text-slate-400 focus-visible:ring-0"
-								/>
+								<div ref={searchMenuRef} className="relative w-full">
+									<Input
+										value={searchQuery}
+										onChange={(e) => setSearchQuery(e.target.value)}
+										onFocus={() => setShowSearchSuggestions(true)}
+										onKeyDown={handleSearchKeyDown}
+										placeholder="Search events..."
+										className="h-auto border-none bg-transparent p-0 font-medium text-[15px] text-slate-700 shadow-none placeholder:text-slate-400 focus-visible:ring-0"
+									/>
+									<SearchSuggestions
+										suggestions={suggestions}
+										isOpen={showSearchSuggestions && searchQuery.length > 0}
+										isLoading={isSuggestionsLoading}
+										onSuggestionSelect={() => {
+											setShowSearchSuggestions(false);
+											setSearchQuery("");
+										}}
+									/>
+								</div>
 							</div>
 
 							<div className="h-8 w-px bg-slate-200" />
