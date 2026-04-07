@@ -1,83 +1,120 @@
 import type {
-	AuthResponse,
 	AuthSession,
 	LoginInput,
 	PublicUser,
 	RegisterInput,
 	ResetPasswordInput,
 } from "@voltaze/schema";
-import apiClient, { tokenManager } from "@/shared/lib/api-client";
+import { createAuthClient } from "better-auth/react";
+import { getActiveBackendUrl } from "@/shared/lib/backend-url";
+
+function getAuthClient() {
+	return createAuthClient({
+		baseURL: getActiveBackendUrl(),
+		fetchOptions: {
+			credentials: "include",
+		},
+	});
+}
 
 export const authService = {
 	/**
 	 * Register a new user
 	 */
 	async register(data: RegisterInput) {
-		const response = await apiClient.post<AuthResponse>("/auth/register", data);
-		const { tokens } = response.data;
-		tokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
-		return response.data;
+		const authClient = getAuthClient();
+		const name = data.name?.trim() || data.email.split("@")[0] || data.email;
+		const { data: session, error } = await authClient.signUp.email({
+			email: data.email,
+			password: data.password,
+			name,
+		});
+
+		if (error) {
+			throw error;
+		}
+
+		return session;
 	},
 
 	/**
 	 * Login with email and password
 	 */
 	async login(credentials: LoginInput) {
-		const response = await apiClient.post<AuthResponse>(
-			"/auth/login",
-			credentials,
+		const authClient = getAuthClient();
+		const { data: session, error } = await authClient.signIn.email({
+			email: credentials.email,
+			password: credentials.password,
+		});
+
+		if (error) {
+			throw error;
+		}
+
+		return session;
+	},
+
+	/**
+	 * Start a Google sign-in flow
+	 */
+	async signInWithGoogle() {
+		const callbackURL = `${window.location.origin}/`;
+		const errorCallbackURL = `${window.location.origin}/login`;
+		const redirectUrl = new URL(
+			`${getActiveBackendUrl()}/api/auth/sign-in/social`,
 		);
-		const { tokens } = response.data;
-		tokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
-		return response.data;
+		redirectUrl.searchParams.set("provider", "google");
+		redirectUrl.searchParams.set("callbackURL", callbackURL);
+		redirectUrl.searchParams.set("errorCallbackURL", errorCallbackURL);
+
+		window.location.assign(redirectUrl.toString());
+		return null;
 	},
 
 	/**
 	 * Logout the current user
 	 */
 	async logout(): Promise<void> {
-		const refreshToken = tokenManager.getRefreshToken();
-		try {
-			if (refreshToken) {
-				await apiClient.post("/auth/logout", { refreshToken });
-			}
-		} finally {
-			tokenManager.clearTokens();
-		}
+		const authClient = getAuthClient();
+		await authClient.signOut();
 	},
 
 	/**
 	 * Get current user profile
 	 */
 	async getCurrentUser() {
-		const response = await apiClient.get<PublicUser>("/auth/me");
-		return response.data;
+		const authClient = getAuthClient();
+		const { data: session } = await authClient.getSession();
+		return session?.user ?? null;
 	},
 
 	/**
 	 * Get active sessions for the current user
 	 */
 	async getSessions() {
-		const response = await apiClient.get<AuthSession[]>("/auth/sessions");
-		return response.data;
+		const authClient = getAuthClient();
+		const { data } = await authClient.listSessions();
+		return data ?? [];
 	},
 
 	/**
 	 * Revoke a specific session
 	 */
-	async revokeSession(sessionId: string): Promise<void> {
-		await apiClient.delete(`/auth/sessions/${sessionId}`);
+	async revokeSession(sessionToken: string): Promise<void> {
+		const authClient = getAuthClient();
+		await authClient.revokeSession({ token: sessionToken });
 	},
 
 	/**
 	 * Refresh access token
 	 */
-	async refreshToken(refreshToken: string) {
-		const response = await apiClient.post<AuthResponse>("/auth/refresh", {
-			refreshToken,
+	async refreshToken(_refreshToken: string) {
+		const authClient = getAuthClient();
+		const response = await authClient.getSession({
+			fetchOptions: {
+				credentials: "include",
+			},
 		});
-		const { tokens } = response.data;
-		tokenManager.setTokens(tokens.accessToken, tokens.refreshToken);
 		return response.data;
 	},
 
@@ -85,14 +122,22 @@ export const authService = {
 	 * Request password reset email
 	 */
 	async forgotPassword(email: string): Promise<void> {
-		await apiClient.post("/auth/forgot-password", { email });
+		const authClient = getAuthClient();
+		await authClient.requestPasswordReset({
+			email,
+			redirectTo: `${window.location.origin}/reset-password`,
+		});
 	},
 
 	/**
 	 * Reset password with token
 	 */
 	async resetPassword(data: ResetPasswordInput): Promise<void> {
-		await apiClient.post("/auth/reset-password", data);
+		const authClient = getAuthClient();
+		await authClient.resetPassword({
+			token: data.token,
+			newPassword: data.password,
+		});
 	},
 
 	/**
@@ -102,9 +147,11 @@ export const authService = {
 		currentPassword: string,
 		newPassword: string,
 	): Promise<void> {
-		await apiClient.post("/auth/change-password", {
+		const authClient = getAuthClient();
+		await authClient.changePassword({
 			currentPassword,
 			newPassword,
+			revokeOtherSessions: true,
 		});
 	},
 };

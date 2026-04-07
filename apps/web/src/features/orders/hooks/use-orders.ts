@@ -1,6 +1,5 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
 	CreateOrderInput,
@@ -8,6 +7,7 @@ import type {
 	UpdateOrderInput,
 } from "@voltaze/schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { ordersService } from "../services/orders.service";
 
 const ORDERS_KEYS = {
@@ -79,14 +79,14 @@ export function useCreateOrder() {
 		mutationFn: (data: CreateOrderInput) => ordersService.createOrder(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ORDERS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Order created successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to create order"),
 				color: "red",
@@ -106,14 +106,14 @@ export function useUpdateOrder(id: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ORDERS_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: ORDERS_KEYS.detail(id) });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Order updated successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to update order"),
 				color: "red",
@@ -132,14 +132,14 @@ export function useDeleteOrder() {
 		mutationFn: (id: string) => ordersService.deleteOrder(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ORDERS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Order deleted successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete order"),
 				color: "red",

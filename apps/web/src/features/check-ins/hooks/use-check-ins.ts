@@ -1,9 +1,9 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CheckInFilterInput, CreateCheckInInput } from "@voltaze/schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { checkInsService } from "../services/check-ins.service";
 
 const CHECKINS_KEYS = {
@@ -77,14 +77,14 @@ export function useCreateCheckIn() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: CHECKINS_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: CHECKINS_KEYS.all });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Check-in created successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to create check-in"),
 				color: "red",
@@ -104,14 +104,14 @@ export function useDeleteCheckIn() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: CHECKINS_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: CHECKINS_KEYS.all });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Check-in deleted successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete check-in"),
 				color: "red",

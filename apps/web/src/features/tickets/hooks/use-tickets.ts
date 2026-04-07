@@ -1,6 +1,5 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
 	CreateTicketInput,
@@ -8,6 +7,7 @@ import type {
 	UpdateTicketInput,
 } from "@voltaze/schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { ticketsService } from "../services/tickets.service";
 
 const TICKETS_KEYS = {
@@ -76,14 +76,14 @@ export function useCreateTicket() {
 		mutationFn: (data: CreateTicketInput) => ticketsService.createTicket(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: TICKETS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Ticket created successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to create ticket"),
 				color: "red",
@@ -104,14 +104,14 @@ export function useUpdateTicket(id: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: TICKETS_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: TICKETS_KEYS.detail(id) });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Ticket updated successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to update ticket"),
 				color: "red",
@@ -130,14 +130,14 @@ export function useDeleteTicket() {
 		mutationFn: (id: string) => ticketsService.deleteTicket(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: TICKETS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Ticket deleted successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete ticket"),
 				color: "red",

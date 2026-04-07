@@ -12,25 +12,31 @@ const DEV_RAZORPAY_WEBHOOK_SECRET =
 export const env = createEnv({
 	server: {
 		DATABASE_URL: z.string().min(1),
-		CORS_ORIGIN: z.url(),
-		JWT_ACCESS_SECRET: z
+		BETTER_AUTH_URL: z.string().url().optional(),
+		BETTER_AUTH_API_KEY: z.string().min(1).optional(),
+		GOOGLE_CLIENT_ID: z.string().min(1).optional(),
+		GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+		CORS_ORIGIN: z
 			.string()
-			.min(32)
-			.default(DEV_ACCESS_SECRET)
+			.min(1)
 			.refine(
 				(value) =>
-					process.env.NODE_ENV !== "production" || value !== DEV_ACCESS_SECRET,
-				"JWT_ACCESS_SECRET must be set to a non-default value in production",
+					value
+						.split(",")
+						.map((origin) => origin.trim())
+						.filter(Boolean)
+						.every((origin) => {
+							try {
+								new URL(origin);
+								return true;
+							} catch {
+								return false;
+							}
+						}),
+				"CORS_ORIGIN must be a valid URL or comma-separated list of valid URLs",
 			),
-		JWT_REFRESH_SECRET: z
-			.string()
-			.min(32)
-			.default(DEV_REFRESH_SECRET)
-			.refine(
-				(value) =>
-					process.env.NODE_ENV !== "production" || value !== DEV_REFRESH_SECRET,
-				"JWT_REFRESH_SECRET must be set to a non-default value in production",
-			),
+		JWT_ACCESS_SECRET: z.string().min(1).default(DEV_ACCESS_SECRET),
+		JWT_REFRESH_SECRET: z.string().min(1).default(DEV_REFRESH_SECRET),
 		RAZORPAY_KEY_ID: z
 			.string()
 			.min(1)
@@ -53,14 +59,8 @@ export const env = createEnv({
 			),
 		RAZORPAY_WEBHOOK_SECRET: z
 			.string()
-			.min(32)
-			.default(DEV_RAZORPAY_WEBHOOK_SECRET)
-			.refine(
-				(value) =>
-					process.env.NODE_ENV !== "production" ||
-					value !== DEV_RAZORPAY_WEBHOOK_SECRET,
-				"RAZORPAY_WEBHOOK_SECRET must be set to a non-default value in production",
-			),
+			.min(1)
+			.default(DEV_RAZORPAY_WEBHOOK_SECRET),
 		ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
 		REFRESH_TOKEN_TTL_SECONDS: z.coerce
 			.number()

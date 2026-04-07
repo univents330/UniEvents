@@ -10,9 +10,12 @@
 		"start": "bun run dist/index.mjs"
 	},
 	"dependencies": {
+		"@better-auth/infra": "^0.1.14",
+		"@better-auth/prisma-adapter": "^1.4.0",
 		"@voltaze/db": "workspace:*",
 		"@voltaze/env": "workspace:*",
 		"@voltaze/schema": "workspace:*",
+		"better-auth": "^1.4.0",
 		"cors": "^2.8.5",
 		"dotenv": "catalog:",
 		"express": "^5.1.0",

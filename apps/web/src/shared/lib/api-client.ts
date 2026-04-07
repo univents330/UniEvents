@@ -1,10 +1,10 @@
 import { env } from "@voltaze/env/web";
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-
-const API_URL = env.NEXT_PUBLIC_SERVER_URL;
+import { getActiveBackendUrl } from "./backend-url";
 
 export const apiClient = axios.create({
-	baseURL: API_URL,
+	baseURL: getActiveBackendUrl(),
+	withCredentials: true,
 	headers: {
 		"Content-Type": "application/json",
 	},
@@ -43,6 +43,7 @@ export const tokenManager = {
 // Request interceptor - add auth token
 apiClient.interceptors.request.use(
 	(config: InternalAxiosRequestConfig) => {
+		config.baseURL = getActiveBackendUrl();
 		const token = tokenManager.getAccessToken();
 		if (token && config.headers) {
 			config.headers.Authorization = `Bearer ${token}`;
@@ -111,9 +112,12 @@ apiClient.interceptors.response.use(
 
 			try {
 				// Call refresh endpoint
-				const response = await axios.post(`${API_URL}/auth/refresh`, {
-					refreshToken,
-				});
+				const response = await axios.post(
+					`${getActiveBackendUrl()}/auth/refresh`,
+					{
+						refreshToken,
+					},
+				);
 
 				const { tokens } = response.data;
 				tokenManager.setTokens(tokens.accessToken, tokens.refreshToken);

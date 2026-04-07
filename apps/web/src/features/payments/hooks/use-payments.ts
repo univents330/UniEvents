@@ -1,6 +1,5 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
 	InitiatePaymentInput,
@@ -10,6 +9,7 @@ import type {
 	VerifyPaymentInput,
 } from "@voltaze/schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { paymentsService } from "../services/payments.service";
 
 const PAYMENTS_KEYS = {
@@ -68,7 +68,7 @@ export function useInitiatePayment() {
 			queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.lists() });
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to initiate payment"),
 				color: "red",
@@ -88,14 +88,14 @@ export function useVerifyPayment() {
 			paymentsService.verifyPayment(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Payment verified successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Payment verification failed"),
 				color: "red",
@@ -116,14 +116,14 @@ export function useRefundPayment(id: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.detail(id) });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Payment refunded successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to refund payment"),
 				color: "red",
@@ -144,14 +144,14 @@ export function useUpdatePayment(id: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.detail(id) });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Payment updated successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to update payment"),
 				color: "red",
@@ -170,14 +170,14 @@ export function useDeletePayment() {
 		mutationFn: (id: string) => paymentsService.deletePayment(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: PAYMENTS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Payment deleted successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete payment"),
 				color: "red",

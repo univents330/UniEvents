@@ -1,18 +1,37 @@
 "use client";
 
-import { MapPin, Search } from "lucide-react";
+import { ChevronDown, Globe, LocateFixed, MapPin, Search } from "lucide-react";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import { Navbar } from "@/shared/ui/navbar";
 
 export function EventHero() {
 	const router = useRouter();
+	const locationMenuRef = useRef<HTMLDivElement | null>(null);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [location, setLocation] = useState<string>("chandigarh");
+	const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
+	const { location, setLocation, detectLocation, isLocating } = useLiveLocation(
+		{
+			fallback: "Chandigarh",
+		},
+	);
+
+	const locationOptions = useMemo(() => {
+		const defaults = ["Chandigarh", "Delhi", "Mumbai", "Bangalore"];
+
+		if (
+			location &&
+			!defaults.some((item) => item.toLowerCase() === location.toLowerCase())
+		) {
+			return [location, ...defaults];
+		}
+
+		return defaults;
+	}, [location]);
 
 	const handleSearch = () => {
 		const params = new URLSearchParams();
@@ -20,7 +39,44 @@ export function EventHero() {
 		if (location) params.append("location", location);
 
 		router.push(`/events?${params.toString()}`);
+		setIsLocationMenuOpen(false);
 	};
+
+	const handleUseLiveLocation = async () => {
+		await detectLocation();
+		setIsLocationMenuOpen(false);
+	};
+
+	const handleBrowseOnlineEvents = () => {
+		setLocation("Online");
+		const params = new URLSearchParams();
+
+		if (searchQuery) params.set("search", searchQuery);
+		params.set("location", "online");
+
+		router.push(`/events?${params.toString()}`);
+		setIsLocationMenuOpen(false);
+	};
+
+	const handlePickLocation = (value: string) => {
+		setLocation(value);
+		setIsLocationMenuOpen(false);
+	};
+
+	useEffect(() => {
+		const handleOutsideClick = (event: MouseEvent) => {
+			const target = event.target as Node;
+			if (!locationMenuRef.current?.contains(target)) {
+				setIsLocationMenuOpen(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleOutsideClick);
+
+		return () => {
+			document.removeEventListener("mousedown", handleOutsideClick);
+		};
+	}, []);
 
 	const handleDiscoverEvents = () => {
 		router.push("/events");
@@ -31,7 +87,7 @@ export function EventHero() {
 			<Navbar />
 
 			<main className="flex w-full flex-1 items-center justify-center">
-				<div className="w-full max-w-[1152px] px-6 py-24 md:py-32">
+				<div className="w-full max-w-6xl px-6 py-24 md:py-32">
 					<div className="flex flex-col items-center gap-3 text-center">
 						<h1 className="font-extrabold text-4xl text-black leading-tight tracking-tighter md:text-8xl">
 							Discover and Book
@@ -78,22 +134,77 @@ export function EventHero() {
 
 									<div className="hidden h-10 w-px bg-gray-200 md:block" />
 
-									<div className="hidden items-center gap-3 px-6 md:flex">
-										<MapPin
-											size={20}
-											className="shrink-0 text-slate-700"
-											strokeWidth={2}
-										/>
-										<Select
-											value={location}
-											onChange={(e) => setLocation(e.target.value)}
-											className="w-[220px] cursor-pointer border-none bg-transparent font-medium text-base text-gray-700 outline-none"
+									<div
+										ref={locationMenuRef}
+										className="relative hidden items-center gap-3 px-6 md:flex"
+									>
+										<button
+											type="button"
+											onClick={() => setIsLocationMenuOpen((prev) => !prev)}
+											className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-50"
+											aria-expanded={isLocationMenuOpen}
+											aria-label="Open location menu"
 										>
-											<option value="chandigarh">Chandigarh</option>
-											<option value="delhi">Delhi</option>
-											<option value="mumbai">Mumbai</option>
-											<option value="bangalore">Bangalore</option>
-										</Select>
+											<MapPin
+												size={20}
+												className="shrink-0 text-slate-700"
+												strokeWidth={2}
+											/>
+											<span className="w-32 truncate text-left font-medium text-base text-gray-700">
+												{location || "Select location"}
+											</span>
+											<ChevronDown
+												className={`h-4 w-4 text-slate-500 transition-transform ${
+													isLocationMenuOpen ? "rotate-180" : "rotate-0"
+												}`}
+											/>
+										</button>
+
+										<div
+											className={`absolute top-full right-0 z-50 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(7,1,144,0.16)] transition-all ${
+												isLocationMenuOpen
+													? "pointer-events-auto translate-y-0 opacity-100"
+													: "pointer-events-none -translate-y-1 opacity-0"
+											}`}
+										>
+											<button
+												type="button"
+												onClick={handleUseLiveLocation}
+												disabled={isLocating}
+												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff] disabled:cursor-not-allowed disabled:opacity-70"
+											>
+												<LocateFixed className="h-4 w-4" />
+												{isLocating
+													? "Fetching live location..."
+													: "Fetch live location"}
+											</button>
+
+											<button
+												type="button"
+												onClick={handleBrowseOnlineEvents}
+												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff]"
+											>
+												<Globe className="h-4 w-4" />
+												Browse online events
+											</button>
+
+											<div className="my-1 border-slate-100 border-t" />
+											<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+												Popular cities
+											</p>
+
+											{locationOptions.map((option) => (
+												<button
+													key={option.toLowerCase()}
+													type="button"
+													onClick={() => handlePickLocation(option)}
+													className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+												>
+													<MapPin className="h-3.5 w-3.5" />
+													{option}
+												</button>
+											))}
+										</div>
 									</div>
 
 									<div className="md:px-4">

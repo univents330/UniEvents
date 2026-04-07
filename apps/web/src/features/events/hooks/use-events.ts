@@ -1,6 +1,5 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
 	CreateEventTicketTierInput,
@@ -9,6 +8,7 @@ import type {
 	UpdateEventTicketTierInput,
 } from "@voltaze/schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { eventsService } from "../services";
 
 const EVENTS_KEYS = {
@@ -70,14 +70,14 @@ export function useCreateEvent() {
 		mutationFn: eventsService.createEvent,
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Event created",
 				message: "Your event has been created successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to create event"),
 				color: "red",
@@ -97,14 +97,14 @@ export function useUpdateEvent(id: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.detail(id) });
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Event updated",
 				message: "Your event has been updated successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to update event"),
 				color: "red",
@@ -124,14 +124,14 @@ export function useDeleteEvent() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.details() });
-			notifications.show({
+			showNotification({
 				title: "Event deleted",
 				message: "Event has been deleted successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete event"),
 				color: "red",
@@ -162,14 +162,14 @@ export function useCreateTicketTier(eventId: string) {
 			eventsService.createTicketTier(eventId, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.tiers(eventId) });
-			notifications.show({
+			showNotification({
 				title: "Ticket tier created",
 				message: "Ticket tier has been created successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to create ticket tier"),
 				color: "red",
@@ -189,14 +189,14 @@ export function useUpdateTicketTier(eventId: string, tierId: string) {
 			eventsService.updateTicketTier(eventId, tierId, data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.tiers(eventId) });
-			notifications.show({
+			showNotification({
 				title: "Ticket tier updated",
 				message: "Ticket tier has been updated successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to update ticket tier"),
 				color: "red",
@@ -216,14 +216,14 @@ export function useDeleteTicketTier(eventId: string) {
 			eventsService.deleteTicketTier(eventId, tierId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.tiers(eventId) });
-			notifications.show({
+			showNotification({
 				title: "Ticket tier deleted",
 				message: "Ticket tier has been deleted successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete ticket tier"),
 				color: "red",

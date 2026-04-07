@@ -1,9 +1,10 @@
 # voltaze
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Express, and more.
+This project was created with
+[Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a
+modern TypeScript stack that combines Next.js, Express, and more.
 
 ## Features
-
 
 - **TypeScript** - For type safety and improved developer experience
 - **Next.js** - Full-stack React framework
@@ -33,7 +34,8 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
 # apps/server/.env
 DATABASE_URL=postgresql://...
-CORS_ORIGIN=http://localhost:3001
+CORS_ORIGIN=http://localhost:3001,https://unieventsss.vercel.app,https://unievent.in,https://www.unievent.in
+BETTER_AUTH_API_KEY=your_better_auth_dashboard_api_key_if_you_use_the_hosted_dashboard
 ```
 
 ## Database Setup
@@ -61,8 +63,9 @@ Then, run the development server:
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3001](http://localhost:3001) in your browser to see the
+web application. The API is running at
+[http://localhost:3000](http://localhost:3000).
 
 ## UI Customization
 
@@ -70,7 +73,8 @@ React web apps in this stack share shadcn/ui primitives through `packages/ui`.
 
 - Change design tokens and global styles in `packages/ui/src/styles/globals.css`
 - Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
+- Adjust shadcn aliases or style config in `packages/ui/components.json` and
+  `apps/web/components.json`
 
 ### Add more shared components
 
@@ -88,7 +92,8 @@ import { Button } from "@voltaze/ui/components/button";
 
 ### Add app-specific blocks
 
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
+If you want to add app-specific blocks instead of shared primitives, run the
+shadcn CLI from `apps/web`.
 
 ## Git Hooks and Formatting
 
@@ -110,6 +115,7 @@ voltaze/
 ## API Endpoints
 
 ### Auth (`/auth`)
+
 - `POST /auth/register` - User registration
 - `POST /auth/login` - User login
 - `POST /auth/refresh` - Refresh access token
@@ -125,6 +131,7 @@ voltaze/
 - `POST /auth/verify-email` - Verify email with token
 
 ### Events (`/events`)
+
 - `GET /events` - List events (with pagination)
 - `GET /events/:eventId` - Get event by ID
 - `POST /events` - Create event (HOST/ADMIN)
@@ -136,6 +143,7 @@ voltaze/
 - `DELETE /events/:eventId/ticket-tiers/:tierId` - Delete ticket tier
 
 ### Payments (`/payments`)
+
 - `GET /payments` - List payments (with pagination)
 - `GET /payments/:id` - Get payment by ID
 - `POST /payments/initiate` - Initiate payment (creates Razorpay order)
@@ -146,14 +154,17 @@ voltaze/
 - `POST /payments/webhook/razorpay` - Razorpay webhook handler
 
 ### Other Endpoints
+
 - Attendees, Orders, Tickets, Passes, Check-ins follow similar CRUD patterns
 
 ## Environment Variables
 
 ### Server (`apps/server/.env`)
+
 ```bash
 DATABASE_URL=postgresql://...
-CORS_ORIGIN=http://localhost:3001
+CORS_ORIGIN=http://localhost:3001,https://unieventsss.vercel.app,https://unievent.in,https://www.unievent.in
+BETTER_AUTH_API_KEY=your_better_auth_dashboard_api_key_if_you_use_the_hosted_dashboard
 RAZORPAY_KEY_ID=rzp_test_...
 RAZORPAY_KEY_SECRET=...
 RAZORPAY_WEBHOOK_SECRET=...

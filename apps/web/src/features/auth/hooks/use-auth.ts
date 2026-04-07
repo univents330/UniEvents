@@ -1,9 +1,9 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { authService } from "../services";
 
 const AUTH_KEYS = {
@@ -26,22 +26,21 @@ export function useCurrentUser() {
  * Hook for user registration
  */
 export function useRegister() {
-	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: authService.register,
 		onSuccess: (data) => {
-			queryClient.setQueryData(AUTH_KEYS.currentUser, data.user);
-			notifications.show({
+			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
+			showNotification({
 				title: "Welcome!",
 				message: "Your account has been created successfully.",
 				color: "green",
 			});
-			router.push("/dashboard");
+			window.location.assign("/");
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Registration failed",
 				message: getApiErrorMessage(error, "An error occurred"),
 				color: "red",
@@ -54,24 +53,48 @@ export function useRegister() {
  * Hook for user login
  */
 export function useLogin() {
-	const router = useRouter();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: authService.login,
 		onSuccess: (data) => {
-			queryClient.setQueryData(AUTH_KEYS.currentUser, data.user);
-			notifications.show({
+			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
+			showNotification({
 				title: "Welcome back!",
-				message: `Logged in as ${data.user.email}`,
+				message: `Logged in as ${data?.user?.email ?? "your account"}`,
 				color: "green",
 			});
-			router.push("/dashboard");
+			window.location.assign("/");
+		},
+		onError: (error: unknown) => {
+			showNotification({
+				title: "Login failed",
+				message: getApiErrorMessage(error, "Invalid credentials"),
+				color: "red",
+			});
+		},
+	});
+}
+
+/**
+ * Hook for Google login
+ */
+export function useGoogleSignIn() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: authService.signInWithGoogle,
+		onSuccess: () => {
+			// Google sign-in now redirects to the backend OAuth endpoint.
+			// No session payload is returned to this callback in the current page context.
 		},
 		onError: (error: unknown) => {
 			notifications.show({
-				title: "Login failed",
-				message: getApiErrorMessage(error, "Invalid credentials"),
+				title: "Google sign-in failed",
+				message: getApiErrorMessage(
+					error,
+					"Google sign-in is not configured correctly",
+				),
 				color: "red",
 			});
 		},
@@ -89,7 +112,7 @@ export function useLogout() {
 		mutationFn: authService.logout,
 		onSuccess: () => {
 			queryClient.clear();
-			notifications.show({
+			showNotification({
 				title: "Logged out",
 				message: "You have been logged out successfully.",
 				color: "blue",
@@ -106,14 +129,14 @@ export function useForgotPassword() {
 	return useMutation({
 		mutationFn: authService.forgotPassword,
 		onSuccess: () => {
-			notifications.show({
+			showNotification({
 				title: "Email sent",
 				message: "Check your email for password reset instructions.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "An error occurred"),
 				color: "red",
@@ -131,7 +154,7 @@ export function useResetPassword() {
 	return useMutation({
 		mutationFn: authService.resetPassword,
 		onSuccess: () => {
-			notifications.show({
+			showNotification({
 				title: "Password reset",
 				message: "Your password has been reset successfully.",
 				color: "green",
@@ -139,7 +162,7 @@ export function useResetPassword() {
 			router.push("/login");
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Invalid or expired token"),
 				color: "red",
@@ -161,14 +184,14 @@ export function useChangePassword() {
 			newPassword: string;
 		}) => authService.changePassword(oldPassword, newPassword),
 		onSuccess: () => {
-			notifications.show({
+			showNotification({
 				title: "Password changed",
 				message: "Your password has been changed successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to change password"),
 				color: "red",
