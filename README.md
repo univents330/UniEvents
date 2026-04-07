@@ -33,7 +33,7 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
 # apps/server/.env
 DATABASE_URL=postgresql://...
-CORS_ORIGIN=http://localhost:3001
+CORS_ORIGIN=http://localhost:3001,https://unieventsss.vercel.app,https://unievent.in,https://www.unievent.in
 ```
 
 ## Database Setup
@@ -153,7 +153,7 @@ voltaze/
 ### Server (`apps/server/.env`)
 ```bash
 DATABASE_URL=postgresql://...
-CORS_ORIGIN=http://localhost:3001
+CORS_ORIGIN=http://localhost:3001,https://unieventsss.vercel.app,https://unievent.in,https://www.unievent.in
 RAZORPAY_KEY_ID=rzp_test_...
 RAZORPAY_KEY_SECRET=...
 RAZORPAY_WEBHOOK_SECRET=...

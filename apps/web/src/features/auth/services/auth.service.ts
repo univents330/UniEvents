@@ -59,9 +59,12 @@ export const authService = {
 	 */
 	async signInWithGoogle() {
 		const authClient = getAuthClient();
+		const callbackURL = `${window.location.origin}/`;
+		const errorCallbackURL = `${window.location.origin}/login`;
 		const { data, error } = await authClient.signIn.social({
 			provider: "google",
-			callbackURL: window.location.origin,
+			callbackURL,
+			errorCallbackURL,
 		});
 
 		if (error) {
