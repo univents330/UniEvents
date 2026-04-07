@@ -15,6 +15,15 @@ interface AllEventsListProps {
 	};
 }
 
+const CATEGORY_SEARCH_MAP: Record<string, string> = {
+	"tech-dev": "tech",
+	music: "music",
+	"college-fests": "fest",
+	workshops: "workshop",
+	"art-culture": "comedy",
+	meetups: "meetup",
+};
+
 export function AllEventsList({ searchParams }: AllEventsListProps) {
 	const filters: EventFilterInput = {
 		page: 1,
@@ -40,7 +49,9 @@ export function AllEventsList({ searchParams }: AllEventsListProps) {
 	}
 
 	if (searchParams.category) {
-		const categoryStr = searchParams.category.toLowerCase().replace("-", " ");
+		const categoryStr =
+			CATEGORY_SEARCH_MAP[searchParams.category] ||
+			searchParams.category.toLowerCase().replace("-", " ");
 		filters.search = filters.search
 			? `${filters.search} ${categoryStr}`
 			: categoryStr;
@@ -61,7 +72,7 @@ export function AllEventsList({ searchParams }: AllEventsListProps) {
 		return (
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
 				{[...Array(6)].map((_, i) => (
-					<Skeleton key={i} className="h-[360px] w-full rounded-[24px]" />
+					<Skeleton key={i} className="h-90 w-full rounded-3xl" />
 				))}
 			</div>
 		);

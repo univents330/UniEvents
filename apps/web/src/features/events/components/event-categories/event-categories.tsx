@@ -1,3 +1,6 @@
+"use client";
+
+import { useQueries } from "@tanstack/react-query";
 import {
 	GraduationCap,
 	Laptop,
@@ -7,13 +10,13 @@ import {
 	Users,
 } from "lucide-react";
 import Link from "next/link";
+import { eventsService } from "../../services";
 
 const CATEGORIES = [
 	{
 		id: "tech-dev",
 		title: "Tech & Dev",
-		keywords: ["tech", "dev", "hackathon", "code"],
-		defaultCount: "234 events",
+		search: "tech",
 		Icon: Laptop,
 		bg: "bg-slate-100",
 		color: "text-slate-900",
@@ -21,8 +24,7 @@ const CATEGORIES = [
 	{
 		id: "music",
 		title: "Music",
-		keywords: ["music", "concert", "dj", "band", "festival"],
-		defaultCount: "187 events",
+		search: "music",
 		Icon: Music,
 		bg: "bg-white",
 		color: "text-slate-900",
@@ -30,8 +32,7 @@ const CATEGORIES = [
 	{
 		id: "college-fests",
 		title: "College Fests",
-		keywords: ["fest", "college", "university", "campus"],
-		defaultCount: "40 events",
+		search: "fest",
 		Icon: GraduationCap,
 		bg: "bg-orange-50",
 		color: "text-orange-500",
@@ -39,8 +40,7 @@ const CATEGORIES = [
 	{
 		id: "workshops",
 		title: "Workshops",
-		keywords: ["workshop", "masterclass", "learn", "training", "course"],
-		defaultCount: "158 events",
+		search: "workshop",
 		Icon: Users,
 		bg: "bg-gray-100",
 		color: "text-gray-600",
@@ -48,8 +48,7 @@ const CATEGORIES = [
 	{
 		id: "art-culture",
 		title: "Art & Culture",
-		keywords: ["art", "culture", "comedy", "standup", "theater", "exhibition"],
-		defaultCount: "80 events",
+		search: "comedy",
 		Icon: Palette,
 		bg: "bg-pink-50",
 		color: "text-pink-500",
@@ -57,8 +56,7 @@ const CATEGORIES = [
 	{
 		id: "meetups",
 		title: "Meetups",
-		keywords: ["meetup", "networking", "community", "social"],
-		defaultCount: "108 events",
+		search: "meetup",
 		Icon: UserPlus,
 		bg: "bg-yellow-50",
 		color: "text-yellow-600",
@@ -66,32 +64,47 @@ const CATEGORIES = [
 ];
 
 export function EventCategories() {
+	const categoryCountQueries = useQueries({
+		queries: CATEGORIES.map((category) => ({
+			queryKey: ["events", "category-count", category.id],
+			queryFn: () =>
+				eventsService.getEvents({
+					page: 1,
+					limit: 1,
+					sortBy: "startDate",
+					sortOrder: "asc",
+					search: category.search,
+				}),
+			staleTime: 1000 * 60 * 5,
+		})),
+	});
+
 	return (
 		<section className="w-full bg-[#EBF3FF] py-20">
 			<div className="mx-auto max-w-[1280px] px-6">
-				<h2 className="mb-12 text-center font-extrabold text-4xl text-black tracking-tight md:text-left md:text-5xl">
+				<h2 className="mb-10 text-center font-extrabold text-3xl text-black tracking-tight md:text-left md:text-5xl">
 					What are you into?
 				</h2>
 
-				<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-					{CATEGORIES.map((category) => (
+				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+					{CATEGORIES.map((category, index) => (
 						<Link
 							key={category.id}
 							href={`/events?category=${category.id}`}
-							className="group flex aspect-square w-56 shrink-0 snap-center flex-col items-center justify-center rounded-[32px] border border-gray-100 bg-white p-4 transition-all duration-300 hover:-translate-y-2 hover:border-transparent hover:shadow-2xl sm:w-64"
+							className="group flex aspect-square w-full flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-xl"
 						>
 							<div
-								className={`mb-6 rounded-2xl p-6 transition-transform duration-300 group-hover:scale-110 ${category.bg}`}
+								className={`mb-4 rounded-2xl p-4 transition-transform duration-300 group-hover:scale-110 ${category.bg}`}
 							>
 								<category.Icon
-									className={`h-10 w-10 stroke-[1.5] sm:h-12 sm:w-12 ${category.color}`}
+									className={`h-8 w-8 stroke-[1.5] sm:h-10 sm:w-10 ${category.color}`}
 								/>
 							</div>
-							<h3 className="mb-2 font-bold text-black text-xl">
+							<h3 className="mb-1 font-bold text-[15px] text-black sm:text-base">
 								{category.title}
 							</h3>
-							<span className="text-center font-semibold text-gray-400 text-xs sm:text-sm">
-								{category.defaultCount}
+							<span className="font-semibold text-gray-400 text-xs sm:text-sm">
+								{categoryCountQueries[index]?.data?.meta?.total ?? 0} events
 							</span>
 						</Link>
 					))}
