@@ -10,16 +10,17 @@
 		"start": "bun run dist/index.mjs"
 	},
 	"dependencies": {
+		"@better-auth/infra": "^0.1.14",
 		"@better-auth/prisma-adapter": "^1.4.0",
 		"@voltaze/db": "workspace:*",
 		"@voltaze/env": "workspace:*",
 		"@voltaze/schema": "workspace:*",
+		"better-auth": "^1.4.0",
 		"cors": "^2.8.5",
 		"dotenv": "catalog:",
 		"express": "^5.1.0",
 		"express-rate-limit": "^8.3.2",
 		"helmet": "^8.1.0",
-		"better-auth": "^1.4.0",
 		"razorpay": "^2.9.6",
 		"zod": "catalog:"
 	},

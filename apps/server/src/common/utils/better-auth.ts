@@ -1,3 +1,4 @@
+import { dash } from "@better-auth/infra";
 import { prisma } from "@voltaze/db";
 import { env } from "@voltaze/env/server";
 import { betterAuth } from "better-auth";
@@ -18,6 +19,13 @@ export const auth = betterAuth({
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 	}),
+	plugins: env.BETTER_AUTH_API_KEY
+		? [
+				dash({
+					apiKey: env.BETTER_AUTH_API_KEY,
+				}),
+			]
+		: [],
 	socialProviders: googleProvider
 		? {
 				google: googleProvider,
