@@ -1,9 +1,9 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { authService } from "../services";
 
 const AUTH_KEYS = {
@@ -32,7 +32,7 @@ export function useRegister() {
 		mutationFn: authService.register,
 		onSuccess: (data) => {
 			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
-			notifications.show({
+			showNotification({
 				title: "Welcome!",
 				message: "Your account has been created successfully.",
 				color: "green",
@@ -40,7 +40,7 @@ export function useRegister() {
 			window.location.assign("/");
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Registration failed",
 				message: getApiErrorMessage(error, "An error occurred"),
 				color: "red",
@@ -59,7 +59,7 @@ export function useLogin() {
 		mutationFn: authService.login,
 		onSuccess: (data) => {
 			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
-			notifications.show({
+			showNotification({
 				title: "Welcome back!",
 				message: `Logged in as ${data?.user?.email ?? "your account"}`,
 				color: "green",
@@ -67,7 +67,7 @@ export function useLogin() {
 			window.location.assign("/");
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Login failed",
 				message: getApiErrorMessage(error, "Invalid credentials"),
 				color: "red",
@@ -87,7 +87,7 @@ export function useLogout() {
 		mutationFn: authService.logout,
 		onSuccess: () => {
 			queryClient.clear();
-			notifications.show({
+			showNotification({
 				title: "Logged out",
 				message: "You have been logged out successfully.",
 				color: "blue",
@@ -104,14 +104,14 @@ export function useForgotPassword() {
 	return useMutation({
 		mutationFn: authService.forgotPassword,
 		onSuccess: () => {
-			notifications.show({
+			showNotification({
 				title: "Email sent",
 				message: "Check your email for password reset instructions.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "An error occurred"),
 				color: "red",
@@ -129,7 +129,7 @@ export function useResetPassword() {
 	return useMutation({
 		mutationFn: authService.resetPassword,
 		onSuccess: () => {
-			notifications.show({
+			showNotification({
 				title: "Password reset",
 				message: "Your password has been reset successfully.",
 				color: "green",
@@ -137,7 +137,7 @@ export function useResetPassword() {
 			router.push("/login");
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Invalid or expired token"),
 				color: "red",
@@ -159,14 +159,14 @@ export function useChangePassword() {
 			newPassword: string;
 		}) => authService.changePassword(oldPassword, newPassword),
 		onSuccess: () => {
-			notifications.show({
+			showNotification({
 				title: "Password changed",
 				message: "Your password has been changed successfully.",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to change password"),
 				color: "red",

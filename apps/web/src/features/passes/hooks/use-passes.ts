@@ -1,6 +1,5 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
 	CreatePassInput,
@@ -9,6 +8,7 @@ import type {
 	ValidatePassInput,
 } from "@voltaze/schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { passesService } from "../services/passes.service";
 
 const PASSES_KEYS = {
@@ -80,14 +80,14 @@ export function useCreatePass() {
 		mutationFn: (data: CreatePassInput) => passesService.createPass(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: PASSES_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Pass created successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to create pass"),
 				color: "red",
@@ -103,7 +103,7 @@ export function useValidatePass() {
 	return useMutation({
 		mutationFn: (data: ValidatePassInput) => passesService.validatePass(data),
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to validate pass"),
 				color: "red",
@@ -123,14 +123,14 @@ export function useUpdatePass(id: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: PASSES_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: PASSES_KEYS.detail(id) });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Pass updated successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to update pass"),
 				color: "red",
@@ -149,14 +149,14 @@ export function useDeletePass() {
 		mutationFn: (id: string) => passesService.deletePass(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: PASSES_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Pass deleted successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete pass"),
 				color: "red",

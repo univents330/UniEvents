@@ -1,6 +1,5 @@
 "use client";
 
-import { notifications } from "@mantine/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
 	AttendeeFilterInput,
@@ -8,6 +7,7 @@ import type {
 	UpdateAttendeeInput,
 } from "@voltaze/schema";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
+import { showNotification } from "@/shared/lib/notifications";
 import { attendeesService } from "../services/attendees.service";
 
 const ATTENDEES_KEYS = {
@@ -67,14 +67,14 @@ export function useCreateAttendee() {
 			attendeesService.createAttendee(data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ATTENDEES_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Attendee created successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to create attendee"),
 				color: "red",
@@ -95,14 +95,14 @@ export function useUpdateAttendee(id: string) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ATTENDEES_KEYS.lists() });
 			queryClient.invalidateQueries({ queryKey: ATTENDEES_KEYS.detail(id) });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Attendee updated successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to update attendee"),
 				color: "red",
@@ -121,14 +121,14 @@ export function useDeleteAttendee() {
 		mutationFn: (id: string) => attendeesService.deleteAttendee(id),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ATTENDEES_KEYS.lists() });
-			notifications.show({
+			showNotification({
 				title: "Success",
 				message: "Attendee deleted successfully",
 				color: "green",
 			});
 		},
 		onError: (error: unknown) => {
-			notifications.show({
+			showNotification({
 				title: "Error",
 				message: getApiErrorMessage(error, "Failed to delete attendee"),
 				color: "red",
