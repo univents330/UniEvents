@@ -125,7 +125,7 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 	}));
 	const isPasswordValid = passwordRuleStates.every((rule) => rule.isMet);
 
-	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+	function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setFormError(null);
 
@@ -144,11 +144,11 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 			password,
 		};
 
-		await mutation.mutateAsync(payload);
+		mutation.mutate(payload);
 	}
 
-	async function handleGoogleSignIn() {
-		await googleMutation.mutateAsync();
+	function handleGoogleSignIn() {
+		googleMutation.mutate();
 	}
 
 	return (
