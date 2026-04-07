@@ -32,6 +32,12 @@ export function createApp(): Express {
 	app.use(requestIdMiddleware);
 	app.use(loggerMiddleware);
 	app.all("/api/auth/{*any}", toNodeHandler(auth));
+	app.get("/", (_req, res) => {
+		res.status(200).json({
+			message: "Voltaze server is running",
+			timestamp: new Date().toISOString(),
+		});
+	});
 	app.use(
 		express.json({
 			verify: (req, _res, buf) => {

@@ -13,9 +13,15 @@ const googleProvider =
 			}
 		: undefined;
 
+const authSecret = env.BETTER_AUTH_API_KEY;
+
+if (!authSecret) {
+	throw new Error("Missing Better Auth secret. Set BETTER_AUTH_API_KEY.");
+}
+
 export const auth = betterAuth({
 	baseURL: env.BETTER_AUTH_URL,
-	secret: env.BETTER_AUTH_SECRET,
+	secret: authSecret,
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 	}),
