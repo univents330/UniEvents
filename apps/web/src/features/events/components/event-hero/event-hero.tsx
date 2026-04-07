@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
+import { startTopLoader } from "@/shared/lib/top-loader-events";
 import { Navbar } from "@/shared/ui/navbar";
 
 export function EventHero() {
@@ -38,6 +39,7 @@ export function EventHero() {
 		if (searchQuery) params.append("search", searchQuery);
 		if (location) params.append("location", location);
 
+		startTopLoader();
 		router.push(`/events?${params.toString()}`);
 		setIsLocationMenuOpen(false);
 	};
@@ -55,6 +57,7 @@ export function EventHero() {
 		params.set("location", "online");
 		params.set("mode", "ONLINE");
 
+		startTopLoader();
 		router.push(`/events?${params.toString()}`);
 		setIsLocationMenuOpen(false);
 	};
@@ -80,6 +83,7 @@ export function EventHero() {
 	}, []);
 
 	const handleDiscoverEvents = () => {
+		startTopLoader();
 		router.push("/events");
 	};
 

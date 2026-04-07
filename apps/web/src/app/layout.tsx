@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 	title: "UniEvent",
 	description: "Create, manage, and attend events with UniEvent",
 	icons: {
-		icon: "/assets/logoo.svg",
+		icon: "/assets/logo_circle_svg.svg",
 	},
 };
 

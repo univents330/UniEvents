@@ -1,9 +1,9 @@
 "use client";
 
 import type { EventFilterInput } from "@voltaze/schema";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useEvents } from "../../hooks/use-events";
 import { EventCard } from "../event-card/event-card";
+import { EventCardSkeleton } from "../event-card/event-card-skeleton";
 
 interface AllEventsListProps {
 	searchParams: {
@@ -72,7 +72,7 @@ export function AllEventsList({ searchParams }: AllEventsListProps) {
 		return (
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
 				{[...Array(6)].map((_, i) => (
-					<Skeleton key={i} className="h-90 w-full rounded-3xl" />
+					<EventCardSkeleton key={i} />
 				))}
 			</div>
 		);

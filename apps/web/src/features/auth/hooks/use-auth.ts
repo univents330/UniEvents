@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { showNotification } from "@/shared/lib/notifications";
+import { startTopLoader } from "@/shared/lib/top-loader-events";
 import { authService } from "../services";
 
 const AUTH_KEYS = {
@@ -115,6 +116,7 @@ export function useLogout() {
 				message: "You have been logged out successfully.",
 				color: "blue",
 			});
+			startTopLoader();
 			router.push("/login");
 		},
 	});
@@ -157,6 +159,7 @@ export function useResetPassword() {
 				message: "Your password has been reset successfully.",
 				color: "green",
 			});
+			startTopLoader();
 			router.push("/login");
 		},
 		onError: (error: unknown) => {

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCurrentUser, useLogout } from "@/features/auth";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
+import { startTopLoader } from "@/shared/lib/top-loader-events";
 
 function getProfileInitial(
 	name: string | null | undefined,
@@ -126,6 +127,7 @@ export function Navbar() {
 			params.set("location", location);
 		}
 
+		startTopLoader();
 		router.push(`/events?${params.toString()}`);
 		closeLocationMenu();
 		closeMobileMenu();
@@ -146,6 +148,7 @@ export function Navbar() {
 
 		params.set("location", "online");
 		params.set("mode", "ONLINE");
+		startTopLoader();
 		router.push(`/events?${params.toString()}`);
 		closeLocationMenu();
 	};
@@ -181,6 +184,7 @@ export function Navbar() {
 	};
 
 	const handleNavigateFromProfileMenu = (href: string) => {
+		startTopLoader();
 		window.location.assign(href);
 		setIsProfileMenuOpen(false);
 		setIsMobileProfileMenuOpen(false);

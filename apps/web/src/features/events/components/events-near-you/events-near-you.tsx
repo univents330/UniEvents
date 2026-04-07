@@ -5,11 +5,11 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import { cn } from "@/shared/lib/utils";
 import { useEvents } from "../../hooks/use-events";
 import { EventCard } from "../event-card/event-card";
+import { EventCardSkeleton } from "../event-card/event-card-skeleton";
 
 const FILTERS = [
 	{ id: "all", label: "All Events" },
@@ -51,7 +51,7 @@ export function EventsNearYou() {
 
 	return (
 		<section className="w-full bg-[#EBF3FF] py-20">
-			<div className="mx-auto max-w-[1280px] px-6">
+			<div className="mx-auto max-w-7xl px-6">
 				<div className="mb-10 text-center md:text-left">
 					<h2 className="mb-3 font-extrabold text-3xl text-black tracking-tight md:text-5xl">
 						Events Happening <span className="text-[#030370]">Near You</span>
@@ -83,7 +83,7 @@ export function EventsNearYou() {
 					{isLoading ? (
 						<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
 							{[...Array(8)].map((_, i) => (
-								<Skeleton key={i} className="h-[360px] w-full rounded-[24px]" />
+								<EventCardSkeleton key={i} />
 							))}
 						</div>
 					) : events.length > 0 ? (
@@ -106,7 +106,7 @@ export function EventsNearYou() {
 							</div>
 						</>
 					) : (
-						<div className="rounded-[32px] bg-white py-20 text-center shadow-sm">
+						<div className="rounded-4xl bg-white py-20 text-center shadow-sm">
 							<p className="font-bold text-lg text-slate-400">
 								No events found for this filter.
 							</p>

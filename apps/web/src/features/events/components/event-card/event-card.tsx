@@ -2,7 +2,9 @@
 
 import type { Event } from "@voltaze/schema";
 import { ArrowRight, Calendar, Heart, MapPin, Users } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useFavoriteEvents } from "../../hooks";
@@ -15,6 +17,11 @@ export interface EventCardProps {
 export function EventCard({ event, className = "" }: EventCardProps) {
 	const { isFavorite, toggleFavorite } = useFavoriteEvents();
 	const saved = isFavorite(event.id);
+	const [isCoverLoading, setIsCoverLoading] = useState(true);
+
+	const coverImage =
+		event.coverUrl ||
+		"https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80";
 
 	const formatDate = (date: Date | string) => {
 		return new Date(date).toLocaleDateString("en-US", {
@@ -69,15 +76,21 @@ export function EventCard({ event, className = "" }: EventCardProps) {
 				href={{ pathname: `/events/${event.slug}` }}
 				className="block h-full"
 			>
-				<div className="relative aspect-[16/8] w-full overflow-hidden bg-slate-100">
-					<div
-						role="img"
-						aria-label={event.name}
-						className="h-full w-full scale-[0.98] bg-center bg-cover transition-transform duration-500 group-hover:scale-[1.02]"
-						style={{
-							backgroundImage: `url(${event.coverUrl || "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80"})`,
-						}}
+				<div className="relative aspect-16/8 w-full overflow-hidden bg-slate-100">
+					<Image
+						src={coverImage}
+						alt={event.name}
+						fill
+						sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
+						className={`scale-[0.98] object-cover transition-opacity duration-300 group-hover:scale-[1.02] ${
+							isCoverLoading ? "opacity-0" : "opacity-100"
+						}`}
+						onLoad={() => setIsCoverLoading(false)}
+						onError={() => setIsCoverLoading(false)}
 					/>
+					{isCoverLoading ? (
+						<div className="absolute inset-0 bg-slate-200/80" />
+					) : null}
 					{event.type === "FREE" && (
 						<Badge className="absolute top-3 left-3 rounded-full bg-emerald-500 px-2.5 py-0.5 font-bold text-[10px] text-white hover:bg-emerald-600">
 							Free

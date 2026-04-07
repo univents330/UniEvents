@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
+import { startTopLoader } from "@/shared/lib/top-loader-events";
 
 type Option = {
 	id: string;
@@ -97,6 +98,7 @@ export function EventsPageFilters({
 			}
 		});
 
+		startTopLoader();
 		router.push(`/events?${params.toString()}`);
 	};
 
@@ -140,6 +142,7 @@ export function EventsPageFilters({
 	};
 
 	const clearAll = () => {
+		startTopLoader();
 		router.push("/events");
 		setIsLocationMenuOpen(false);
 	};
