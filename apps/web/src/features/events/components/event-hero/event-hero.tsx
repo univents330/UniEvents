@@ -97,38 +97,41 @@ export function EventHero() {
 	};
 
 	return (
-		<div className="relative flex min-h-[calc(100vh-80px)] w-full flex-col items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_15%_20%,#dbe9ff_0%,#f4f8ff_38%,#eef3ff_100%)]">
-			<div className="pointer-events-none absolute -top-28 -left-20 h-72 w-72 rounded-full bg-[#8bb1ff]/35 blur-3xl" />
-			<div className="pointer-events-none absolute -right-24 -bottom-22 h-80 w-80 rounded-full bg-[#2f49b8]/20 blur-3xl" />
+		<div className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center justify-center bg-[#EBF3FF]">
 			<Navbar />
 
-			<main className="relative z-10 flex w-full flex-1 items-center justify-center">
+			<main className="flex w-full flex-1 items-center justify-center">
 				<div className="w-full max-w-6xl px-6 py-24 md:py-32">
-					<div className="mx-auto flex max-w-5xl flex-col items-center gap-4 rounded-4xl border border-white/60 bg-white/45 px-5 py-10 text-center shadow-[0_20px_70px_rgba(18,43,112,0.16)] backdrop-blur-2xl md:px-10 md:py-14">
-						<h1 className="font-extrabold text-4xl text-[#06114e] leading-tight tracking-[-0.03em] md:text-7xl">
-							Discover and Book Events
+					<div className="flex flex-col items-center gap-3 text-center">
+						<h1 className="font-extrabold text-4xl text-black leading-tight tracking-tighter md:text-8xl">
+							Discover and Book
 						</h1>
 
-						<p className="mt-1 max-w-2xl px-2 font-medium text-[#4f5f86] text-base leading-relaxed md:text-xl">
-							A clean, fast way to find shows, workshops, and experiences near
-							you or online.
+						<h2 className="mt-3 font-extrabold text-3xl text-[#030370] leading-[0.95] tracking-tighter md:text-7xl">
+							Events Effortlessly
+						</h2>
+
+						<p className="mt-4 max-w-2xl px-4 font-semibold text-[#6B7280] text-base leading-relaxed md:text-xl">
+							From Front Row Fan To Sold Out Host
+							<br />
+							Everything You Need To Live And Lead The Experience.
 						</p>
 
 						<Button
 							onClick={handleDiscoverEvents}
 							size="lg"
-							className="mt-4 h-13 rounded-full bg-[#0c227f] px-10 font-bold text-white shadow-[0_10px_30px_rgba(12,34,127,0.32)] transition-transform hover:-translate-y-0.5 hover:bg-[#0c227f]/90"
+							className="mt-6 h-14 rounded-full bg-[#030370] px-10 font-bold text-white shadow-[0_0_10px_0_rgba(71,114,230,1)] transition-transform hover:-translate-y-0.5 hover:bg-[#030370]/90"
 						>
 							Discover Events
 						</Button>
 
 						<div className="mt-8 flex w-full justify-center">
-							<div className="w-full max-w-4xl rounded-[1.75rem] border border-white/70 bg-white/70 p-2 shadow-[0_18px_45px_rgba(16,36,99,0.16)] backdrop-blur-xl">
+							<div className="w-full max-w-4xl rounded-full border border-gray-100 bg-white p-2 shadow-2xl">
 								<div className="flex items-center">
 									<div className="flex flex-1 items-center gap-3 px-4">
 										<Search
 											size={22}
-											className="shrink-0 text-slate-600"
+											className="shrink-0 text-slate-700"
 											strokeWidth={2}
 										/>
 										<div ref={searchMenuRef} className="relative w-full">
@@ -141,7 +144,7 @@ export function EventHero() {
 												onKeyDown={(e) => {
 													if (e.key === "Enter") handleSearch();
 												}}
-												className="h-auto border-none bg-transparent p-0 font-medium text-gray-700 text-lg shadow-none placeholder:text-slate-400 focus-visible:ring-0"
+												className="h-auto border-none bg-transparent p-0 font-medium text-gray-700 text-lg shadow-none focus-visible:ring-0"
 											/>
 											<SearchSuggestions
 												suggestions={suggestions}
@@ -155,7 +158,7 @@ export function EventHero() {
 										</div>
 									</div>
 
-									<div className="hidden h-10 w-px bg-slate-200/80 md:block" />
+									<div className="hidden h-10 w-px bg-gray-200 md:block" />
 
 									<div
 										ref={locationMenuRef}
@@ -164,7 +167,7 @@ export function EventHero() {
 										<button
 											type="button"
 											onClick={() => setIsLocationMenuOpen((prev) => !prev)}
-											className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/70"
+											className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-50"
 											aria-expanded={isLocationMenuOpen}
 											aria-label="Open location menu"
 										>
@@ -184,7 +187,7 @@ export function EventHero() {
 										</button>
 
 										<div
-											className={`absolute top-full right-0 z-50 mt-2 w-64 rounded-2xl border border-white/60 bg-white/90 p-2 shadow-[0_18px_40px_rgba(7,1,144,0.16)] backdrop-blur-xl transition-all ${
+											className={`absolute top-full right-0 z-50 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(7,1,144,0.16)] transition-all ${
 												isLocationMenuOpen
 													? "pointer-events-auto translate-y-0 opacity-100"
 													: "pointer-events-none -translate-y-1 opacity-0"
@@ -233,7 +236,7 @@ export function EventHero() {
 									<div className="md:px-4">
 										<Button
 											onClick={handleSearch}
-											className="h-12 rounded-full bg-[#0c227f] px-8 font-bold text-white shadow-[0_10px_24px_rgba(12,34,127,0.3)] transition-opacity hover:bg-[#0c227f]/90 hover:opacity-90 active:scale-95"
+											className="h-12 rounded-full bg-[#030370] px-8 font-bold text-white shadow-[0_0_10px_0_rgba(71,114,230,1)] transition-opacity hover:bg-[#030370]/90 hover:opacity-90 active:scale-95"
 										>
 											Search
 										</Button>

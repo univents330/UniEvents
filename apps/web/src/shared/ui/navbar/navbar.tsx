@@ -30,10 +30,10 @@ function getProfileInitial(
 }
 
 interface NavbarProps {
-	dashboardMode?: boolean;
+	minimal?: boolean;
 }
 
-export function Navbar({ dashboardMode = false }: NavbarProps) {
+export function Navbar({ minimal = false }: NavbarProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { data: user } = useCurrentUser();
@@ -214,31 +214,27 @@ export function Navbar({ dashboardMode = false }: NavbarProps) {
 	const profileMenuItems = useMemo(() => {
 		const items = [
 			{ label: "Profile", href: "/" },
-			{ label: "Discover Events", href: "/events" },
+			...(minimal ? [] : [{ label: "Discover Events", href: "/events" }]),
 			{ label: "My Orders", href: "/orders" },
 			{ label: "My Passes", href: "/passes" },
 			{ label: "Session Settings", href: "/settings/sessions" },
 		];
 
 		return items;
-	}, []);
+	}, [minimal]);
 
 	const profileInitial = getProfileInitial(user?.name, user?.email);
-	const isHostDashboard = dashboardMode || pathname.startsWith("/host");
-	const alwaysShowSearch = !isHostDashboard && pathname !== "/";
-	const isSearchVisible =
-		!isHostDashboard && (alwaysShowSearch || showScrolledSearch);
+	const alwaysShowSearch = pathname !== "/";
+	const isSearchVisible = !minimal && (alwaysShowSearch || showScrolledSearch);
 
 	return (
-		<header
-			className={`fixed top-0 right-0 left-0 z-50 border-slate-100 border-b backdrop-blur-md ${
-				isHostDashboard ? "bg-[#f7fbff]/95" : "bg-white/80"
-			}`}
-		>
+		<header className="fixed top-0 right-0 left-0 z-50 border-slate-100 border-b bg-white/80 backdrop-blur-md">
 			<div
-				className={`flex h-16 items-center justify-between gap-6 lg:gap-8 ${
-					isHostDashboard ? "w-full px-4 md:px-6" : "mx-auto max-w-7xl px-6"
-				}`}
+				className={
+					minimal
+						? "flex h-16 w-full items-center justify-between px-6 lg:px-8"
+						: "mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-6 lg:gap-8"
+				}
 			>
 				<div className="flex items-center">
 					<Link
@@ -259,139 +255,139 @@ export function Navbar({ dashboardMode = false }: NavbarProps) {
 					</Link>
 				</div>
 
-				<div
-					className={`hidden flex-1 items-center justify-center transition-all duration-300 lg:flex ${
-						isSearchVisible
-							? "pointer-events-auto translate-y-0 opacity-100"
-							: "pointer-events-none -translate-y-2 opacity-0"
-					}`}
-				>
-					<div className="w-full max-w-2xl rounded-full border border-slate-200 bg-white p-1.5 shadow-[0_8px_30px_rgba(7,1,144,0.08)]">
-						<div className="flex items-center gap-2">
-							<div className="flex min-w-0 flex-1 items-center gap-2 px-3">
-								<Search className="h-4 w-4 shrink-0 text-slate-500" />
-								<div ref={searchMenuRef} className="relative w-full">
-									<Input
-										value={searchQuery}
-										onChange={(e) => setSearchQuery(e.target.value)}
-										onFocus={() => setShowSearchSuggestions(true)}
-										onKeyDown={handleSearchKeyDown}
-										placeholder="Search events..."
-										className="h-auto border-none bg-transparent p-0 font-medium text-[15px] text-slate-700 shadow-none placeholder:text-slate-400 focus-visible:ring-0"
-									/>
-									<SearchSuggestions
-										suggestions={suggestions}
-										isOpen={showSearchSuggestions && searchQuery.length > 0}
-										isLoading={isSuggestionsLoading}
-										onSuggestionSelect={() => {
-											setShowSearchSuggestions(false);
-											setSearchQuery("");
-										}}
-									/>
+				{!minimal && (
+					<div
+						className={`hidden flex-1 items-center justify-center transition-all duration-300 lg:flex ${
+							isSearchVisible
+								? "pointer-events-auto translate-y-0 opacity-100"
+								: "pointer-events-none -translate-y-2 opacity-0"
+						}`}
+					>
+						<div className="w-full max-w-2xl rounded-full border border-slate-200 bg-white p-1.5 shadow-[0_8px_30px_rgba(7,1,144,0.08)]">
+							<div className="flex items-center gap-2">
+								<div className="flex min-w-0 flex-1 items-center gap-2 px-3">
+									<Search className="h-4 w-4 shrink-0 text-slate-500" />
+									<div ref={searchMenuRef} className="relative w-full">
+										<Input
+											value={searchQuery}
+											onChange={(e) => setSearchQuery(e.target.value)}
+											onFocus={() => setShowSearchSuggestions(true)}
+											onKeyDown={handleSearchKeyDown}
+											placeholder="Search events..."
+											className="h-auto border-none bg-transparent p-0 font-medium text-[15px] text-slate-700 shadow-none placeholder:text-slate-400 focus-visible:ring-0"
+										/>
+										<SearchSuggestions
+											suggestions={suggestions}
+											isOpen={showSearchSuggestions && searchQuery.length > 0}
+											isLoading={isSuggestionsLoading}
+											onSuggestionSelect={() => {
+												setShowSearchSuggestions(false);
+												setSearchQuery("");
+											}}
+										/>
+									</div>
 								</div>
-							</div>
 
-							<div className="h-8 w-px bg-slate-200" />
-
-							<div
-								ref={locationMenuRef}
-								className="relative hidden items-center gap-2 px-3 md:flex"
-							>
-								<button
-									type="button"
-									onClick={() => setIsLocationMenuOpen((prev) => !prev)}
-									className="flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-slate-50"
-									aria-expanded={isLocationMenuOpen}
-									aria-label="Open location menu"
-								>
-									<MapPin className="h-4 w-4 shrink-0 text-slate-500" />
-									<span className="w-24 truncate text-left font-semibold text-[#070190] text-sm">
-										{location || "Select location"}
-									</span>
-									<ChevronDown
-										className={`h-3.5 w-3.5 text-slate-500 transition-transform ${
-											isLocationMenuOpen ? "rotate-180" : "rotate-0"
-										}`}
-									/>
-								</button>
+								<div className="h-8 w-px bg-slate-200" />
 
 								<div
-									className={`absolute top-full right-0 z-50 mt-2 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(7,1,144,0.16)] transition-all ${
-										isLocationMenuOpen
-											? "pointer-events-auto translate-y-0 opacity-100"
-											: "pointer-events-none -translate-y-1 opacity-0"
-									}`}
+									ref={locationMenuRef}
+									className="relative hidden items-center gap-2 px-3 md:flex"
 								>
 									<button
 										type="button"
-										onClick={handleUseLiveLocation}
-										disabled={isLocating}
-										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff] disabled:cursor-not-allowed disabled:opacity-70"
+										onClick={() => setIsLocationMenuOpen((prev) => !prev)}
+										className="flex items-center gap-2 rounded-lg px-1 py-1.5 transition-colors hover:bg-slate-50"
+										aria-expanded={isLocationMenuOpen}
+										aria-label="Open location menu"
 									>
-										<LocateFixed className="h-4 w-4" />
-										{isLocating
-											? "Fetching live location..."
-											: "Fetch live location"}
+										<MapPin className="h-4 w-4 shrink-0 text-slate-500" />
+										<span className="w-24 truncate text-left font-semibold text-[#070190] text-sm">
+											{location || "Select location"}
+										</span>
+										<ChevronDown
+											className={`h-3.5 w-3.5 text-slate-500 transition-transform ${
+												isLocationMenuOpen ? "rotate-180" : "rotate-0"
+											}`}
+										/>
 									</button>
 
-									<button
-										type="button"
-										onClick={handleBrowseOnlineEvents}
-										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff]"
+									<div
+										className={`absolute top-full right-0 z-50 mt-2 w-60 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_18px_40px_rgba(7,1,144,0.16)] transition-all ${
+											isLocationMenuOpen
+												? "pointer-events-auto translate-y-0 opacity-100"
+												: "pointer-events-none -translate-y-1 opacity-0"
+										}`}
 									>
-										<Globe className="h-4 w-4" />
-										Browse online events
-									</button>
-
-									<div className="my-1 border-slate-100 border-t" />
-									<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
-										Popular cities
-									</p>
-
-									{locationOptions.map((option) => (
 										<button
-											key={option.toLowerCase()}
 											type="button"
-											onClick={() => handlePickLocation(option)}
-											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+											onClick={handleUseLiveLocation}
+											disabled={isLocating}
+											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff] disabled:cursor-not-allowed disabled:opacity-70"
 										>
-											<MapPin className="h-3.5 w-3.5" />
-											{option}
+											<LocateFixed className="h-4 w-4" />
+											{isLocating
+												? "Fetching live location..."
+												: "Fetch live location"}
 										</button>
-									))}
-								</div>
-							</div>
 
-							<Button
-								type="button"
-								onClick={handleSearch}
-								className="h-10 w-10 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
-								aria-label="Search events"
-							>
-								<Search className="h-4 w-4" />
-							</Button>
+										<button
+											type="button"
+											onClick={handleBrowseOnlineEvents}
+											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-[#070190] text-sm transition-colors hover:bg-[#f4f6ff]"
+										>
+											<Globe className="h-4 w-4" />
+											Browse online events
+										</button>
+
+										<div className="my-1 border-slate-100 border-t" />
+										<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+											Popular cities
+										</p>
+
+										{locationOptions.map((option) => (
+											<button
+												key={option.toLowerCase()}
+												type="button"
+												onClick={() => handlePickLocation(option)}
+												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+											>
+												<MapPin className="h-3.5 w-3.5" />
+												{option}
+											</button>
+										))}
+									</div>
+								</div>
+
+								<Button
+									type="button"
+									onClick={handleSearch}
+									className="h-10 w-10 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
+									aria-label="Search events"
+								>
+									<Search className="h-4 w-4" />
+								</Button>
+							</div>
 						</div>
 					</div>
-				</div>
+				)}
 
-				<nav
-					className={`hidden items-center gap-3 md:flex lg:gap-4 ${
-						isHostDashboard ? "invisible" : ""
-					}`}
-				>
-					<Link
-						href="/events"
-						className="rounded-full border border-transparent px-4 py-2 font-semibold text-slate-700 text-sm transition-all hover:border-[#dfe3f6] hover:bg-[#f4f6ff] hover:text-[#030370]"
-					>
-						Discover
-					</Link>
-					<Link
-						href="/events"
-						className="rounded-full border border-[#e6e9f8] bg-[#f9faff] px-4 py-2 font-semibold text-[#030370] text-sm transition-all hover:border-[#cad2f4] hover:bg-[#eef1ff]"
-					>
-						Create Event +
-					</Link>
-				</nav>
+				{!minimal && (
+					<nav className="hidden items-center gap-3 md:flex lg:gap-4">
+						<Link
+							href="/events"
+							className="rounded-full border border-transparent px-4 py-2 font-semibold text-slate-700 text-sm transition-all hover:border-[#dfe3f6] hover:bg-[#f4f6ff] hover:text-[#030370]"
+						>
+							Discover
+						</Link>
+						<Link
+							href="/events"
+							className="rounded-full border border-[#e6e9f8] bg-[#f9faff] px-4 py-2 font-semibold text-[#030370] text-sm transition-all hover:border-[#cad2f4] hover:bg-[#eef1ff]"
+						>
+							Create Event +
+						</Link>
+					</nav>
+				)}
 
 				<div className="hidden items-center gap-3 md:flex">
 					{user ? (
@@ -629,13 +625,6 @@ export function Navbar({ dashboardMode = false }: NavbarProps) {
 					</div>
 				)}
 			</div>
-
-			{isHostDashboard && (
-				<div
-					aria-hidden
-					className="pointer-events-none absolute inset-x-0 -bottom-4 h-8 bg-linear-to-b from-[#cfe1ff]/55 to-transparent blur-md"
-				/>
-			)}
 		</header>
 	);
 }
