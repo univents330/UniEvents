@@ -11,9 +11,12 @@ import {
 	Train,
 	UserCircle2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCurrentUser } from "@/features/auth";
+import { startTopLoader } from "@/shared/lib/top-loader-events";
 import { Footer } from "@/shared/ui/footer";
 import { Navbar } from "@/shared/ui/navbar";
 import { useFavoriteEvents } from "../../hooks";
@@ -21,6 +24,8 @@ import { useEvent, useEvents, useTicketTiers } from "../../hooks/use-events";
 import { EventCard } from "../event-card/event-card";
 
 export function EventDetailsClient({ slug }: { slug: string }) {
+	const router = useRouter();
+	const { data: user } = useCurrentUser();
 	const { data: event, isLoading } = useEvent(slug);
 	const { data: tiersResponse } = useTicketTiers(event?.id ?? "");
 	const { isFavorite, toggleFavorite } = useFavoriteEvents();
@@ -46,6 +51,25 @@ export function EventDetailsClient({ slug }: { slug: string }) {
 	const relatedEvents = (relatedEventsResponse?.data ?? [])
 		.filter((relatedEvent) => relatedEvent.id !== event?.id)
 		.slice(0, 4);
+
+	const handleBookNowClick = () => {
+		if (!event) {
+			return;
+		}
+
+		if (!user) {
+			const redirectTo = encodeURIComponent(
+				`/events/${event.slug}#ticket-options`,
+			);
+			startTopLoader();
+			router.push(`/login?redirect=${redirectTo}`);
+			return;
+		}
+
+		document
+			.getElementById("ticket-options")
+			?.scrollIntoView({ behavior: "smooth", block: "start" });
+	};
 
 	useEffect(() => {
 		const target = ctaAnchorRef.current;
@@ -200,10 +224,10 @@ export function EventDetailsClient({ slug }: { slug: string }) {
 							</div>
 						</div>
 						<Button
-							asChild
 							className="h-9 rounded-full border border-slate-200 bg-white px-5 text-[#070190] text-xs hover:bg-slate-100"
+							onClick={handleBookNowClick}
 						>
-							<a href="#ticket-options">Book Now</a>
+							Book Now
 						</Button>
 					</div>
 				</div>
@@ -343,10 +367,10 @@ export function EventDetailsClient({ slug }: { slug: string }) {
 							<div ref={ctaAnchorRef} className="h-1 w-full" />
 
 							<Button
-								asChild
 								className="h-13 w-full rounded-2xl bg-[#070190] font-bold text-base text-white shadow-[0_8px_18px_rgba(7,1,144,0.25)] transition-all hover:bg-[#030370]"
+								onClick={handleBookNowClick}
 							>
-								<a href="#ticket-options">Book Now</a>
+								Book Now
 							</Button>
 							<span className="mt-3 text-center font-semibold text-[10px] text-slate-400 uppercase tracking-wider">
 								secure checkout powered by razorpay

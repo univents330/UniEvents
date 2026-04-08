@@ -57,9 +57,14 @@ export const authService = {
 	/**
 	 * Start a Google sign-in flow
 	 */
-	async signInWithGoogle() {
-		const callbackURL = `${window.location.origin}/`;
-		const errorCallbackURL = `${window.location.origin}/login`;
+	async signInWithGoogle(redirectTo?: string) {
+		const normalizedRedirect = redirectTo?.startsWith("/") ? redirectTo : "/";
+		const callbackURL = `${window.location.origin}${normalizedRedirect}`;
+		const errorCallbackURL = `${window.location.origin}/login${
+			normalizedRedirect !== "/"
+				? `?redirect=${encodeURIComponent(normalizedRedirect)}`
+				: ""
+		}`;
 		const redirectUrl = new URL(
 			`${getActiveBackendUrl()}/api/auth/sign-in/social`,
 		);

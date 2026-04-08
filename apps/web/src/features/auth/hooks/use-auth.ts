@@ -11,6 +11,10 @@ const AUTH_KEYS = {
 	currentUser: ["auth", "currentUser"] as const,
 };
 
+type AuthRedirectOptions = {
+	redirectTo?: string;
+};
+
 /**
  * Hook to get the current authenticated user
  */
@@ -26,7 +30,7 @@ export function useCurrentUser() {
 /**
  * Hook for user registration
  */
-export function useRegister() {
+export function useRegister(options?: AuthRedirectOptions) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -38,7 +42,7 @@ export function useRegister() {
 				message: "Your account has been created successfully.",
 				color: "green",
 			});
-			window.location.assign("/");
+			window.location.assign(options?.redirectTo || "/");
 		},
 		onError: (error: unknown) => {
 			showNotification({
@@ -53,7 +57,7 @@ export function useRegister() {
 /**
  * Hook for user login
  */
-export function useLogin() {
+export function useLogin(options?: AuthRedirectOptions) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -65,7 +69,7 @@ export function useLogin() {
 				message: `Logged in as ${data?.user?.email ?? "your account"}`,
 				color: "green",
 			});
-			window.location.assign("/");
+			window.location.assign(options?.redirectTo || "/");
 		},
 		onError: (error: unknown) => {
 			showNotification({
@@ -82,7 +86,8 @@ export function useLogin() {
  */
 export function useGoogleSignIn() {
 	return useMutation({
-		mutationFn: authService.signInWithGoogle,
+		mutationFn: (redirectTo?: string) =>
+			authService.signInWithGoogle(redirectTo),
 		onSuccess: () => {
 			// Google sign-in now redirects to the backend OAuth endpoint.
 			// No session payload is returned to this callback in the current page context.
