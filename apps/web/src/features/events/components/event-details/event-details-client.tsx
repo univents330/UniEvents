@@ -1,10 +1,7 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { env } from "@voltaze/env/web";
 import {
 	Car,
-	Clock,
 	Footprints,
 	Heart,
 	Mail,
@@ -17,12 +14,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { attendeesService } from "@/features/attendees/services/attendees.service";
 import { useCurrentUser } from "@/features/auth";
-import { ordersService } from "@/features/orders/services/orders.service";
-import { paymentsService } from "@/features/payments/services/payments.service";
-import { loadRazorpayCheckoutScript } from "@/features/payments/utils/razorpay";
-import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { showNotification } from "@/shared/lib/notifications";
 import { startTopLoader } from "@/shared/lib/top-loader-events";
 import { Footer } from "@/shared/ui/footer";
@@ -33,13 +25,11 @@ import { EventCard } from "../event-card/event-card";
 
 export function EventDetailsClient({ slug }: { slug: string }) {
 	const router = useRouter();
-	const queryClient = useQueryClient();
 	const { data: user } = useCurrentUser();
 	const { data: event, isLoading } = useEvent(slug);
 	const { data: tiersResponse } = useTicketTiers(event?.id ?? "");
 	const { isFavorite, toggleFavorite } = useFavoriteEvents();
 	const [showStickyBookingBar, setShowStickyBookingBar] = useState(false);
-	const [isBooking, setIsBooking] = useState(false);
 	const ctaAnchorRef = useRef<HTMLDivElement | null>(null);
 	const tiers = [...(tiersResponse?.data ?? [])].sort(
 		(a, b) => a.price - b.price,
@@ -72,43 +62,13 @@ export function EventDetailsClient({ slug }: { slug: string }) {
 		});
 	};
 
-	const resolveAttendeeForBooking = async () => {
-		if (!event || !user) {
-			throw new Error("You must be logged in to book this event");
-		}
-
-		const attendeeResponse = await attendeesService.getAttendees({
-			eventId: event.id,
-			userId: user.id,
-			page: 1,
-			limit: 1,
-			sortBy: "createdAt",
-			sortOrder: "desc",
-		});
-
-		const existingAttendee = attendeeResponse.data[0];
-		if (existingAttendee) {
-			return existingAttendee;
-		}
-
-		return attendeesService.createAttendee({
-			eventId: event.id,
-			name: user.name?.trim() || user.email.split("@")[0] || user.email,
-			email: user.email,
-			phone: null,
-			userId: user.id,
-		});
-	};
-
 	const handleBookNowClick = async () => {
 		if (!event) {
 			return;
 		}
 
 		if (!user) {
-			const redirectTo = encodeURIComponent(
-				`/events/${event.slug}#ticket-options`,
-			);
+			const redirectTo = encodeURIComponent(`/events/${event.slug}/checkout`);
 			startTopLoader();
 			router.push(`/login?redirect=${redirectTo}`);
 			return;
@@ -129,88 +89,8 @@ export function EventDetailsClient({ slug }: { slug: string }) {
 			return;
 		}
 
-		setIsBooking(true);
-
-		try {
-			await loadRazorpayCheckoutScript();
-			const attendee = await resolveAttendeeForBooking();
-			const order = await ordersService.createOrder({
-				attendeeId: attendee.id,
-				eventId: event.id,
-			});
-			const payment = await paymentsService.initiatePayment({
-				orderId: order.id,
-				currency: "INR",
-				items: [{ tierId: paidTier.id, quantity: 1 }],
-			});
-
-			const razorpayKeyId =
-				payment.razorpayKeyId || env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-			if (!razorpayKeyId) {
-				throw new Error("Razorpay key is not configured");
-			}
-
-			const checkout = new window.Razorpay({
-				key: razorpayKeyId,
-				amount: payment.amount,
-				currency: payment.currency,
-				order_id: payment.razorpayOrderId,
-				name: event.name,
-				description: `${paidTier.name} ticket for ${event.name}`,
-				prefill: payment.prefill,
-				notes: payment.notes,
-				theme: {
-					color: "#070190",
-				},
-				modal: {
-					ondismiss: () => {
-						setIsBooking(false);
-					},
-				},
-				handler: async (response) => {
-					try {
-						await paymentsService.verifyPayment({
-							razorpayOrderId: response.razorpay_order_id,
-							razorpayPaymentId: response.razorpay_payment_id,
-							razorpaySignature: response.razorpay_signature,
-						});
-
-						await queryClient.invalidateQueries({
-							queryKey: ["events", "detail", event.id, "tiers"],
-						});
-						await queryClient.invalidateQueries({ queryKey: ["orders"] });
-						await queryClient.invalidateQueries({ queryKey: ["payments"] });
-
-						showNotification({
-							title: "Booking confirmed",
-							message: "Your payment was verified successfully.",
-							color: "green",
-						});
-						router.refresh();
-					} catch (error) {
-						showNotification({
-							title: "Payment verification failed",
-							message: getApiErrorMessage(
-								error,
-								"We could not verify your Razorpay payment",
-							),
-							color: "red",
-						});
-					} finally {
-						setIsBooking(false);
-					}
-				},
-			});
-
-			checkout.open();
-		} catch (error) {
-			setIsBooking(false);
-			showNotification({
-				title: "Booking failed",
-				message: getApiErrorMessage(error, "Unable to start checkout"),
-				color: "red",
-			});
-		}
+		startTopLoader();
+		router.push(`/events/${event.slug}/checkout`);
 	};
 
 	useEffect(() => {
@@ -368,7 +248,6 @@ export function EventDetailsClient({ slug }: { slug: string }) {
 						<Button
 							className="h-9 rounded-full border border-slate-200 bg-white px-5 text-[#070190] text-xs hover:bg-slate-100"
 							onClick={handleBookNowClick}
-							disabled={isBooking}
 						>
 							Book Now
 						</Button>
@@ -512,7 +391,6 @@ export function EventDetailsClient({ slug }: { slug: string }) {
 							<Button
 								className="h-13 w-full rounded-2xl bg-[#070190] font-bold text-base text-white shadow-[0_8px_18px_rgba(7,1,144,0.25)] transition-all hover:bg-[#030370]"
 								onClick={handleBookNowClick}
-								disabled={isBooking}
 							>
 								Book Now
 							</Button>

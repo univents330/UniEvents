@@ -18,6 +18,9 @@ type PasswordRule = {
 	check: (value: string) => boolean;
 };
 
+type FieldName = "email" | "password" | "confirmPassword";
+type FieldErrors = Partial<Record<FieldName, string>>;
+
 const AUTH_COPY: Record<AuthMode, AuthCopy> = {
 	login: {
 		heading: "Log in",
@@ -51,6 +54,98 @@ const PASSWORD_RULES: PasswordRule[] = [
 		check: (value) => /[^A-Za-z0-9]/.test(value),
 	},
 ];
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function extractErrorMessage(error: unknown): string | null {
+	if (!error) {
+		return null;
+	}
+
+	if (error instanceof Error) {
+		return error.message;
+	}
+
+	if (typeof error === "object") {
+		const maybeRecord = error as Record<string, unknown>;
+		const fromMessage = maybeRecord.message;
+		if (typeof fromMessage === "string") {
+			return fromMessage;
+		}
+
+		const maybeNestedError = maybeRecord.error;
+		if (
+			typeof maybeNestedError === "object" &&
+			maybeNestedError !== null &&
+			typeof (maybeNestedError as Record<string, unknown>).message === "string"
+		) {
+			return (maybeNestedError as Record<string, string>).message;
+		}
+
+		const maybeData = maybeRecord.data;
+		if (
+			typeof maybeData === "object" &&
+			maybeData !== null &&
+			typeof (maybeData as Record<string, unknown>).message === "string"
+		) {
+			return (maybeData as Record<string, string>).message;
+		}
+	}
+
+	if (typeof error === "string") {
+		return error;
+	}
+
+	return null;
+}
+
+function getFriendlyAuthErrorMessage(error: unknown): string {
+	const rawMessage =
+		extractErrorMessage(error)?.toLowerCase() || "unable to sign in";
+
+	if (rawMessage.includes("invalid") || rawMessage.includes("credential")) {
+		return "Incorrect email or password. Please try again.";
+	}
+
+	if (rawMessage.includes("verify") || rawMessage.includes("unverified")) {
+		return "Please verify your email before logging in.";
+	}
+
+	if (rawMessage.includes("too many") || rawMessage.includes("rate limit")) {
+		return "Too many login attempts. Please wait a minute and try again.";
+	}
+
+	if (
+		rawMessage.includes("network") ||
+		rawMessage.includes("fetch") ||
+		rawMessage.includes("timeout")
+	) {
+		return "Network issue detected. Check your connection and try again.";
+	}
+
+	if (rawMessage.includes("server") || rawMessage.includes("500")) {
+		return "Server error while signing in. Please try again shortly.";
+	}
+
+	return "Login failed. Please try again.";
+}
+
+function getOAuthLoginError(searchParams: URLSearchParams): string | null {
+	const oauthError = searchParams.get("error")?.toLowerCase();
+	if (!oauthError) {
+		return null;
+	}
+
+	if (oauthError.includes("access_denied")) {
+		return "Google sign-in was cancelled.";
+	}
+
+	if (oauthError.includes("callback") || oauthError.includes("oauth")) {
+		return "Google sign-in could not be completed. Please try again.";
+	}
+
+	return "Authentication failed. Please try again.";
+}
 
 function PasswordRuleItem({
 	label,
@@ -132,15 +227,52 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [formError, setFormError] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+	const oauthError = mode === "login" ? getOAuthLoginError(searchParams) : null;
 	const passwordRuleStates = PASSWORD_RULES.map((rule) => ({
 		label: rule.label,
 		isMet: rule.check(password),
 	}));
 	const isPasswordValid = passwordRuleStates.every((rule) => rule.isMet);
 
+	function clearFieldError(field: FieldName) {
+		setFieldErrors((current) => {
+			if (!current[field]) {
+				return current;
+			}
+
+			const next = { ...current };
+			delete next[field];
+			return next;
+		});
+	}
+
 	function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 		setFormError(null);
+		setSubmitError(null);
+
+		const nextFieldErrors: FieldErrors = {};
+		const normalizedEmail = email.trim();
+		const normalizedPassword = password.trim();
+
+		if (!normalizedEmail) {
+			nextFieldErrors.email = "Email is required.";
+		} else if (!EMAIL_PATTERN.test(normalizedEmail)) {
+			nextFieldErrors.email = "Enter a valid email address.";
+		}
+
+		if (!normalizedPassword) {
+			nextFieldErrors.password = "Password is required.";
+		}
+
+		if (Object.keys(nextFieldErrors).length > 0) {
+			setFieldErrors(nextFieldErrors);
+			return;
+		}
+
+		setFieldErrors({});
 
 		if (isSignup && password !== confirmPassword) {
 			setFormError("Passwords do not match.");
@@ -153,11 +285,15 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 		}
 
 		const payload = {
-			email,
+			email: normalizedEmail,
 			password,
 		};
 
-		mutation.mutate(payload);
+		mutation.mutate(payload, {
+			onError: (error) => {
+				setSubmitError(getFriendlyAuthErrorMessage(error));
+			},
+		});
 	}
 
 	function handleGoogleSignIn() {
@@ -271,10 +407,23 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 										autoComplete="email"
 										required
 										value={email}
-										onChange={(event) => setEmail(event.target.value)}
+										onChange={(event) => {
+											setEmail(event.target.value);
+											clearFieldError("email");
+											if (submitError) {
+												setSubmitError(null);
+											}
+										}}
 										placeholder="you@example.com"
-										className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-slate-950 outline-none transition-shadow placeholder:text-slate-400 focus:border-[#2f57db] focus:ring-4 focus:ring-[#2f57db]/10"
+										className={`h-11 w-full rounded-xl border bg-white px-3.5 text-slate-950 outline-none transition-shadow placeholder:text-slate-400 focus:ring-4 focus:ring-[#2f57db]/10 ${
+											fieldErrors.email
+												? "border-red-400 focus:border-red-500"
+												: "border-slate-200 focus:border-[#2f57db]"
+										}`}
 									/>
+									{fieldErrors.email ? (
+										<p className="text-red-600 text-xs">{fieldErrors.email}</p>
+									) : null}
 								</div>
 
 								<div className="space-y-2">
@@ -293,10 +442,25 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 										}
 										required
 										value={password}
-										onChange={(event) => setPassword(event.target.value)}
+										onChange={(event) => {
+											setPassword(event.target.value);
+											clearFieldError("password");
+											if (submitError) {
+												setSubmitError(null);
+											}
+										}}
 										placeholder="Enter your password"
-										className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-slate-950 outline-none transition-shadow placeholder:text-slate-400 focus:border-[#2f57db] focus:ring-4 focus:ring-[#2f57db]/10"
+										className={`h-11 w-full rounded-xl border bg-white px-3.5 text-slate-950 outline-none transition-shadow placeholder:text-slate-400 focus:ring-4 focus:ring-[#2f57db]/10 ${
+											fieldErrors.password
+												? "border-red-400 focus:border-red-500"
+												: "border-slate-200 focus:border-[#2f57db]"
+										}`}
 									/>
+									{fieldErrors.password ? (
+										<p className="text-red-600 text-xs">
+											{fieldErrors.password}
+										</p>
+									) : null}
 
 									{isSignup ? (
 										<div
@@ -338,13 +502,20 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 											autoComplete="new-password"
 											required
 											value={confirmPassword}
-											onChange={(event) =>
-												setConfirmPassword(event.target.value)
-											}
+											onChange={(event) => {
+												setConfirmPassword(event.target.value);
+												clearFieldError("confirmPassword");
+											}}
 											placeholder="Re-enter your password"
 											className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-slate-950 outline-none transition-shadow placeholder:text-slate-400 focus:border-[#2f57db] focus:ring-4 focus:ring-[#2f57db]/10"
 										/>
 									</div>
+								) : null}
+
+								{oauthError ? (
+									<p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
+										{oauthError}
+									</p>
 								) : null}
 
 								<button
@@ -357,6 +528,12 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 
 								{formError ? (
 									<p className="text-red-600 text-sm">{formError}</p>
+								) : null}
+
+								{submitError ? (
+									<p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-sm">
+										{submitError}
+									</p>
 								) : null}
 
 								<div className="flex items-center gap-3 text-slate-400 text-xs">

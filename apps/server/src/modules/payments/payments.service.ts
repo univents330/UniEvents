@@ -21,6 +21,7 @@ import {
 	createRazorpayOrder,
 	createRazorpayRefund,
 	fetchRazorpayPayment,
+	type RazorpayOrder,
 } from "@/common/utils/razorpay";
 
 type PaymentActor = {
@@ -515,17 +516,24 @@ export class PaymentsService {
 			);
 		}
 
-		const razorpayOrder = await createRazorpayOrder({
-			amount: totalAmount,
-			currency: input.currency,
-			receipt: order.id,
-			notes: {
-				orderId: order.id,
-				eventId: order.eventId,
-				eventName: order.event.name,
-				attendeeEmail: order.attendee.email,
-			},
-		});
+		let razorpayOrder: RazorpayOrder;
+		try {
+			razorpayOrder = await createRazorpayOrder({
+				amount: totalAmount,
+				currency: input.currency,
+				receipt: order.id,
+				notes: {
+					orderId: order.id,
+					eventId: order.eventId,
+					eventName: order.event.name,
+					attendeeEmail: order.attendee.email,
+				},
+			});
+		} catch (_error) {
+			throw new BadRequestError(
+				"Unable to create a Razorpay order. Check the server Razorpay credentials in apps/server/.env.",
+			);
+		}
 
 		const payment = await prisma.payment.create({
 			data: {

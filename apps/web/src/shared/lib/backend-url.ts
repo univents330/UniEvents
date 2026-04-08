@@ -19,6 +19,17 @@ function getConfiguredBackendUrls() {
 	return [...new Set(list)];
 }
 
+function getLocalBackendUrl(configured: string[]) {
+	return configured.find((url) => {
+		try {
+			const parsed = new URL(url);
+			return parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+		} catch {
+			return false;
+		}
+	});
+}
+
 export function getAvailableBackendUrls() {
 	return getConfiguredBackendUrls();
 }
@@ -29,6 +40,17 @@ export function getActiveBackendUrl() {
 	}
 
 	const configured = getConfiguredBackendUrls();
+	const isLocalFrontend =
+		window.location.hostname === "localhost" ||
+		window.location.hostname === "127.0.0.1";
+
+	if (isLocalFrontend) {
+		const localBackend = getLocalBackendUrl(configured);
+		if (localBackend) {
+			return localBackend;
+		}
+	}
+
 	const stored = localStorage.getItem(ACTIVE_BACKEND_KEY);
 	if (stored) {
 		const normalized = normalizeUrl(stored);

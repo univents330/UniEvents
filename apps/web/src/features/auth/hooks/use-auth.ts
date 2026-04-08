@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { PublicUser } from "@voltaze/schema";
 import { useRouter } from "next/navigation";
 import { getApiErrorMessage } from "@/shared/lib/api-error";
 import { showNotification } from "@/shared/lib/notifications";
@@ -14,6 +15,48 @@ const AUTH_KEYS = {
 type AuthRedirectOptions = {
 	redirectTo?: string;
 };
+
+function readUserFromAuthPayload(payload: unknown): PublicUser | null {
+	if (!payload || typeof payload !== "object") {
+		return null;
+	}
+
+	const record = payload as Record<string, unknown>;
+	const candidate =
+		(record.user as PublicUser | undefined) ??
+		((record.data as Record<string, unknown> | undefined)?.user as
+			| PublicUser
+			| undefined) ??
+		null;
+
+	if (!candidate || typeof candidate !== "object") {
+		return null;
+	}
+
+	if (typeof candidate.email !== "string") {
+		return null;
+	}
+
+	return candidate;
+}
+
+async function syncCurrentUserCache(
+	queryClient: ReturnType<typeof useQueryClient>,
+	payload: unknown,
+) {
+	const payloadUser = readUserFromAuthPayload(payload);
+	if (payloadUser) {
+		queryClient.setQueryData(AUTH_KEYS.currentUser, payloadUser);
+	}
+
+	const currentUser = await authService.getCurrentUser();
+	queryClient.setQueryData(
+		AUTH_KEYS.currentUser,
+		currentUser ?? payloadUser ?? null,
+	);
+
+	await queryClient.invalidateQueries({ queryKey: AUTH_KEYS.currentUser });
+}
 
 /**
  * Hook to get the current authenticated user
@@ -35,8 +78,8 @@ export function useRegister(options?: AuthRedirectOptions) {
 
 	return useMutation({
 		mutationFn: authService.register,
-		onSuccess: (data) => {
-			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
+		onSuccess: async (data) => {
+			await syncCurrentUserCache(queryClient, data);
 			showNotification({
 				title: "Welcome!",
 				message: "Your account has been created successfully.",
@@ -62,11 +105,12 @@ export function useLogin(options?: AuthRedirectOptions) {
 
 	return useMutation({
 		mutationFn: authService.login,
-		onSuccess: (data) => {
-			queryClient.setQueryData(AUTH_KEYS.currentUser, data?.user ?? null);
+		onSuccess: async (data) => {
+			await syncCurrentUserCache(queryClient, data);
+			const payloadUser = readUserFromAuthPayload(data);
 			showNotification({
 				title: "Welcome back!",
-				message: `Logged in as ${data?.user?.email ?? "your account"}`,
+				message: `Logged in as ${payloadUser?.email ?? "your account"}`,
 				color: "green",
 			});
 			window.location.assign(options?.redirectTo || "/");

@@ -44,15 +44,13 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 	},
-	advanced:
-		process.env.NODE_ENV === "production"
-			? {
-					defaultCookieAttributes: {
-						sameSite: "none",
-						secure: true,
-					},
-				}
-			: undefined,
+	advanced: {
+		defaultCookieAttributes: {
+			sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+			secure: process.env.NODE_ENV === "production",
+			path: "/",
+		},
+	},
 	user: {
 		additionalFields: {
 			role: {
