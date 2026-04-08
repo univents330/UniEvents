@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { AuthScreen } from "../_components/auth-screen";
 
 export default function RegisterPage() {
-	return <AuthScreen mode="register" />;
+	return (
+		<Suspense fallback={null}>
+			<AuthScreen mode="register" />
+		</Suspense>
+	);
 }

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useGoogleSignIn, useLogin, useRegister } from "@/features/auth";
 
 type AuthMode = "login" | "signup" | "register";
@@ -114,14 +114,15 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 	const searchParams = useSearchParams();
 	const redirectParam = searchParams.get("redirect")?.trim();
 	const redirectTo = redirectParam || "/";
-	const authQuerySuffix = useMemo(() => {
-		if (!redirectParam) {
-			return "";
-		}
-
-		const encodedRedirect = encodeURIComponent(redirectTo);
-		return `?redirect=${encodedRedirect}`;
-	}, [redirectParam, redirectTo]);
+	const authRedirectQuery = redirectParam
+		? { redirect: redirectTo }
+		: undefined;
+	const signupHref = authRedirectQuery
+		? { pathname: "/signup", query: authRedirectQuery }
+		: "/signup";
+	const loginHref = authRedirectQuery
+		? { pathname: "/login", query: authRedirectQuery }
+		: "/login";
 	const loginMutation = useLogin({ redirectTo });
 	const registerMutation = useRegister({ redirectTo });
 	const googleMutation = useGoogleSignIn();
@@ -229,7 +230,7 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 
 								<div className="ml-auto inline-flex rounded-full border border-[#d8e1fb] bg-[#f5f8ff] p-1 shadow-sm">
 									<Link
-										href={`/signup${authQuerySuffix}`}
+										href={signupHref}
 										className={`rounded-full px-5 py-2 font-semibold text-sm transition-colors ${
 											mode === "signup" || mode === "register"
 												? "bg-[#1e43bf] text-white"
@@ -239,7 +240,7 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 										Sign Up
 									</Link>
 									<Link
-										href={`/login${authQuerySuffix}`}
+										href={loginHref}
 										className={`rounded-full px-5 py-2 font-semibold text-sm transition-colors ${
 											mode === "login"
 												? "bg-[#1e43bf] text-white"
