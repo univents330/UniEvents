@@ -1,13 +1,13 @@
-import { HostSidebar } from "@/shared/ui/host-sidebar";
+import { UserSidebar } from "@/shared/ui/user-sidebar";
 
-export default function HostLayout({
+export default function UserLayout({
 	children,
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
 	return (
 		<div className="min-h-screen bg-linear-to-b from-[#f7fbff] via-[#f3f8ff] to-[#edf5ff]">
-			<HostSidebar />
+			<UserSidebar />
 			{/* Main Content Area - scrollable on the right */}
 			<main className="fixed top-16 right-0 bottom-0 left-64 overflow-y-auto overflow-x-hidden">
 				<div

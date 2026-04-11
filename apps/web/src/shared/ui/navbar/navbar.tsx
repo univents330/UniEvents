@@ -300,21 +300,42 @@ export function Navbar({ minimal = false }: NavbarProps) {
 		window.location.assign("/liked-events");
 	};
 
+	interface MenuSection {
+		section?: string;
+		items: Array<{ label: string; href: string }>;
+	}
+
+	const isHostRoute = pathname.startsWith("/host");
+	const isUserRoute = pathname.startsWith("/user");
+
 	const profileMenuItems = useMemo(() => {
-		const items = [
-			{ label: "Profile", href: "/" },
-			...(minimal ? [] : [{ label: "Discover Events", href: "/events" }]),
-			{ label: "My Orders", href: "/orders" },
-			{ label: "My Passes", href: "/passes" },
-			{ label: "Session Settings", href: "/settings/sessions" },
+		const sections: MenuSection[] = [
+			{
+				section: "User Dashboard",
+				items: [
+					{ label: "Dashboard", href: "/user/dashboard" },
+					{ label: "Tickets", href: "/user/tickets" },
+					{ label: "Liked", href: "/liked-events" },
+					{ label: "Settings", href: "/user/settings" },
+				],
+			},
+			...(minimal || isHostRoute
+				? []
+				: [
+						{
+							section: "Discover",
+							items: [{ label: "Browse Events", href: "/events" }],
+						},
+					]),
 		];
 
-		return items;
-	}, [minimal]);
+		return sections;
+	}, [minimal, isHostRoute]);
 
 	const profileInitial = getProfileInitial(user?.name, user?.email);
 	const alwaysShowSearch = pathname !== "/";
-	const isSearchVisible = !minimal && (alwaysShowSearch || showScrolledSearch);
+	const isSearchVisible =
+		!minimal && !isHostRoute && (alwaysShowSearch || showScrolledSearch);
 
 	return (
 		<header className="fixed top-0 right-0 left-0 z-50 border-slate-100 border-b bg-white/80 backdrop-blur-md">
@@ -322,7 +343,9 @@ export function Navbar({ minimal = false }: NavbarProps) {
 				className={
 					minimal
 						? "flex h-16 w-full items-center justify-between px-6 lg:px-8"
-						: "mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-6 lg:gap-8"
+						: isUserRoute
+							? "flex h-16 w-full items-center justify-between gap-6 px-6 lg:gap-8"
+							: "mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-6 lg:gap-8"
 				}
 			>
 				<div className="flex items-center">
@@ -344,7 +367,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 					</Link>
 				</div>
 
-				{!minimal && (
+				{!minimal && !isHostRoute && (
 					<div
 						className={`hidden flex-1 items-center justify-center transition-all duration-300 lg:flex ${
 							isSearchVisible
@@ -461,7 +484,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 					</div>
 				)}
 
-				{!minimal && (
+				{!minimal && !isHostRoute && (
 					<nav className="hidden items-center gap-3 md:flex lg:gap-4">
 						<Link
 							href="/events"
@@ -544,29 +567,51 @@ export function Navbar({ minimal = false }: NavbarProps) {
 							>
 								<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(7,1,144,0.16)]">
 									<div className="border-slate-100 border-b px-3 py-2.5">
-										<p className="truncate font-semibold text-[#070190] text-sm">
-											{user.name?.trim() || "My Profile"}
-										</p>
-										<p className="truncate text-slate-500 text-xs">
-											{user.email}
-										</p>
+										<button
+											type="button"
+											onClick={() =>
+												handleNavigateFromProfileMenu("/user/dashboard")
+											}
+											className="flex w-full flex-col items-start gap-1 text-left"
+										>
+											<p className="truncate font-semibold text-[#070190] text-sm">
+												{user.name?.trim() || "My Profile"}
+											</p>
+											<p className="truncate text-slate-500 text-xs">
+												{user.email}
+											</p>
+											<p className="font-medium text-slate-400 text-xs">
+												Go to dashboard
+											</p>
+										</button>
 									</div>
 
 									<div className="p-2">
-										{profileMenuItems.map((item) => (
-											<button
-												key={item.label}
-												type="button"
-												onClick={() => handleNavigateFromProfileMenu(item.href)}
-												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
-											>
-												<UserCircle2 className="h-4 w-4" />
-												{item.label}
-											</button>
+										{profileMenuItems.map((section) => (
+											<div key={section.section}>
+												{section.section && (
+													<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+														{section.section}
+													</p>
+												)}
+												{section.items.map((item) => (
+													<button
+														key={item.label}
+														type="button"
+														onClick={() =>
+															handleNavigateFromProfileMenu(item.href)
+														}
+														className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+													>
+														<UserCircle2 className="h-4 w-4" />
+														{item.label}
+													</button>
+												))}
+											</div>
 										))}
 
 										<div className="my-1 border-slate-100 border-t" />
-										<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+										<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
 											Host Control
 										</p>
 										<button
@@ -687,29 +732,51 @@ export function Navbar({ minimal = false }: NavbarProps) {
 						>
 							<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(7,1,144,0.16)]">
 								<div className="border-slate-100 border-b px-3 py-2.5">
-									<p className="truncate font-semibold text-[#070190] text-sm">
-										{user.name?.trim() || "My Profile"}
-									</p>
-									<p className="truncate text-slate-500 text-xs">
-										{user.email}
-									</p>
+									<button
+										type="button"
+										onClick={() =>
+											handleNavigateFromProfileMenu("/user/dashboard")
+										}
+										className="flex w-full flex-col items-start gap-1 text-left"
+									>
+										<p className="truncate font-semibold text-[#070190] text-sm">
+											{user.name?.trim() || "My Profile"}
+										</p>
+										<p className="truncate text-slate-500 text-xs">
+											{user.email}
+										</p>
+										<p className="font-medium text-slate-400 text-xs">
+											Go to dashboard
+										</p>
+									</button>
 								</div>
 
 								<div className="p-2">
-									{profileMenuItems.map((item) => (
-										<button
-											key={item.label}
-											type="button"
-											onClick={() => handleNavigateFromProfileMenu(item.href)}
-											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
-										>
-											<UserCircle2 className="h-4 w-4" />
-											{item.label}
-										</button>
+									{profileMenuItems.map((section) => (
+										<div key={section.section}>
+											{section.section && (
+												<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+													{section.section}
+												</p>
+											)}
+											{section.items.map((item) => (
+												<button
+													key={item.label}
+													type="button"
+													onClick={() =>
+														handleNavigateFromProfileMenu(item.href)
+													}
+													className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+												>
+													<UserCircle2 className="h-4 w-4" />
+													{item.label}
+												</button>
+											))}
+										</div>
 									))}
 
 									<div className="my-1 border-slate-100 border-t" />
-									<p className="px-3 py-1 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+									<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
 										Host Control
 									</p>
 									<button

@@ -62,7 +62,7 @@ async function syncCurrentUserCache(
  * Hook to get the current authenticated user
  */
 export function useCurrentUser() {
-	return useQuery({
+	return useQuery<PublicUser | null>({
 		queryKey: AUTH_KEYS.currentUser,
 		queryFn: authService.getCurrentUser,
 		retry: false,

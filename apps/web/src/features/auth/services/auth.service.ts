@@ -1,5 +1,4 @@
 import type {
-	AuthSession,
 	LoginInput,
 	PublicUser,
 	RegisterInput,
@@ -87,10 +86,11 @@ export const authService = {
 	/**
 	 * Get current user profile
 	 */
-	async getCurrentUser() {
+	async getCurrentUser(): Promise<PublicUser | null> {
 		const authClient = getAuthClient();
 		const { data: session } = await authClient.getSession();
-		return session?.user ?? null;
+		const user = session?.user as PublicUser | undefined;
+		return user ?? null;
 	},
 
 	/**
