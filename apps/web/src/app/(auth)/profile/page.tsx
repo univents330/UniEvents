@@ -16,25 +16,25 @@ export default function ProfilePage() {
 	}
 
 	return (
-		<div className="mx-auto max-w-2xl space-y-6">
+		<div className="space-y-4 sm:space-y-6">
 			<PageHeader
 				title="My Profile"
 				description="Manage your account information and preferences"
 			/>
 
-			<div className="space-y-6 rounded-lg border border-slate-200 bg-white p-6">
-				<div className="flex items-center gap-4">
+			<div className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 sm:space-y-6 sm:p-6">
+				<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
 					{user.image ? (
 						<Image
 							src={user.image}
 							alt={user.name || "Profile"}
 							width={64}
 							height={64}
-							className="h-16 w-16 rounded-full border border-slate-200 object-cover"
+							className="h-14 w-14 rounded-full border border-slate-200 object-cover sm:h-16 sm:w-16"
 						/>
 					) : (
-						<div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
-							<span className="font-semibold text-2xl text-slate-600">
+						<div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 sm:h-16 sm:w-16">
+							<span className="font-semibold text-slate-600 text-xl sm:text-2xl">
 								{user.name?.charAt(0)?.toUpperCase() ||
 									user.email.charAt(0).toUpperCase()}
 							</span>

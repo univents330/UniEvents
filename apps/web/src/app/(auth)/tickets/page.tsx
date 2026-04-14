@@ -30,7 +30,7 @@ export default function TicketsPage() {
 	const tickets = ticketsData?.data || [];
 
 	return (
-		<div className="mx-auto max-w-4xl space-y-6">
+		<div className="space-y-4 sm:space-y-6">
 			<PageHeader title="My Tickets" description="View your event tickets" />
 
 			{tickets.length === 0 ? (
