@@ -146,6 +146,20 @@ export const authService = {
 	},
 
 	/**
+	 * Update current user's profile (name, image)
+	 */
+	async updateProfile(data: {
+		name?: string;
+		image?: string | null;
+	}): Promise<void> {
+		const authClient = getAuthClient();
+		const { error } = await authClient.updateUser(data);
+		if (error) {
+			throw error;
+		}
+	},
+
+	/**
 	 * Change password
 	 */
 	async changePassword(
