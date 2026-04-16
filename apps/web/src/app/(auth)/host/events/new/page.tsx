@@ -68,25 +68,28 @@ export default function CreateEventPage() {
 				visibility: form.visibility,
 			});
 
-			const tierPrice = Number(form.ticketTierPrice || 0);
-			const tierQuantity = Number(form.ticketTierQuantity || 0);
+			if (createdEvent?.id) {
+				const tierPrice = Number(form.ticketTierPrice || 0);
+				const tierQuantity = Number(form.ticketTierQuantity || 0);
 
-			if (form.type === "PAID" && tierPrice > 0 && tierQuantity > 0) {
-				await eventsService.createTicketTier(createdEvent.id, {
-					name: form.ticketTierName.trim() || "General Admission",
-					description: "Default ticket tier",
-					price: tierPrice,
-					maxQuantity: tierQuantity,
+				if (form.type === "PAID" && tierPrice > 0 && tierQuantity > 0) {
+					await eventsService.createTicketTier(createdEvent.id, {
+						name: form.ticketTierName.trim() || "General Admission",
+						description: "Default ticket tier",
+						price: tierPrice,
+						maxQuantity: tierQuantity,
+					});
+				}
+
+				showNotification({
+					title: "Event sent for approval",
+					message:
+						"Your event was created as a draft and is waiting for review.",
+					color: "blue",
 				});
+
+				router.push("/host/requests" as Route);
 			}
-
-			showNotification({
-				title: "Event sent for approval",
-				message: "Your event was created as a draft and is waiting for review.",
-				color: "blue",
-			});
-
-			router.push("/host/requests" as Route);
 		} catch {
 			showNotification({
 				title: "Could not create event",

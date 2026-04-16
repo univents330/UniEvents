@@ -1,3 +1,4 @@
+import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { env } from "@voltaze/env/server";
 
@@ -8,6 +9,10 @@ export * from "../prisma/generated/client";
 const globalForPrisma = globalThis as unknown as {
 	prisma: PrismaClient | undefined;
 };
+
+// Prefer HTTP fetch for pooled queries to avoid WebSocket connectivity issues
+// in local/dev environments where wss to Neon may be blocked.
+neonConfig.poolQueryViaFetch = true;
 
 const adapter = new PrismaNeon({
 	connectionString: env.DATABASE_URL,

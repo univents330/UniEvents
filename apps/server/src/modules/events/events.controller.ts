@@ -78,6 +78,7 @@ export class EventsController {
 		const event = await eventsService.moderate(
 			params.id,
 			body.action,
+			body.reason,
 			this.getActor(req),
 		);
 		res.status(200).json(event);

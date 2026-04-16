@@ -15,6 +15,7 @@ import {
 	ForbiddenError,
 	NotFoundError,
 } from "@/common/exceptions/app-error";
+import { eventNotificationService } from "./event-notification.service";
 
 type EventActor = {
 	userId: string;
@@ -266,7 +267,7 @@ export class EventsService {
 					...input,
 					userId: actor.userId,
 					moderationStatus,
-					status: actor.role === "USER" ? "PUBLISHED" : "DRAFT",
+					status: "DRAFT",
 					slug: `${slug}-${Date.now()}`,
 				},
 			});
@@ -534,7 +535,16 @@ export class EventsService {
 		await prisma.event.delete({ where: { id: event.id } });
 	}
 
-	async moderate(id: string, action: "APPROVE" | "REJECT", actor: EventActor) {
+	async moderate(
+		id: string,
+		action: "APPROVE" | "REJECT",
+		reason?: string,
+		actor?: EventActor,
+	) {
+		if (!actor) {
+			throw new ForbiddenError("Actor is required");
+		}
+
 		if (actor.role !== "ADMIN") {
 			throw new ForbiddenError("Only admins can moderate events");
 		}
@@ -553,13 +563,36 @@ export class EventsService {
 					: event.status
 				: event.status;
 
-		return prisma.event.update({
+		const updatedEvent = await prisma.event.update({
 			where: { id },
 			data: {
 				moderationStatus,
 				status: nextStatus,
 			},
 		});
+
+		// Send email notification to event creator
+		if (event.userId) {
+			const user = await prisma.user.findUnique({
+				where: { id: event.userId },
+				select: { email: true, name: true },
+			});
+
+			if (user?.email) {
+				await eventNotificationService
+					.sendModerationDecision({
+						event: { id: event.id, name: event.name },
+						creator: { email: user.email, name: user.name },
+						action,
+						reason,
+					})
+					.catch((error) => {
+						console.error("Failed to send event moderation email:", error);
+					});
+			}
+		}
+
+		return updatedEvent;
 	}
 }
 

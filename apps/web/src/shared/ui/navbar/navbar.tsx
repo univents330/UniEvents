@@ -498,7 +498,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 							Discover
 						</Link>
 						<Link
-							href="/events"
+							href="/host/events/new"
 							className="rounded-full border border-[#e6e9f8] bg-[#f9faff] px-4 py-2 font-semibold text-[#030370] text-sm transition-all hover:border-[#cad2f4] hover:bg-[#eef1ff]"
 						>
 							Create Event +

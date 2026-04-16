@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useAttendees } from "@/features/attendees";
 import { useEvents } from "@/features/events";
+import { PendingApprovalsWidget } from "@/features/events/components/pending-approvals-widget";
 import { useOrders } from "@/features/orders";
 import { usePayments } from "@/features/payments";
 import { formatCurrency } from "@/shared/utils/format-currency";
@@ -119,6 +120,8 @@ export function AdminDashboardHome() {
 					Global activity across all hosts, events, orders, and attendees.
 				</p>
 			</div>
+
+			<PendingApprovalsWidget />
 
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
 				<MetricCard

@@ -137,6 +137,7 @@ export const eventTicketTierParamsSchema = z.object({
 
 export const moderateEventSchema = z.object({
 	action: z.enum(["APPROVE", "REJECT"]),
+	reason: z.string().optional(),
 });
 
 export const eventSlugParamSchema = z.object({

@@ -11,6 +11,9 @@ export default function AdminEventsPage() {
 	const [status, setStatus] = useState<
 		"ALL" | "DRAFT" | "PUBLISHED" | "COMPLETED" | "CANCELLED"
 	>("ALL");
+	const [moderationStatus, setModerationStatus] = useState<
+		"ALL" | "PENDING" | "APPROVED" | "REJECTED"
+	>("ALL");
 	const [hostId, setHostId] = useState<string>("ALL");
 
 	const eventsQuery = useEvents({
@@ -23,6 +26,15 @@ export default function AdminEventsPage() {
 	});
 
 	const allEvents = eventsQuery.data?.data ?? [];
+
+	// Filter by moderation status on client side
+	const filteredEventsByModeration = useMemo(() => {
+		if (moderationStatus === "ALL") return allEvents;
+		return allEvents.filter(
+			(event) => event.moderationStatus === moderationStatus,
+		);
+	}, [allEvents, moderationStatus]);
+
 	const hostIds = useMemo(
 		() =>
 			Array.from(
@@ -36,9 +48,11 @@ export default function AdminEventsPage() {
 	);
 
 	const visibleEvents = useMemo(() => {
-		if (hostId === "ALL") return allEvents;
-		return allEvents.filter((event) => event.userId === hostId);
-	}, [allEvents, hostId]);
+		if (hostId === "ALL") return filteredEventsByModeration;
+		return filteredEventsByModeration.filter(
+			(event) => event.userId === hostId,
+		);
+	}, [filteredEventsByModeration, hostId]);
 
 	return (
 		<div className="space-y-5">
@@ -84,6 +98,19 @@ export default function AdminEventsPage() {
 				</select>
 
 				<select
+					value={moderationStatus}
+					onChange={(e) =>
+						setModerationStatus(e.target.value as typeof moderationStatus)
+					}
+					className="rounded-xl border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
+				>
+					<option value="ALL">All moderation</option>
+					<option value="PENDING">Pending</option>
+					<option value="APPROVED">Approved</option>
+					<option value="REJECTED">Rejected</option>
+				</select>
+
+				<select
 					value={hostId}
 					onChange={(e) => setHostId(e.target.value)}
 					className="rounded-xl border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
@@ -121,9 +148,22 @@ export default function AdminEventsPage() {
 										{event.venueName}
 									</p>
 								</div>
-								<span className="rounded-full border border-[#dbe7ff] bg-[#f5f9ff] px-2 py-1 font-semibold text-[#0a4bb8] text-xs">
-									{event.status}
-								</span>
+								<div className="flex shrink-0 gap-2">
+									<span className="rounded-full border border-[#dbe7ff] bg-[#f5f9ff] px-2 py-1 font-semibold text-[#0a4bb8] text-xs">
+										{event.status}
+									</span>
+									<span
+										className={`rounded-full px-2 py-1 font-semibold text-xs ${
+											event.moderationStatus === "APPROVED"
+												? "border border-green-200 bg-green-50 text-green-700"
+												: event.moderationStatus === "PENDING"
+													? "border border-amber-200 bg-amber-50 text-amber-700"
+													: "border border-red-200 bg-red-50 text-red-700"
+										}`}
+									>
+										{event.moderationStatus}
+									</span>
+								</div>
 							</div>
 
 							<div className="mt-3 space-y-1.5 text-slate-600 text-sm">

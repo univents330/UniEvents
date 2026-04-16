@@ -1,4 +1,4 @@
-export type AppNotificationColor = "green" | "red" | "blue";
+export type AppNotificationColor = "green" | "red" | "blue" | "amber";
 
 export type AppNotification = {
 	id: string;
@@ -254,7 +254,7 @@ export function addNotificationToAllScopes(input: NotificationInput) {
 
 	for (let index = 0; index < window.localStorage.length; index += 1) {
 		const key = window.localStorage.key(index);
-		if (!key || !key.startsWith(`${STORAGE_KEY_PREFIX}:`)) {
+		if (!key?.startsWith(`${STORAGE_KEY_PREFIX}:`)) {
 			continue;
 		}
 
