@@ -6,7 +6,6 @@ import {
 	eventTicketTierIdParamsSchema,
 	eventTicketTierParamsSchema,
 	idParamSchema,
-	moderateEventSchema,
 	ticketTierFilterSchema,
 	updateEventSchema,
 	updateEventTicketTierSchema,
@@ -16,7 +15,6 @@ import { Router } from "express";
 import {
 	optionalAuth,
 	requireAuth,
-	requireRoles,
 } from "@/common/middlewares/auth.middleware";
 import { validatePipe } from "@/common/pipes/validate.pipe";
 import { asyncHandler } from "@/common/utils/async-handler";
@@ -62,35 +60,24 @@ export function createEventsRouter(): Router {
 	router.post(
 		"/",
 		requireAuth,
-		requireRoles("ADMIN", "HOST", "USER"),
 		validatePipe({ body: createEventSchema }),
 		asyncHandler((req, res) => eventsController.create(req, res)),
 	);
 	router.patch(
 		"/:id",
 		requireAuth,
-		requireRoles("ADMIN", "HOST", "USER"),
 		validatePipe({ params: idParamSchema, body: updateEventSchema }),
 		asyncHandler((req, res) => eventsController.update(req, res)),
-	);
-	router.patch(
-		"/:id/moderate",
-		requireAuth,
-		requireRoles("ADMIN"),
-		validatePipe({ params: idParamSchema, body: moderateEventSchema }),
-		asyncHandler((req, res) => eventsController.moderate(req, res)),
 	);
 	router.delete(
 		"/:id",
 		requireAuth,
-		requireRoles("ADMIN", "HOST", "USER"),
 		validatePipe({ params: idParamSchema }),
 		asyncHandler((req, res) => eventsController.delete(req, res)),
 	);
 	router.post(
 		"/:eventId/ticket-tiers",
 		requireAuth,
-		requireRoles("ADMIN", "HOST", "USER"),
 		validatePipe({
 			params: eventTicketTierParamsSchema,
 			body: createEventTicketTierSchema,
@@ -100,7 +87,6 @@ export function createEventsRouter(): Router {
 	router.patch(
 		"/:eventId/ticket-tiers/:tierId",
 		requireAuth,
-		requireRoles("ADMIN", "HOST", "USER"),
 		validatePipe({
 			params: eventTicketTierIdParamsSchema,
 			body: updateEventTicketTierSchema,
@@ -110,7 +96,6 @@ export function createEventsRouter(): Router {
 	router.delete(
 		"/:eventId/ticket-tiers/:tierId",
 		requireAuth,
-		requireRoles("ADMIN", "HOST", "USER"),
 		validatePipe({ params: eventTicketTierIdParamsSchema }),
 		asyncHandler((req, res) => eventsController.deleteTicketTier(req, res)),
 	);

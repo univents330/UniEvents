@@ -12,7 +12,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useAttendees } from "@/features/attendees";
 import { useEvents } from "@/features/events";
 import { useOrders } from "@/features/orders";
-import { paymentsService } from "@/features/payments";
+import { usePayments } from "@/features/payments";
 import { formatCurrency } from "@/shared/utils/format-currency";
 
 export function AdminDashboardHome() {
@@ -70,9 +70,10 @@ export function AdminDashboardHome() {
 		[allEvents],
 	);
 
-	const hostCount = useMemo(() => {
-		return new Set(allEvents.map((event) => event.userId).filter(Boolean)).size;
-	}, [allEvents]);
+	const hostCount = useMemo(
+		() => new Set(allEvents.map((event) => event.userId).filter(Boolean)).size,
+		[allEvents],
+	);
 
 	const totalAttendees = attendeesQuery.data?.meta.total ?? 0;
 	const pendingOrdersTotal = pendingOrdersQuery.data?.meta.total ?? 0;
@@ -81,43 +82,23 @@ export function AdminDashboardHome() {
 	const totalOrders =
 		pendingOrdersTotal + completedOrdersTotal + cancelledOrdersTotal;
 
-	const [revenue, setRevenue] = useState<number | null>(null);
+	const paymentsQuery = usePayments({
+		status: "SUCCESS",
+		page: 1,
+		limit: 100,
+		sortBy: "createdAt",
+		sortOrder: "desc",
+	});
+
+	const [revenue, setRevenue] = useState<number>(0);
 
 	useEffect(() => {
-		let cancelled = false;
-
-		(async () => {
-			try {
-				let page = 1;
-				let sum = 0;
-				while (page <= 10) {
-					const res = await paymentsService.getPayments({
-						status: "SUCCESS",
-						page,
-						limit: 100,
-						sortBy: "createdAt",
-						sortOrder: "desc",
-					});
-
-					sum += res.data.reduce(
-						(acc, payment) => acc + (payment.amount ?? 0),
-						0,
-					);
-
-					if (!res.meta.hasNextPage) break;
-					page += 1;
-				}
-
-				if (!cancelled) setRevenue(sum);
-			} catch {
-				if (!cancelled) setRevenue(0);
-			}
-		})();
-
-		return () => {
-			cancelled = true;
-		};
-	}, []);
+		const total = (paymentsQuery.data?.data ?? []).reduce(
+			(acc, payment) => acc + (payment.amount ?? 0),
+			0,
+		);
+		setRevenue(total);
+	}, [paymentsQuery.data?.data]);
 
 	const orderStatusPieData = useMemo(
 		() => [
@@ -166,7 +147,7 @@ export function AdminDashboardHome() {
 				/>
 				<MetricCard
 					label="Revenue"
-					value={revenue ?? 0}
+					value={revenue}
 					icon={<CircleDollarSign className="h-5 w-5" />}
 					accent="violet"
 					isCurrency
@@ -262,7 +243,11 @@ function MetricCard({
 						{isCurrency ? formatCurrency(value) : value.toLocaleString("en-IN")}
 					</p>
 				</div>
-				<div className={`rounded-lg border p-2 ${styles[accent]}`}>{icon}</div>
+				<span
+					className={`inline-flex h-10 w-10 items-center justify-center rounded-full border ${styles[accent]}`}
+				>
+					{icon}
+				</span>
 			</div>
 		</div>
 	);
@@ -278,17 +263,16 @@ function StatusCard({
 	color: string;
 }) {
 	return (
-		<div className="rounded-xl border border-[#dbe7ff] bg-white/80 p-4">
-			<div className="flex items-center justify-between">
-				<p className="text-slate-600 text-sm">{label}</p>
-				<div
-					className="flex h-10 w-10 items-center justify-center rounded-lg"
-					style={{ backgroundColor: `${color}20` }}
-				>
-					<span className="font-bold text-lg" style={{ color }}>
-						{value}
-					</span>
-				</div>
+		<div className="rounded-xl border border-[#dbe7ff] bg-white p-4">
+			<p className="text-slate-600 text-sm">{label}</p>
+			<div className="mt-2 flex items-end justify-between">
+				<p className="font-bold text-2xl text-slate-900">
+					{value.toLocaleString("en-IN")}
+				</p>
+				<span
+					className="h-2.5 w-2.5 rounded-full"
+					style={{ backgroundColor: color }}
+				/>
 			</div>
 		</div>
 	);

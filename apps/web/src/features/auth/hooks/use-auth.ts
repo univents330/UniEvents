@@ -222,6 +222,35 @@ export function useResetPassword() {
 }
 
 /**
+ * Hook for updating user profile
+ */
+export function useUpdateProfile() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (data: { name?: string; image?: string | null }) =>
+			authService.updateProfile(data),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: AUTH_KEYS.currentUser,
+			});
+			showNotification({
+				title: "Profile updated",
+				message: "Your profile has been updated successfully.",
+				color: "green",
+			});
+		},
+		onError: (error: unknown) => {
+			showNotification({
+				title: "Update failed",
+				message: getApiErrorMessage(error, "Failed to update profile"),
+				color: "red",
+			});
+		},
+	});
+}
+
+/**
  * Hook for changing password
  */
 export function useChangePassword() {

@@ -1,4 +1,5 @@
 import {
+	BellRing,
 	ClipboardList,
 	Home,
 	PlusCircle,
@@ -27,6 +28,16 @@ export function HostSidebar() {
 					label: "Manage Events",
 					href: "/host/events",
 					icon: <Zap className="h-5 w-5" />,
+				},
+			],
+		},
+		{
+			title: "Approvals",
+			items: [
+				{
+					label: "My Requests",
+					href: "/host/requests",
+					icon: <BellRing className="h-5 w-5" />,
 				},
 			],
 		},

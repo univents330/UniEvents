@@ -1,4 +1,5 @@
 import {
+	BellRing,
 	ClipboardList,
 	Home,
 	PlusCircle,
@@ -29,6 +30,16 @@ export function AdminSidebar() {
 					label: "Manage Events",
 					href: "/admin/events",
 					icon: <Zap className="h-5 w-5" />,
+				},
+			],
+		},
+		{
+			title: "Approvals",
+			items: [
+				{
+					label: "Event Approvals",
+					href: "/admin/approvals",
+					icon: <BellRing className="h-5 w-5" />,
 				},
 			],
 		},

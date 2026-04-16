@@ -44,9 +44,10 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 	},
+	trustedOrigins: getAllowedCorsOrigins(),
 	advanced: {
 		defaultCookieAttributes: {
-			sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+			sameSite: "lax",
 			secure: process.env.NODE_ENV === "production",
 			path: "/",
 		},
@@ -61,5 +62,4 @@ export const auth = betterAuth({
 			},
 		},
 	},
-	trustedOrigins: getAllowedCorsOrigins(),
 });

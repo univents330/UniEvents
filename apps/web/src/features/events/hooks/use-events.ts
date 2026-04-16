@@ -52,8 +52,8 @@ export function useCreateEvent() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: EVENTS_KEYS.lists() });
 			showNotification({
-				title: "Event created",
-				message: "Your event has been created successfully.",
+				title: "Event sent for approval",
+				message: "Your event draft has been created successfully.",
 				color: "green",
 			});
 		},
