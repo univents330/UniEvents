@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { useCurrentUser, useLogout } from "@/features/auth";
 import { SearchSuggestions } from "@/features/events/components/search-suggestions/search-suggestions";
 import { useEventSearch } from "@/features/events/hooks/use-event-search";
+import type { AppRole } from "@/shared/hooks";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import {
 	type AppNotification,
@@ -305,21 +306,25 @@ export function Navbar({ minimal = false }: NavbarProps) {
 		items: Array<{ label: string; href: string }>;
 	}
 
-	const isHostRoute = pathname.startsWith("/host");
+	const isManagementRoute =
+		pathname.startsWith("/host") || pathname.startsWith("/admin");
 	const isUserRoute = pathname.startsWith("/user");
+	const userRole = user?.role as AppRole | undefined;
+	const dashboardHref = "/user/dashboard";
+	const dashboardLabel = "User Dashboard";
 
 	const profileMenuItems = useMemo(() => {
 		const sections: MenuSection[] = [
 			{
 				section: "User Dashboard",
 				items: [
-					{ label: "Dashboard", href: "/user/dashboard" },
+					{ label: "Dashboard", href: dashboardHref },
 					{ label: "Tickets", href: "/user/tickets" },
 					{ label: "Liked", href: "/liked-events" },
 					{ label: "Settings", href: "/user/settings" },
 				],
 			},
-			...(minimal || isHostRoute
+			...(minimal || isManagementRoute
 				? []
 				: [
 						{
@@ -330,7 +335,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 		];
 
 		return sections;
-	}, [minimal, isHostRoute]);
+	}, [minimal, dashboardHref, isManagementRoute]);
 
 	const profileInitial = getProfileInitial(user?.name, user?.email);
 	const alwaysShowSearch = pathname !== "/";
@@ -371,7 +376,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 					</Link>
 				</div>
 
-				{!minimal && !isHostRoute && (
+				{!minimal && !isManagementRoute && (
 					<div
 						className={`hidden flex-1 items-center justify-center px-2 transition-all duration-300 sm:flex md:px-0 lg:flex ${
 							isSearchVisible
@@ -574,7 +579,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 										<button
 											type="button"
 											onClick={() =>
-												handleNavigateFromProfileMenu("/user/dashboard")
+												handleNavigateFromProfileMenu(dashboardHref)
 											}
 											className="flex w-full flex-col items-start gap-1 text-left"
 										>
@@ -585,7 +590,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 												{user.email}
 											</p>
 											<p className="font-medium text-slate-400 text-xs">
-												Go to dashboard
+												Go to {dashboardLabel.toLowerCase()}
 											</p>
 										</button>
 									</div>
@@ -628,6 +633,24 @@ export function Navbar({ minimal = false }: NavbarProps) {
 											<UserCircle2 className="h-4 w-4" />
 											Host Dashboard
 										</button>
+										{userRole === "ADMIN" && (
+											<>
+												<div className="my-1 border-slate-100 border-t" />
+												<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+													Admin Control
+												</p>
+												<button
+													type="button"
+													onClick={() =>
+														handleNavigateFromProfileMenu("/admin/dashboard")
+													}
+													className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+												>
+													<UserCircle2 className="h-4 w-4" />
+													Admin Dashboard
+												</button>
+											</>
+										)}
 
 										<button
 											type="button"
@@ -738,9 +761,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 								<div className="border-slate-100 border-b px-3 py-2.5">
 									<button
 										type="button"
-										onClick={() =>
-											handleNavigateFromProfileMenu("/user/dashboard")
-										}
+										onClick={() => handleNavigateFromProfileMenu(dashboardHref)}
 										className="flex w-full flex-col items-start gap-1 text-left"
 									>
 										<p className="truncate font-semibold text-[#070190] text-sm">
@@ -750,7 +771,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 											{user.email}
 										</p>
 										<p className="font-medium text-slate-400 text-xs">
-											Go to dashboard
+											Go to {dashboardLabel.toLowerCase()}
 										</p>
 									</button>
 								</div>
@@ -793,6 +814,24 @@ export function Navbar({ minimal = false }: NavbarProps) {
 										<UserCircle2 className="h-4 w-4" />
 										Host Dashboard
 									</button>
+									{userRole === "ADMIN" && (
+										<>
+											<div className="my-1 border-slate-100 border-t" />
+											<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+												Admin Control
+											</p>
+											<button
+												type="button"
+												onClick={() =>
+													handleNavigateFromProfileMenu("/admin/dashboard")
+												}
+												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+											>
+												<UserCircle2 className="h-4 w-4" />
+												Admin Dashboard
+											</button>
+										</>
+									)}
 
 									<button
 										type="button"

@@ -1,15 +1,16 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAttendees } from "@/features/attendees";
-import { useCurrentUser } from "@/features/auth";
 import { useEvents } from "@/features/events";
 
+const PAGE_SIZE = 50;
+
 export default function HostAttendeesPage() {
-	const { data: user } = useCurrentUser();
 	const [search, setSearch] = useState("");
 	const [selectedEventId, setSelectedEventId] = useState<string>("ALL");
+	const [page, setPage] = useState(1);
 
 	const eventsQuery = useEvents({
 		page: 1,
@@ -18,37 +19,27 @@ export default function HostAttendeesPage() {
 		sortOrder: "desc",
 	});
 
-	const hostEvents = useMemo(() => {
-		const allEvents = eventsQuery.data?.data ?? [];
-		if (!user?.id) return [];
-		return allEvents.filter((event) => event.userId === user.id);
-	}, [eventsQuery.data?.data, user?.id]);
-	const hostEventIds = useMemo(
-		() => new Set(hostEvents.map((e) => e.id)),
-		[hostEvents],
-	);
+	const hostEvents = eventsQuery.data?.data ?? [];
 	const eventNameById = useMemo(
 		() => new Map(hostEvents.map((e) => [e.id, e.name])),
 		[hostEvents],
 	);
 
 	const attendeesQuery = useAttendees({
-		page: 1,
-		limit: 100,
+		page,
+		limit: PAGE_SIZE,
 		sortBy: "createdAt",
 		sortOrder: "desc",
 		...(selectedEventId !== "ALL" ? { eventId: selectedEventId } : {}),
 		...(search.trim() ? { search: search.trim() } : {}),
 	});
 
-	const allAttendees = attendeesQuery.data?.data ?? [];
-	const visibleAttendees = useMemo(
-		() => allAttendees.filter((a) => hostEventIds.has(a.eventId)),
-		[allAttendees, hostEventIds],
-	);
+	const visibleAttendees = attendeesQuery.data?.data ?? [];
+	const meta = attendeesQuery.data?.meta;
 
+	// Stats use server total so they're accurate across all pages
 	const stats = useMemo(() => {
-		const total = visibleAttendees.length;
+		const total = meta?.total ?? 0;
 		const withPhone = visibleAttendees.filter((a) => !!a.phone).length;
 		const uniqueEvents = new Set(visibleAttendees.map((a) => a.eventId)).size;
 		const recent = visibleAttendees.filter(
@@ -56,15 +47,61 @@ export default function HostAttendeesPage() {
 				Date.now() - new Date(a.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000,
 		).length;
 		return { total, withPhone, uniqueEvents, recent };
-	}, [visibleAttendees]);
+	}, [visibleAttendees, meta?.total]);
+
+	function handleFilterChange(newEventId: string) {
+		setSelectedEventId(newEventId);
+		setPage(1);
+	}
+
+	function handleSearchChange(value: string) {
+		setSearch(value);
+		setPage(1);
+	}
+
+	function exportToExcel() {
+		const headers = ["Name", "Email", "Phone", "Event", "Created"];
+		const rows = visibleAttendees.map((a) => [
+			a.name,
+			a.email,
+			a.phone ?? "",
+			eventNameById.get(a.eventId) ?? a.eventId,
+			new Date(a.createdAt).toLocaleString("en-IN"),
+		]);
+
+		const csvContent = [headers, ...rows]
+			.map((row) =>
+				row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","),
+			)
+			.join("\n");
+
+		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = `attendees-${new Date().toISOString().slice(0, 10)}.csv`;
+		link.click();
+		URL.revokeObjectURL(url);
+	}
 
 	return (
 		<div className="space-y-6">
-			<div>
-				<h1 className="font-bold text-3xl text-slate-900">Attendees</h1>
-				<p className="mt-2 text-slate-600">
-					Real attendees from your events only.
-				</p>
+			<div className="flex items-start justify-between">
+				<div>
+					<h1 className="font-bold text-3xl text-slate-900">Attendees</h1>
+					<p className="mt-2 text-slate-600">
+						Real attendees from your events only.
+					</p>
+				</div>
+				<button
+					type="button"
+					onClick={exportToExcel}
+					disabled={visibleAttendees.length === 0}
+					className="flex items-center gap-2 rounded-lg bg-[#030370] px-4 py-2 font-semibold text-sm text-white transition hover:bg-[#0a4bb8] disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					<Download className="h-4 w-4" />
+					Export CSV
+				</button>
 			</div>
 
 			<div className="flex flex-col gap-4 sm:flex-row">
@@ -72,7 +109,7 @@ export default function HostAttendeesPage() {
 					<Search className="absolute top-3 left-3 h-5 w-5 text-slate-400" />
 					<input
 						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						onChange={(e) => handleSearchChange(e.target.value)}
 						type="text"
 						placeholder="Search attendee name or email..."
 						className="w-full rounded-lg border border-slate-200 py-2 pr-4 pl-10 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
@@ -81,7 +118,7 @@ export default function HostAttendeesPage() {
 
 				<select
 					value={selectedEventId}
-					onChange={(e) => setSelectedEventId(e.target.value)}
+					onChange={(e) => handleFilterChange(e.target.value)}
 					className="rounded-lg border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
 				>
 					<option value="ALL">All my events</option>
@@ -159,6 +196,73 @@ export default function HostAttendeesPage() {
 						</tbody>
 					</table>
 				</div>
+
+				{meta && meta.totalPages > 1 && (
+					<div className="flex items-center justify-between border-slate-200 border-t px-4 py-3">
+						<p className="text-slate-600 text-sm">
+							Showing{" "}
+							<span className="font-medium">
+								{(page - 1) * PAGE_SIZE + 1}–
+								{Math.min(page * PAGE_SIZE, meta.total)}
+							</span>{" "}
+							of <span className="font-medium">{meta.total}</span> attendees
+						</p>
+						<div className="flex items-center gap-1">
+							<button
+								type="button"
+								onClick={() => setPage((p) => p - 1)}
+								disabled={!meta.hasPreviousPage}
+								className="rounded-lg p-1.5 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+							>
+								<ChevronLeft className="h-4 w-4" />
+							</button>
+							{Array.from({ length: meta.totalPages }, (_, i) => i + 1)
+								.filter(
+									(p) =>
+										p === 1 ||
+										p === meta.totalPages ||
+										Math.abs(p - page) <= 1,
+								)
+								.reduce<(number | "...")[]>((acc, p, idx, arr) => {
+									if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+										acc.push("...");
+									acc.push(p);
+									return acc;
+								}, [])
+								.map((p, idx) =>
+									p === "..." ? (
+										<span
+											key={`ellipsis-${idx}`}
+											className="px-1 text-slate-400 text-sm"
+										>
+											…
+										</span>
+									) : (
+										<button
+											key={p}
+											type="button"
+											onClick={() => setPage(p as number)}
+											className={`min-w-[32px] rounded-lg px-2 py-1 text-sm font-medium transition ${
+												p === page
+													? "bg-[#030370] text-white"
+													: "text-slate-700 hover:bg-slate-100"
+											}`}
+										>
+											{p}
+										</button>
+									),
+								)}
+							<button
+								type="button"
+								onClick={() => setPage((p) => p + 1)}
+								disabled={!meta.hasNextPage}
+								className="rounded-lg p-1.5 text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+							>
+								<ChevronRight className="h-4 w-4" />
+							</button>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

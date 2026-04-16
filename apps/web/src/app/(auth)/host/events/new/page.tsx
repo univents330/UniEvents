@@ -5,10 +5,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import {
-	eventsService,
-	useCreateEvent,
-} from "../../../../../features/events/index";
+import { eventsService, useCreateEvent } from "../../../../../features/events";
 import { showNotification } from "../../../../../shared/lib/notifications";
 
 function getDefaultTimezone() {
@@ -23,6 +20,7 @@ export default function CreateEventPage() {
 	const router = useRouter();
 	const createEvent = useCreateEvent();
 	const timezone = useMemo(() => getDefaultTimezone(), []);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	const [form, setForm] = useState({
 		name: "",
@@ -50,27 +48,24 @@ export default function CreateEventPage() {
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+		setIsSubmitting(true);
 
-		const createdEvent = await createEvent.mutateAsync({
-			name: form.name.trim(),
-			description: form.description.trim(),
-			venueName: form.venueName.trim(),
-			address: form.address.trim(),
-			coverUrl: form.coverUrl.trim() || "https://picsum.photos/1200/630",
-			thumbnail: form.thumbnail.trim() || "https://picsum.photos/600/338",
-			latitude: "0",
-			longitude: "0",
-			timezone,
-			startDate: new Date(form.startDate),
-			endDate: new Date(form.endDate),
-			type: form.type,
-			mode: form.mode,
-			visibility: form.visibility,
-		});
-
-		if (createdEvent?.id) {
-			await eventsService.updateEvent(createdEvent.id, {
-				status: "PUBLISHED",
+		try {
+			const createdEvent = await createEvent.mutateAsync({
+				name: form.name.trim(),
+				description: form.description.trim(),
+				venueName: form.venueName.trim(),
+				address: form.address.trim(),
+				coverUrl: form.coverUrl.trim() || "https://picsum.photos/1200/630",
+				thumbnail: form.thumbnail.trim() || "https://picsum.photos/600/338",
+				latitude: "0",
+				longitude: "0",
+				timezone,
+				startDate: new Date(form.startDate),
+				endDate: new Date(form.endDate),
+				type: form.type,
+				mode: form.mode,
+				visibility: form.visibility,
 			});
 
 			const tierPrice = Number(form.ticketTierPrice || 0);
@@ -84,15 +79,23 @@ export default function CreateEventPage() {
 					maxQuantity: tierQuantity,
 				});
 			}
+
+			showNotification({
+				title: "Event sent for approval",
+				message: "Your event was created as a draft and is waiting for review.",
+				color: "blue",
+			});
+
+			router.push("/host/requests" as Route);
+		} catch {
+			showNotification({
+				title: "Could not create event",
+				message: "Please review the form and try again.",
+				color: "red",
+			});
+		} finally {
+			setIsSubmitting(false);
 		}
-
-		showNotification({
-			title: "Event created",
-			message: "Your event was created successfully.",
-			color: "green",
-		});
-
-		router.push("/host/events" as Route);
 	};
 
 	return (
@@ -107,9 +110,18 @@ export default function CreateEventPage() {
 				<div>
 					<h1 className="font-bold text-3xl text-slate-900">Create Event</h1>
 					<p className="mt-2 text-slate-600">
-						Create a real event that appears in your host dashboard.
+						Create your event. It will be submitted for admin approval right
+						after.
 					</p>
 				</div>
+			</div>
+
+			<div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+				<p className="font-semibold">Approval required</p>
+				<p className="mt-1 text-amber-800 text-sm">
+					Once you create the event, it goes into draft and appears in admin
+					approvals. It will be published after approval.
+				</p>
 			</div>
 
 			<div className="rounded-2xl border border-[#dbe7ff] bg-white p-8 shadow-sm">
@@ -304,10 +316,10 @@ export default function CreateEventPage() {
 						</Link>
 						<button
 							type="submit"
-							disabled={createEvent.isPending}
+							disabled={isSubmitting}
 							className="flex-1 rounded-lg bg-[#0a4bb8] px-6 py-3 font-medium text-white hover:bg-[#0a4bb8]/90 disabled:cursor-not-allowed disabled:opacity-60"
 						>
-							{createEvent.isPending ? (
+							{isSubmitting ? (
 								<span className="inline-flex items-center gap-2">
 									<Loader2 className="h-4 w-4 animate-spin" />
 									Creating...

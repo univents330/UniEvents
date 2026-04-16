@@ -1,12 +1,10 @@
-"use client";
-
 import {
+	BellRing,
 	ClipboardList,
 	Home,
 	LogOut,
 	Menu,
 	Settings,
-	Ticket,
 	Users,
 	X,
 	Zap,
@@ -41,9 +39,24 @@ export function HostSidebar() {
 					icon: <Home className="h-5 w-5" />,
 				},
 				{
-					label: "Events",
+					label: "Create Event",
+					href: "/host/events/new",
+					icon: <PlusCircle className="h-5 w-5" />,
+				},
+				{
+					label: "Manage Events",
 					href: "/host/events",
 					icon: <Zap className="h-5 w-5" />,
+				},
+			],
+		},
+		{
+			title: "Approvals",
+			items: [
+				{
+					label: "My Requests",
+					href: "/host/requests",
+					icon: <BellRing className="h-5 w-5" />,
 				},
 			],
 		},
@@ -63,7 +76,17 @@ export function HostSidebar() {
 				{
 					label: "Check-ins",
 					href: "/host/check-ins",
-					icon: <Ticket className="h-5 w-5" />,
+					icon: <Users className="h-5 w-5" />,
+				},
+			],
+		},
+		{
+			title: "Insights",
+			items: [
+				{
+					label: "Analytics",
+					href: "/host/analytics",
+					icon: <Users className="h-5 w-5" />,
 				},
 			],
 		},

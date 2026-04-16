@@ -46,6 +46,12 @@ export class EventsService {
 			};
 		}
 
+		if (actor.role === "USER") {
+			return {
+				OR: [publicPublishedWhere, { userId: actor.userId }],
+			};
+		}
+
 		return {
 			OR: [
 				publicPublishedWhere,

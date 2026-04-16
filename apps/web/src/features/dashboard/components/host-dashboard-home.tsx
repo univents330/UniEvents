@@ -161,9 +161,8 @@ export function HostDashboardHome() {
 						<h2 className="font-bold text-[#071a78] text-lg sm:text-xl md:text-2xl">
 							Create your next event
 						</h2>
-						<p className="mt-1 text-slate-600 text-sm">
-							Launch events, manage ticket tiers, and track attendees with live
-							analytics.
+						<p className="mt-1 text-slate-600">
+							Create and manage your events from one place.
 						</p>
 					</div>
 					<Link
@@ -174,15 +173,6 @@ export function HostDashboardHome() {
 						Create event
 					</Link>
 				</div>
-
-				{allEventsTotal === 0 && (
-					<div className="mt-3 rounded-lg border border-[#dbe7ff] bg-white/70 p-3 sm:mt-4 sm:rounded-xl sm:p-4">
-						<p className="text-slate-700 text-xs sm:text-sm">
-							You haven’t created any events yet. Create your first event to
-							start receiving orders and check-ins.
-						</p>
-					</div>
-				)}
 			</div>
 
 			{/* Key metrics */}
