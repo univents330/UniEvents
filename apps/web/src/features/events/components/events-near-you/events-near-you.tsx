@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import { cn } from "@/shared/lib/utils";
 import { useEvents } from "../../hooks/use-events";
-import { EventCard } from "../event-card/event-card";
-import { EventCardSkeleton } from "../event-card/event-card-skeleton";
+import { EventCarousel } from "../event-carousel/event-carousel";
 
 const FILTERS = [
 	{ id: "all", label: "All Events" },
@@ -81,18 +80,10 @@ export function EventsNearYou() {
 
 				<div>
 					{isLoading ? (
-						<div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-4">
-							{[...Array(8)].map((_, i) => (
-								<EventCardSkeleton key={i} />
-							))}
-						</div>
+						<EventCarousel events={[]} isLoading={true} />
 					) : events.length > 0 ? (
 						<>
-							<div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-4">
-								{events.map((event) => (
-									<EventCard key={event.id} event={event} />
-								))}
-							</div>
+							<EventCarousel events={events} isLoading={false} />
 							<div className="mt-8 flex justify-center sm:mt-10">
 								<Button
 									asChild

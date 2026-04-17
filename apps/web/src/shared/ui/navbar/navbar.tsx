@@ -6,10 +6,13 @@ import {
 	ChevronDown,
 	Globe,
 	Heart,
+	Home,
 	LocateFixed,
 	LogOut,
 	MapPin,
 	Search,
+	Settings,
+	Ticket,
 	Trash2,
 	UserCircle2,
 	X,
@@ -306,6 +309,27 @@ export function Navbar({ minimal = false }: NavbarProps) {
 		items: Array<{ label: string; href: string }>;
 	}
 
+	function getMenuIcon(label: string) {
+		switch (label) {
+			case "Dashboard":
+				return <Home className="h-4 w-4" />;
+			case "Tickets":
+				return <Ticket className="h-4 w-4" />;
+			case "Liked":
+				return <Heart className="h-4 w-4" />;
+			case "Settings":
+				return <Settings className="h-4 w-4" />;
+			case "Browse Events":
+				return <Globe className="h-4 w-4" />;
+			case "Host Dashboard":
+				return <UserCircle2 className="h-4 w-4" />;
+			case "Admin Dashboard":
+				return <UserCircle2 className="h-4 w-4" />;
+			default:
+				return <UserCircle2 className="h-4 w-4" />;
+		}
+	}
+
 	const isManagementRoute =
 		pathname.startsWith("/host") || pathname.startsWith("/admin");
 	const isUserRoute = pathname.startsWith("/user");
@@ -335,7 +359,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 		];
 
 		return sections;
-	}, [minimal, dashboardHref, isManagementRoute]);
+	}, [minimal, isManagementRoute]);
 
 	const profileInitial = getProfileInitial(user?.name, user?.email);
 	const alwaysShowSearch = pathname !== "/";
@@ -612,7 +636,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 														}
 														className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
 													>
-														<UserCircle2 className="h-4 w-4" />
+														{getMenuIcon(item.label)}
 														{item.label}
 													</button>
 												))}
@@ -630,7 +654,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 											}
 											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
 										>
-											<UserCircle2 className="h-4 w-4" />
+											{getMenuIcon("Host Dashboard")}
 											Host Dashboard
 										</button>
 										{userRole === "ADMIN" && (
@@ -646,7 +670,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 													}
 													className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
 												>
-													<UserCircle2 className="h-4 w-4" />
+													{getMenuIcon("Admin Dashboard")}
 													Admin Dashboard
 												</button>
 											</>
@@ -793,7 +817,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 													}
 													className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
 												>
-													<UserCircle2 className="h-4 w-4" />
+													{getMenuIcon(item.label)}
 													{item.label}
 												</button>
 											))}
@@ -811,7 +835,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 										}
 										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
 									>
-										<UserCircle2 className="h-4 w-4" />
+										{getMenuIcon("Host Dashboard")}
 										Host Dashboard
 									</button>
 									{userRole === "ADMIN" && (
@@ -827,7 +851,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 												}
 												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
 											>
-												<UserCircle2 className="h-4 w-4" />
+												{getMenuIcon("Admin Dashboard")}
 												Admin Dashboard
 											</button>
 										</>

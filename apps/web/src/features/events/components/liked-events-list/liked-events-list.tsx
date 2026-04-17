@@ -2,8 +2,7 @@
 
 import { useMemo } from "react";
 import { useEvents, useFavoriteEvents } from "../../hooks";
-import { EventCard } from "../event-card/event-card";
-import { EventCardSkeleton } from "../event-card/event-card-skeleton";
+import { EventCarousel } from "../event-carousel/event-carousel";
 
 export function LikedEventsList() {
 	const { favoriteIds } = useFavoriteEvents();
@@ -21,13 +20,7 @@ export function LikedEventsList() {
 	);
 
 	if (isLoading) {
-		return (
-			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-				{[...Array(6)].map((_, i) => (
-					<EventCardSkeleton key={i} />
-				))}
-			</div>
-		);
+		return <EventCarousel events={[]} isLoading={true} />;
 	}
 
 	if (favoriteEvents.length === 0) {
@@ -41,11 +34,5 @@ export function LikedEventsList() {
 		);
 	}
 
-	return (
-		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-			{favoriteEvents.map((event) => (
-				<EventCard key={event.id} event={event} className="h-full" />
-			))}
-		</div>
-	);
+	return <EventCarousel events={favoriteEvents} isLoading={false} />;
 }
