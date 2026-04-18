@@ -16,6 +16,7 @@ export const userSchema = z.object({
 	emailVerified: z.boolean(),
 	image: z.string().nullable(),
 	role: userRoleSchema,
+	skills: z.array(z.string()).default([]),
 	createdAt: z.date(),
 	updatedAt: z.date(),
 }) satisfies z.ZodType<User>;
@@ -27,6 +28,7 @@ export const publicUserSchema = userSchema.pick({
 	emailVerified: true,
 	image: true,
 	role: true,
+	skills: true,
 	createdAt: true,
 	updatedAt: true,
 });
@@ -94,6 +96,7 @@ export const updateUserSchema = userSchema
 		email: z.string().trim().email().optional(),
 		name: z.string().trim().min(1).max(100).nullable().optional(),
 		role: userRoleSchema.optional(),
+		skills: z.array(z.string()).max(5).optional(),
 	});
 
 export const sessionSchema = z.object({

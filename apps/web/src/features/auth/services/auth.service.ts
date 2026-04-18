@@ -156,11 +156,12 @@ export const authService = {
 	},
 
 	/**
-	 * Update current user's profile (name, image)
+	 * Update current user's profile
 	 */
 	async updateProfile(data: {
 		name?: string;
 		image?: string | null;
+		skills?: string[];
 	}): Promise<void> {
 		const authClient = getAuthClient();
 		const { error } = await authClient.updateUser(data);
