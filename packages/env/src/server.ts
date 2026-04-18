@@ -16,6 +16,7 @@ export const env = createEnv({
 		BETTER_AUTH_API_KEY: z.string().min(1).optional(),
 		GOOGLE_CLIENT_ID: z.string().min(1).optional(),
 		GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+		AUTH_COOKIE_DOMAIN: z.string().min(1).optional(),
 		CORS_ORIGIN: z
 			.string()
 			.min(1)

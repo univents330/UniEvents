@@ -24,6 +24,8 @@ if (!authSecret) {
 	throw new Error("Missing Better Auth secret. Set BETTER_AUTH_API_KEY.");
 }
 
+const isProduction = env.NODE_ENV === "production";
+
 export const auth = betterAuth({
 	baseURL: env.BETTER_AUTH_URL,
 	secret: authSecret,
@@ -76,9 +78,11 @@ export const auth = betterAuth({
 	trustedOrigins: getAllowedCorsOrigins(),
 	advanced: {
 		defaultCookieAttributes: {
-			sameSite: "lax",
-			secure: process.env.NODE_ENV === "production",
+			// Cross-origin OAuth requires SameSite=None in production.
+			sameSite: isProduction ? "none" : "lax",
+			secure: isProduction,
 			path: "/",
+			domain: env.AUTH_COOKIE_DOMAIN,
 		},
 	},
 	user: {
