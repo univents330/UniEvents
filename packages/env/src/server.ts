@@ -71,6 +71,9 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),
+		WEB_APP_URL: z.string().url().optional(),
+		BREVO_API_KEY: z.string().min(1).optional(),
+		BREVO_MAIL_FROM: z.string().email().optional(),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

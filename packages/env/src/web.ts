@@ -4,7 +4,7 @@ import { z } from "zod";
 export const env = createEnv({
 	server: {},
 	client: {
-		NEXT_PUBLIC_SERVER_URL: z.url(),
+		NEXT_PUBLIC_SERVER_URL: z.url().default("http://localhost:3000"),
 		NEXT_PUBLIC_SERVER_URLS: z.string().optional(),
 		NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().min(1).optional(),
 	},
