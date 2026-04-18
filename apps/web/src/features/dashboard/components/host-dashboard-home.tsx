@@ -221,8 +221,8 @@ export function HostDashboardHome() {
 						Pending, completed, and cancelled orders across your events.
 					</p>
 
-					<div className="mt-4 h-64 sm:h-72">
-						<ResponsiveContainer width="100%" height="100%">
+					<div className="mt-4 h-64 w-full sm:h-72">
+						<ResponsiveContainer width="100%" height="100%" minWidth={0}>
 							<PieChart>
 								<Tooltip
 									formatter={(value: unknown) => {

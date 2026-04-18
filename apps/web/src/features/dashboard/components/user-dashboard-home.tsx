@@ -268,7 +268,7 @@ export function UserDashboardHome() {
 		totalSpent === null;
 
 	return (
-		<div className="space-y-6 pt-4 sm:space-y-8 sm:pt-6 md:pt-0">
+		<div className="space-y-6 pt-0 sm:space-y-8 sm:pt-0 md:pt-0">
 			{/* Welcome Card */}
 			<div className="relative overflow-hidden rounded-2xl border border-[#dbe7ff] bg-linear-to-br from-[#030370]/5 via-white to-[#245ed1]/5 p-4 sm:p-5 md:p-6 lg:p-8">
 				<div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">

@@ -157,8 +157,8 @@ export function AdminDashboardHome() {
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 				<div className="rounded-2xl border border-[#dbe7ff] bg-white p-6 lg:col-span-1">
 					<h3 className="font-semibold text-[#071a78] text-lg">Order status</h3>
-					<div className="mt-4 h-72">
-						<ResponsiveContainer width="100%" height="100%">
+					<div className="mt-4 h-72 w-full">
+						<ResponsiveContainer width="100%" height="100%" minWidth={0}>
 							<PieChart>
 								<Tooltip
 									formatter={(value: unknown) =>

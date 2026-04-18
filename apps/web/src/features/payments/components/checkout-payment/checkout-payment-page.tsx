@@ -237,7 +237,7 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 			<Navbar />
 			<div className="mx-auto mt-12 w-full max-w-2xl px-3 pb-8 sm:mt-16 sm:px-4 sm:pb-10 md:mt-20 md:px-6 md:pb-12 lg:mt-24">
 				<section className="rounded-xl bg-[#e8eefc] p-5 text-center shadow-sm sm:rounded-2xl sm:p-6 md:p-8">
-					<h1 className="font-bold text-2xl text-[#0f172a] sm:text-2.5xl md:text-3xl lg:text-3xl">
+					<h1 className="font-bold text-2xl text-[#0f172a] sm:text-3xl md:text-3xl lg:text-3xl">
 						Opening secure checkout
 					</h1>
 					<p className="mt-2 text-[#64748b] text-xs sm:text-sm">

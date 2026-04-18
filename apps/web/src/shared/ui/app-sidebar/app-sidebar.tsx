@@ -1,10 +1,10 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { useLogout } from "@/features/auth";
 import { cn } from "@/shared/lib/utils";
 
@@ -28,6 +28,7 @@ export function AppSidebar({ sections }: AppSidebarProps) {
 	const pathname = usePathname();
 	const router = useRouter();
 	const logoutMutation = useLogout();
+	const [isOpen, setIsOpen] = useState(false);
 
 	const isActive = (href: string) => {
 		if (pathname === href) {
@@ -42,65 +43,115 @@ export function AppSidebar({ sections }: AppSidebarProps) {
 		router.push("/login");
 	};
 
-	return (
-		<aside className="fixed top-16 bottom-0 left-0 z-40 flex w-64 flex-col border-slate-200 border-r bg-white/90 backdrop-blur-md">
-			<nav className="flex-1 overflow-y-auto px-4 py-5">
-				<div className="space-y-6">
-					{sections.map((section) => (
-						<div key={section.title}>
-							<p className="px-3 font-semibold text-[11px] text-slate-500 uppercase tracking-wider">
-								{section.title}
-							</p>
-							<ul className="mt-3 space-y-1">
-								{section.items.map((item) => (
-									<li key={item.href}>
-										<Link
-											href={item.href as Route}
-											className={cn(
-												"group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
-												isActive(item.href)
-													? "bg-[#030370] text-white shadow-[0_14px_40px_rgba(3,3,112,0.25)]"
-													: "text-slate-700 hover:bg-slate-100",
-											)}
-										>
-											<span
-												className={cn(
-													"shrink-0 transition-colors",
-													isActive(item.href)
-														? "text-white"
-														: "text-slate-500 group-hover:text-slate-700",
-												)}
-											>
-												{item.icon}
-											</span>
-											<span className="flex-1 font-semibold text-sm">
-												{item.label}
-											</span>
-											{item.badge && (
-												<span className="rounded-full bg-rose-500 px-2 py-1 text-white text-xs">
-													{item.badge}
-												</span>
-											)}
-										</Link>
-									</li>
-								))}
-							</ul>
-						</div>
-					))}
-				</div>
-			</nav>
+	const handleNavClick = () => {
+		setIsOpen(false);
+	};
 
-			<div className="border-slate-200 border-t px-4 py-4">
+	const allItems = sections.flatMap((section) => section.items);
+
+	return (
+		<>
+			{/* Mobile Drawer Trigger Button */}
+			<div className="fixed bottom-6 left-6 z-40 flex md:hidden">
 				<button
 					type="button"
-					onClick={handleLogout}
-					disabled={logoutMutation.isPending}
-					className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-slate-700 transition-all duration-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+					onClick={() => setIsOpen(!isOpen)}
+					className="inline-flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#030370] bg-white shadow-lg transition-all hover:bg-slate-50"
+					aria-label="Toggle navigation drawer"
 				>
-					<LogOut className="h-5 w-5" />
-					<span className="font-semibold text-sm">Logout</span>
+					{isOpen ? (
+						<X className="h-6 w-6 text-[#030370]" />
+					) : (
+						<Menu className="h-6 w-6 text-[#030370]" />
+					)}
 				</button>
 			</div>
-		</aside>
+
+			{/* Mobile Drawer Overlay */}
+			{isOpen && (
+				<button
+					type="button"
+					className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm md:hidden"
+					onClick={() => setIsOpen(false)}
+					aria-label="Close navigation drawer"
+				/>
+			)}
+
+			{/* Mobile Drawer */}
+			<aside
+				className={cn(
+					"fixed right-0 bottom-0 left-0 z-40 flex max-h-[80vh] flex-col overflow-y-auto rounded-t-3xl border-slate-200 border-t bg-white shadow-lg transition-all duration-300 md:hidden",
+					isOpen
+						? "translate-y-0 opacity-100"
+						: "pointer-events-none translate-y-full opacity-0",
+				)}
+			>
+				{/* Drawer Header */}
+				<div className="sticky top-0 border-slate-200 border-b bg-white px-4 py-4">
+					<div className="flex items-center justify-between">
+						<h2 className="font-semibold text-lg text-slate-900">Navigation</h2>
+						<button
+							type="button"
+							onClick={() => setIsOpen(false)}
+							className="rounded-full p-1 transition-colors hover:bg-slate-100"
+						>
+							<X className="h-5 w-5 text-slate-600" />
+						</button>
+					</div>
+				</div>
+
+				{/* Drawer Content */}
+				<nav className="flex-1 overflow-y-auto px-2 py-4">
+					<div className="space-y-1">
+						{allItems.map((item) => (
+							<Link
+								key={item.href}
+								href={item.href as Route}
+								onClick={handleNavClick}
+								className={cn(
+									"flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200",
+									isActive(item.href)
+										? "bg-[#f4f6ff] font-semibold text-[#030370]"
+										: "text-slate-700 hover:bg-slate-100",
+								)}
+							>
+								<div
+									className={cn(
+										"flex h-6 w-6 items-center justify-center",
+										isActive(item.href) ? "text-[#030370]" : "text-slate-500",
+									)}
+								>
+									{item.icon}
+								</div>
+								<span className="flex-1">{item.label}</span>
+								{item.badge && (
+									<span className="rounded-full bg-rose-500 px-2 py-1 font-semibold text-white text-xs">
+										{item.badge}
+									</span>
+								)}
+							</Link>
+						))}
+					</div>
+				</nav>
+
+				{/* Drawer Footer */}
+				<div className="border-slate-200 border-t bg-white px-2 py-4">
+					<button
+						type="button"
+						onClick={() => {
+							handleLogout();
+							setIsOpen(false);
+						}}
+						disabled={logoutMutation.isPending}
+						className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						<LogOut className="h-5 w-5" />
+						<span>
+							{logoutMutation.isPending ? "Logging out..." : "Logout"}
+						</span>
+					</button>
+				</div>
+			</aside>
+		</>
 	);
 }

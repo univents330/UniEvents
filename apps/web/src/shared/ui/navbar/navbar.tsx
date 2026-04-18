@@ -7,6 +7,7 @@ import {
 	Globe,
 	Heart,
 	Home,
+	LayoutGrid,
 	LocateFixed,
 	LogOut,
 	MapPin,
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { useCurrentUser, useLogout } from "@/features/auth";
 import { SearchSuggestions } from "@/features/events/components/search-suggestions/search-suggestions";
 import { useEventSearch } from "@/features/events/hooks/use-event-search";
+import { useMobileMenu } from "@/shared/context/mobile-menu-context";
 import type { AppRole } from "@/shared/hooks";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import {
@@ -74,6 +76,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 	const pathname = usePathname();
 	const { data: user } = useCurrentUser();
 	const logoutMutation = useLogout();
+	const mobileMenu = useMobileMenu();
 	const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 	const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
 	const [showScrolledSearch, setShowScrolledSearch] = useState(false);
@@ -299,9 +302,14 @@ export function Navbar({ minimal = false }: NavbarProps) {
 		markAllNotificationsAsRead();
 	};
 
-	const handleNavigateToLikedEvents = () => {
-		startTopLoader();
-		window.location.assign("/liked-events");
+	// Close mobile menu when profile menu opens, to avoid UI conflicts
+	const handleMobileMenuToggle = () => {
+		if (!mobileMenu.isOpen) {
+			// Opening drawer — close other overlapping panels
+			setIsMobileProfileMenuOpen(false);
+			setIsNotificationsOpen(false);
+		}
+		mobileMenu.toggle();
 	};
 
 	interface MenuSection {
@@ -537,15 +545,6 @@ export function Navbar({ minimal = false }: NavbarProps) {
 				<div className="hidden items-center gap-3 md:flex">
 					<button
 						type="button"
-						onClick={handleNavigateToLikedEvents}
-						className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-rose-500"
-						aria-label="Open liked events"
-					>
-						<Heart className="h-4 w-4" />
-					</button>
-
-					<button
-						type="button"
 						onClick={handleOpenNotifications}
 						className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-[#030370]"
 						aria-label="Open notifications"
@@ -709,167 +708,179 @@ export function Navbar({ minimal = false }: NavbarProps) {
 				</div>
 
 				{user ? (
-					<div
-						ref={mobileProfileMenuRef}
-						className="relative flex items-center gap-2 md:hidden"
-					>
-						{isSearchVisible && (
-							<Button
-								type="button"
-								onClick={() => window.location.assign("/events")}
-								className="h-9 w-9 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
-								aria-label="Open events search"
-							>
-								<Search className="h-4 w-4" />
-							</Button>
-						)}
-
-						<button
-							type="button"
-							onClick={handleNavigateToLikedEvents}
-							className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-rose-500"
-							aria-label="Open liked events"
-						>
-							<Heart className="h-4 w-4" />
-						</button>
-
-						<button
-							type="button"
-							onClick={handleOpenNotifications}
-							className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-[#030370]"
-							aria-label="Open notifications"
-						>
-							<Bell className="h-4 w-4" />
-							{unreadNotificationCount > 0 && (
-								<span className="absolute top-1 right-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 font-bold text-[10px] text-white">
-									{unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
-								</span>
-							)}
-						</button>
-
-						<button
-							type="button"
-							onClick={() => setIsMobileProfileMenuOpen((prev) => !prev)}
-							className="flex items-center gap-1 rounded-full border border-slate-200 bg-white py-1 pr-1.5 pl-1"
-							aria-label="Toggle profile menu"
-							aria-expanded={isMobileProfileMenuOpen}
-						>
-							{user.image ? (
-								<Image
-									src={user.image}
-									alt={user.name ? `${user.name} profile` : "User profile"}
-									width={32}
-									height={32}
-									className="h-8 w-8 rounded-full border border-slate-200 object-cover"
-								/>
-							) : (
-								<span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#e9edff] font-bold text-[#070190] text-sm">
-									{profileInitial}
-								</span>
-							)}
-							<ChevronDown
-								className={`h-4 w-4 text-[#070190] transition-transform ${
-									isMobileProfileMenuOpen ? "rotate-180" : "rotate-0"
-								}`}
-							/>
-						</button>
-
+					!isManagementRoute ? (
 						<div
-							className={`absolute top-full right-0 z-50 min-w-56 pt-2 transition-all duration-200 ease-out ${
-								isMobileProfileMenuOpen
-									? "pointer-events-auto translate-y-0 opacity-100"
-									: "pointer-events-none -translate-y-2 opacity-0"
-							}`}
+							ref={mobileProfileMenuRef}
+							className="relative flex items-center gap-2 md:hidden"
 						>
-							<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(7,1,144,0.16)]">
-								<div className="border-slate-100 border-b px-3 py-2.5">
-									<button
-										type="button"
-										onClick={() => handleNavigateFromProfileMenu(dashboardHref)}
-										className="flex w-full flex-col items-start gap-1 text-left"
-									>
-										<p className="truncate font-semibold text-[#070190] text-sm">
-											{user.name?.trim() || "My Profile"}
-										</p>
-										<p className="truncate text-slate-500 text-xs">
-											{user.email}
-										</p>
-										<p className="font-medium text-slate-400 text-xs">
-											Go to {dashboardLabel.toLowerCase()}
-										</p>
-									</button>
-								</div>
+							{isSearchVisible && (
+								<Button
+									type="button"
+									onClick={() => window.location.assign("/events")}
+									className="h-9 w-9 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
+									aria-label="Open events search"
+								>
+									<Search className="h-4 w-4" />
+								</Button>
+							)}
 
-								<div className="p-2">
-									{profileMenuItems.map((section) => (
-										<div key={section.section}>
-											{section.section && (
+							{/* FIX: use handleMobileMenuToggle and reflect open state with active styles */}
+							<button
+								type="button"
+								onClick={handleMobileMenuToggle}
+								className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+									mobileMenu.isOpen
+										? "border-[#030370] bg-[#030370] text-white"
+										: "border-slate-200 bg-white text-[#030370] hover:border-[#ccd5f7] hover:bg-[#f7f9ff]"
+								}`}
+								aria-label="Open app menu"
+								aria-expanded={mobileMenu.isOpen}
+							>
+								<LayoutGrid className="h-4 w-4" />
+							</button>
+
+							<button
+								type="button"
+								onClick={handleOpenNotifications}
+								className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-[#030370]"
+								aria-label="Open notifications"
+							>
+								<Bell className="h-4 w-4" />
+								{unreadNotificationCount > 0 && (
+									<span className="absolute top-1 right-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 font-bold text-[10px] text-white">
+										{unreadNotificationCount > 9
+											? "9+"
+											: unreadNotificationCount}
+									</span>
+								)}
+							</button>
+
+							<button
+								type="button"
+								onClick={() => setIsMobileProfileMenuOpen((prev) => !prev)}
+								className="flex items-center gap-1 rounded-full border border-slate-200 bg-white py-1 pr-1.5 pl-1"
+								aria-label="Toggle profile menu"
+								aria-expanded={isMobileProfileMenuOpen}
+							>
+								{user.image ? (
+									<Image
+										src={user.image}
+										alt={user.name ? `${user.name} profile` : "User profile"}
+										width={32}
+										height={32}
+										className="h-8 w-8 rounded-full border border-slate-200 object-cover"
+									/>
+								) : (
+									<span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#e9edff] font-bold text-[#070190] text-sm">
+										{profileInitial}
+									</span>
+								)}
+								<ChevronDown
+									className={`hidden h-4 w-4 text-[#070190] transition-transform md:inline-flex ${
+										isMobileProfileMenuOpen ? "rotate-180" : "rotate-0"
+									}`}
+								/>
+							</button>
+
+							<div
+								className={`absolute top-full right-0 z-50 min-w-56 pt-2 transition-all duration-200 ease-out ${
+									isMobileProfileMenuOpen
+										? "pointer-events-auto translate-y-0 opacity-100"
+										: "pointer-events-none -translate-y-2 opacity-0"
+								}`}
+							>
+								<div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(7,1,144,0.16)]">
+									<div className="border-slate-100 border-b px-3 py-2.5">
+										<button
+											type="button"
+											onClick={() =>
+												handleNavigateFromProfileMenu(dashboardHref)
+											}
+											className="flex w-full flex-col items-start gap-1 text-left"
+										>
+											<p className="truncate font-semibold text-[#070190] text-sm">
+												{user.name?.trim() || "My Profile"}
+											</p>
+											<p className="truncate text-slate-500 text-xs">
+												{user.email}
+											</p>
+											<p className="font-medium text-slate-400 text-xs">
+												Go to {dashboardLabel.toLowerCase()}
+											</p>
+										</button>
+									</div>
+
+									<div className="p-2">
+										{profileMenuItems.map((section) => (
+											<div key={section.section}>
+												{section.section && (
+													<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+														{section.section}
+													</p>
+												)}
+												{section.items.map((item) => (
+													<button
+														key={item.label}
+														type="button"
+														onClick={() =>
+															handleNavigateFromProfileMenu(item.href)
+														}
+														className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+													>
+														{getMenuIcon(item.label)}
+														{item.label}
+													</button>
+												))}
+											</div>
+										))}
+
+										<div className="my-1 border-slate-100 border-t" />
+										<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
+											Host Control
+										</p>
+										<button
+											type="button"
+											onClick={() =>
+												handleNavigateFromProfileMenu("/host/dashboard")
+											}
+											className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
+										>
+											{getMenuIcon("Host Dashboard")}
+											Host Dashboard
+										</button>
+										{userRole === "ADMIN" && (
+											<>
+												<div className="my-1 border-slate-100 border-t" />
 												<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
-													{section.section}
+													Admin Control
 												</p>
-											)}
-											{section.items.map((item) => (
 												<button
-													key={item.label}
 													type="button"
 													onClick={() =>
-														handleNavigateFromProfileMenu(item.href)
+														handleNavigateFromProfileMenu("/admin/dashboard")
 													}
 													className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
 												>
-													{getMenuIcon(item.label)}
-													{item.label}
+													{getMenuIcon("Admin Dashboard")}
+													Admin Dashboard
 												</button>
-											))}
-										</div>
-									))}
+											</>
+										)}
 
-									<div className="my-1 border-slate-100 border-t" />
-									<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
-										Host Control
-									</p>
-									<button
-										type="button"
-										onClick={() =>
-											handleNavigateFromProfileMenu("/host/dashboard")
-										}
-										className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
-									>
-										{getMenuIcon("Host Dashboard")}
-										Host Dashboard
-									</button>
-									{userRole === "ADMIN" && (
-										<>
-											<div className="my-1 border-slate-100 border-t" />
-											<p className="px-3 py-2 font-semibold text-[11px] text-slate-500 uppercase tracking-wide">
-												Admin Control
-											</p>
-											<button
-												type="button"
-												onClick={() =>
-													handleNavigateFromProfileMenu("/admin/dashboard")
-												}
-												className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-slate-700 text-sm transition-colors hover:bg-[#f4f6ff] hover:text-[#030370]"
-											>
-												{getMenuIcon("Admin Dashboard")}
-												Admin Dashboard
-											</button>
-										</>
-									)}
-
-									<button
-										type="button"
-										onClick={handleLogout}
-										disabled={logoutMutation.isPending}
-										className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-rose-600 text-sm transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70"
-									>
-										<LogOut className="h-4 w-4" />
-										{logoutMutation.isPending ? "Logging out..." : "Logout"}
-									</button>
+										<button
+											type="button"
+											onClick={handleLogout}
+											disabled={logoutMutation.isPending}
+											className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-medium text-rose-600 text-sm transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70"
+										>
+											<LogOut className="h-4 w-4" />
+											{logoutMutation.isPending ? "Logging out..." : "Logout"}
+										</button>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
+					) : null
 				) : (
 					<div className="flex items-center gap-2 md:hidden">
 						{isSearchVisible && (
@@ -883,13 +894,19 @@ export function Navbar({ minimal = false }: NavbarProps) {
 							</Button>
 						)}
 
+						{/* FIX: use handleMobileMenuToggle and reflect open state with active styles */}
 						<button
 							type="button"
-							onClick={handleNavigateToLikedEvents}
-							className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-rose-500"
-							aria-label="Open liked events"
+							onClick={handleMobileMenuToggle}
+							className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+								mobileMenu.isOpen
+									? "border-[#030370] bg-[#030370] text-white"
+									: "border-slate-200 bg-white text-[#030370] hover:border-[#ccd5f7] hover:bg-[#f7f9ff]"
+							}`}
+							aria-label="Open app menu"
+							aria-expanded={mobileMenu.isOpen}
 						>
-							<Heart className="h-4 w-4" />
+							<LayoutGrid className="h-4 w-4" />
 						</button>
 
 						<button
@@ -917,15 +934,6 @@ export function Navbar({ minimal = false }: NavbarProps) {
 					</div>
 				)}
 			</div>
-
-			{isNotificationsOpen && (
-				<button
-					type="button"
-					className="fixed inset-x-0 top-16 bottom-0 z-40 bg-black/30"
-					aria-label="Close notifications panel"
-					onClick={() => setIsNotificationsOpen(false)}
-				/>
-			)}
 
 			<aside
 				ref={notificationsPanelRef}

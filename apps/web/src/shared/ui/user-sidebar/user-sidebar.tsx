@@ -2,19 +2,20 @@
 
 import {
 	CreditCard,
+	Heart,
 	Home,
 	LogOut,
-	Menu,
+	MapPin,
 	Settings,
 	Ticket,
 	User,
-	X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLogout } from "@/features/auth";
+import { useMobileMenu } from "@/shared/context/mobile-menu-context";
 import { cn } from "@/shared/lib/utils";
 
 interface NavItem {
@@ -28,58 +29,78 @@ export function UserSidebar() {
 	const pathname = usePathname();
 	const router = useRouter();
 	const logoutMutation = useLogout();
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const mobileMenu = useMobileMenu();
+	const asideRef = useRef<HTMLElement>(null);
+	const touchStartX = useRef<number>(0);
 
-	const navSections: Array<{ title: string; items: NavItem[] }> = [
+	useEffect(() => {
+		const handleTouchStart = (e: TouchEvent) => {
+			touchStartX.current = e.touches[0]?.clientX || 0;
+		};
+
+		const handleTouchEnd = (e: TouchEvent) => {
+			const touchEndX = e.changedTouches[0]?.clientX || 0;
+			const diff = touchStartX.current - touchEndX;
+
+			// Swipe left (positive diff) or swipe right (negative diff)
+			if (Math.abs(diff) > 50) {
+				// Threshold of 50px for swipe detection
+				mobileMenu.close();
+			}
+		};
+
+		const drawer = asideRef.current;
+		if (drawer) {
+			drawer.addEventListener("touchstart", handleTouchStart);
+			drawer.addEventListener("touchend", handleTouchEnd);
+
+			return () => {
+				drawer.removeEventListener("touchstart", handleTouchStart);
+				drawer.removeEventListener("touchend", handleTouchEnd);
+			};
+		}
+	}, [mobileMenu]);
+
+	const navItems: NavItem[] = [
 		{
-			title: "Main menu",
-			items: [
-				{
-					label: "Dashboard",
-					href: "/user/dashboard",
-					icon: <Home className="h-5 w-5" />,
-				},
-				{
-					label: "Profile",
-					href: "/user/profile",
-					icon: <User className="h-5 w-5" />,
-				},
-			],
+			label: "Dashboard",
+			href: "/user/dashboard",
+			icon: <Home className="h-6 w-6" />,
 		},
 		{
-			title: "Tickets & Events",
-			items: [
-				{
-					label: "My Tickets",
-					href: "/user/tickets",
-					icon: <Ticket className="h-5 w-5" />,
-				},
-			],
+			label: "Browse Events",
+			href: "/events",
+			icon: <MapPin className="h-6 w-6" />,
 		},
 		{
-			title: "Transactions",
-			items: [
-				{
-					label: "Orders",
-					href: "/user/orders",
-					icon: <CreditCard className="h-5 w-5" />,
-				},
-				{
-					label: "Payments",
-					href: "/user/payments",
-					icon: <CreditCard className="h-5 w-5" />,
-				},
-			],
+			label: "Liked",
+			href: "/liked-events",
+			icon: <Heart className="h-6 w-6" />,
 		},
 		{
-			title: "Account",
-			items: [
-				{
-					label: "Settings",
-					href: "/user/settings",
-					icon: <Settings className="h-5 w-5" />,
-				},
-			],
+			label: "Profile",
+			href: "/user/profile",
+			icon: <User className="h-6 w-6" />,
+		},
+		{
+			label: "My Tickets",
+			href: "/user/tickets",
+			icon: <Ticket className="h-6 w-6" />,
+		},
+		{
+			label: "Orders",
+			href: "/user/orders",
+			icon: <CreditCard className="h-6 w-6" />,
+		},
+		{
+			label: "Payments",
+			href: "/user/payments",
+			icon: <CreditCard className="h-6 w-6" />,
+		},
+		{
+			label: "Settings",
+			href: "/user/settings",
+			icon: <Settings className="h-6 w-6" />,
 		},
 	];
 
@@ -94,65 +115,37 @@ export function UserSidebar() {
 	};
 
 	const handleNavigate = () => {
-		setIsMobileMenuOpen(false);
+		mobileMenu.close();
 	};
 
 	return (
 		<>
-			{/* Mobile Menu Open Button - Only visible when menu is closed */}
-			{!isMobileMenuOpen && (
-				<button
-					type="button"
-					onClick={() => setIsMobileMenuOpen(true)}
-					className="fixed top-14 left-4 z-50 rounded-lg p-2 text-slate-700 transition-colors hover:bg-slate-100 sm:top-16 lg:hidden"
-					aria-label="Open menu"
-				>
-					<Menu className="h-6 w-6" />
-				</button>
-			)}
-
-			{/* Mobile Menu Overlay */}
-			{isMobileMenuOpen && (
-				<button
-					type="button"
+			{/* Mobile Menu Overlay — use div, not button, to avoid click-intercept issues */}
+			{mobileMenu.isOpen && (
+				<div
 					className="fixed inset-0 z-30 bg-black/30 lg:hidden"
-					onClick={() => setIsMobileMenuOpen(false)}
-					aria-label="Close menu"
+					onClick={mobileMenu.close}
+					aria-hidden="true"
 				/>
 			)}
 
-			{/* Desktop Sidebar */}
-			<aside className="hidden lg:fixed lg:top-16 lg:bottom-0 lg:left-0 lg:z-40 lg:flex lg:w-64 lg:flex-col lg:border-slate-200 lg:border-r lg:bg-white/90 lg:backdrop-blur-md">
-				<Navigation
-					navSections={navSections}
-					isActive={isActive}
-					handleLogout={handleLogout}
-					logoutMutation={logoutMutation}
-				/>
-			</aside>
-
-			{/* Mobile Drawer */}
+			{/* Mobile Drawer — slides in from top; fixed below navbar */}
 			<aside
+				ref={asideRef}
 				className={cn(
-					"fixed top-14 bottom-0 left-0 z-40 flex w-64 flex-col border-slate-200 border-r bg-white/90 backdrop-blur-md transition-transform duration-300 sm:top-16 lg:hidden",
-					isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+					// Position fixed just below navbar; use translate-y for open/close
+					"fixed right-0 left-0 z-40 flex flex-col overflow-y-auto border-slate-200 border-b bg-white/95 backdrop-blur-md transition-transform duration-300 ease-in-out lg:hidden",
+					// Positioned below navbar heights
+					"top-14 sm:top-16",
+					// Max height so it doesn't cover full screen
+					"max-h-[calc(100vh-3.5rem)] sm:max-h-[calc(100vh-4rem)]",
+					// Slide in/out vertically
+					mobileMenu.isOpen ? "translate-y-0" : "-translate-y-[200%]",
 				)}
+				aria-hidden={!mobileMenu.isOpen}
 			>
-				{/* Mobile Header with Close Button */}
-				<div className="flex items-center justify-between border-slate-200 border-b px-4 py-4">
-					<h2 className="font-bold text-[#030370] text-lg">Menu</h2>
-					<button
-						type="button"
-						onClick={() => setIsMobileMenuOpen(false)}
-						className="rounded-lg p-1 text-slate-700 transition-colors hover:bg-slate-100"
-						aria-label="Close menu"
-					>
-						<X className="h-5 w-5" />
-					</button>
-				</div>
-
 				<Navigation
-					navSections={navSections}
+					navItems={navItems}
 					isActive={isActive}
 					handleLogout={handleLogout}
 					logoutMutation={logoutMutation}
@@ -164,7 +157,7 @@ export function UserSidebar() {
 }
 
 interface NavigationProps {
-	navSections: Array<{ title: string; items: NavItem[] }>;
+	navItems: NavItem[];
 	isActive: (href: string) => boolean;
 	handleLogout: () => Promise<void>;
 	logoutMutation: ReturnType<typeof useLogout>;
@@ -172,7 +165,7 @@ interface NavigationProps {
 }
 
 function Navigation({
-	navSections,
+	navItems,
 	isActive,
 	handleLogout,
 	logoutMutation,
@@ -180,64 +173,54 @@ function Navigation({
 }: NavigationProps) {
 	return (
 		<>
-			{/* Navigation Items */}
-			<nav className="flex-1 overflow-y-auto px-4 py-5">
-				<div className="space-y-6">
-					{navSections.map((section) => (
-						<div key={section.title}>
-							<p className="px-3 font-semibold text-[11px] text-slate-500 uppercase tracking-wider">
-								{section.title}
-							</p>
-							<ul className="mt-3 space-y-1">
-								{section.items.map((item) => (
-									<li key={item.href}>
-										<Link
-											href={item.href as never}
-											onClick={onNavigate}
-											className={cn(
-												"group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200",
-												isActive(item.href)
-													? "bg-[#030370] text-white shadow-[0_14px_40px_rgba(3,3,112,0.25)]"
-													: "text-slate-700 hover:bg-slate-100",
-											)}
-										>
-											<span
-												className={cn(
-													"shrink-0 transition-colors",
-													isActive(item.href)
-														? "text-white"
-														: "text-slate-500 group-hover:text-slate-700",
-												)}
-											>
-												{item.icon}
-											</span>
-											<span className="flex-1 font-semibold text-sm">
-												{item.label}
-											</span>
-											{item.badge && (
-												<span className="rounded-full bg-rose-500 px-2 py-1 text-white text-xs">
-													{item.badge}
-												</span>
-											)}
-										</Link>
-									</li>
-								))}
-							</ul>
-						</div>
+			{/* Navigation Grid - Horizontal on desktop */}
+			<nav className="flex-1 overflow-x-auto lg:overflow-x-auto">
+				<div className="grid grid-cols-3 gap-4 p-4 md:grid-cols-2 lg:flex lg:gap-0 lg:p-0">
+					{navItems.map((item) => (
+						<Link
+							key={item.href}
+							href={item.href as never}
+							onClick={onNavigate}
+							className={cn(
+								"flex flex-col items-center justify-center rounded-lg px-3 py-4 transition-all duration-200 hover:shadow-lg lg:flex-col lg:items-center lg:justify-center lg:rounded-none lg:border-b-2 lg:px-6 lg:py-3",
+								isActive(item.href)
+									? "bg-[#030370] text-white shadow-[0_14px_40px_rgba(3,3,112,0.25)] lg:border-[#030370] lg:bg-white/50"
+									: "bg-slate-50 text-slate-700 hover:bg-slate-100 lg:border-transparent",
+							)}
+						>
+							<span
+								className={cn(
+									"mb-2 transition-colors lg:mb-1",
+									isActive(item.href)
+										? "text-white lg:text-[#030370]"
+										: "text-slate-500 group-hover:text-slate-700 lg:text-slate-500",
+								)}
+							>
+								{item.icon}
+							</span>
+							<span className="text-center font-semibold text-xs">
+								{item.label}
+							</span>
+							{item.badge && (
+								<span className="mt-1 rounded-full bg-rose-500 px-2 py-1 text-white text-xs">
+									{item.badge}
+								</span>
+							)}
+						</Link>
 					))}
 				</div>
 			</nav>
 
 			{/* Logout Button */}
-			<div className="border-slate-200 border-t px-4 py-4">
+			<div className="border-slate-200 border-t px-4 py-4 lg:border-t-0 lg:border-l lg:px-4 lg:py-0">
 				<button
 					type="button"
 					onClick={handleLogout}
 					disabled={logoutMutation.isPending}
-					className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-slate-700 transition-all duration-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+					className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-slate-700 transition-all duration-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 lg:h-full lg:gap-1 lg:rounded-none"
 				>
-					<LogOut className="h-5 w-5" />
-					<span className="font-semibold text-sm">Logout</span>
+					<LogOut className="h-4 w-4" />
+					<span className="font-semibold text-xs lg:hidden">Logout</span>
 				</button>
 			</div>
 		</>

@@ -114,15 +114,15 @@ export function EventCard({ event, className = "" }: EventCardProps) {
 
 					<div className="mb-2 grid grid-cols-1 gap-1">
 						<div className="flex items-center gap-1.5 font-semibold text-[11px] text-slate-500 sm:text-[12px]">
-							<Calendar size={10} className="text-slate-400 sm:size-12" />
+							<Calendar size={10} className="text-slate-400 sm:size-4" />
 							<span>{formatDate(event.startDate)}</span>
 						</div>
 						<div className="flex items-center gap-1.5 font-semibold text-[11px] text-slate-500 sm:text-[12px]">
-							<MapPin size={10} className="text-slate-400 sm:size-12" />
+							<MapPin size={10} className="text-slate-400 sm:size-4" />
 							<span className="line-clamp-1">{event.venueName}</span>
 						</div>
 						<div className="flex items-center gap-1.5 font-semibold text-[11px] text-slate-500 sm:text-[12px]">
-							<Users size={10} className="text-slate-400 sm:size-12" />
+							<Users size={10} className="text-slate-400 sm:size-4" />
 							<span>
 								{event.mode === "ONLINE" ? "Online event" : "In-person event"}
 							</span>
@@ -134,7 +134,7 @@ export function EventCard({ event, className = "" }: EventCardProps) {
 							{event.type === "FREE" ? "Free" : "Paid"}
 						</div>
 						<div className="inline-flex items-center font-bold text-[#030370] text-xs">
-							View Event <ArrowRight size={10} className="ml-1 sm:size-12" />
+							View Event <ArrowRight size={10} className="ml-1 sm:size-4" />
 						</div>
 					</div>
 				</CardContent>
