@@ -1,9 +1,2 @@
-import { createTheme } from "@mantine/core";
-
-export const theme = createTheme({
-	primaryColor: "violet",
-	fontFamily: "var(--font-poppins), sans-serif",
-	headings: {
-		fontFamily: "var(--font-poppins), sans-serif",
-	},
-});
+// This file has been removed. @mantine/core is not a dependency.
+// The app uses Tailwind CSS + Radix UI for styling.
