@@ -1,6 +1,9 @@
 FROM oven/bun:1.3.6 AS deps
 WORKDIR /app
 
+ARG DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/postgres
+ENV DATABASE_URL=${DATABASE_URL}
+
 COPY package.json bun.lock turbo.json tsconfig.json ./
 COPY apps ./apps
 COPY packages ./packages
