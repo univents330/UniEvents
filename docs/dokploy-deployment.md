@@ -40,6 +40,8 @@ Create two apps in Dokploy from the same Git repo.
 - Domain: `unievent.in`
 - Add alias: `www.unievent.in`
 - Build args:
+  - `NEXT_PUBLIC_API_URL=https://api.unievent.in`
+  - `NEXT_PUBLIC_API_URLS=https://api.unievent.in`
   - `NEXT_PUBLIC_SERVER_URL=https://api.unievent.in`
   - `NEXT_PUBLIC_SERVER_URLS=https://api.unievent.in`
   - `NEXT_PUBLIC_RAZORPAY_KEY_ID=<your-public-razorpay-key>`
@@ -69,6 +71,10 @@ Use [.env.example](../.env.example) as the template and set these in Dokploy.
 - `RAZORPAY_WEBHOOK_SECRET` -> Razorpay webhook secret
 - `BREVO_API_KEY` -> Brevo API key
 - `BREVO_MAIL_FROM` -> verified sender email
+- `NEXT_PUBLIC_APP_URL` -> `https://unievent.in` (frontend origin, optional)
+- `NEXT_PUBLIC_API_URL` -> `https://api.unievent.in` (preferred browser API
+  base)
+- `NEXT_PUBLIC_API_URLS` -> `https://api.unievent.in` (preferred list form)
 - `NEXT_PUBLIC_SERVER_URL` -> `https://api.unievent.in`
 - `NEXT_PUBLIC_SERVER_URLS` -> `https://api.unievent.in`
 - `NEXT_PUBLIC_RAZORPAY_KEY_ID` -> Razorpay public key

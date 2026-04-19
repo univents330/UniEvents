@@ -30,7 +30,10 @@ Create environment variables for web and server/database before running the app:
 
 ```bash
 # apps/web/.env
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3000
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+NEXT_PUBLIC_SERVER_URLS=http://localhost:3000
 
 # apps/server/.env
 DATABASE_URL=postgresql://...
