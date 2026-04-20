@@ -228,8 +228,11 @@ export function useUpdateProfile() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (data: { name?: string; image?: string | null }) =>
-			authService.updateProfile(data),
+		mutationFn: (data: {
+			name?: string;
+			image?: string | null;
+			skills?: string[];
+		}) => authService.updateProfile(data),
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({
 				queryKey: AUTH_KEYS.currentUser,

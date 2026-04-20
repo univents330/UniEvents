@@ -7,13 +7,15 @@ type CheckoutSummaryEvent = {
 };
 
 type CheckoutSummaryTier = {
+	id: string;
 	name: string;
 	price: number;
+	quantity: number;
 };
 
 export interface CheckoutSummaryProps {
 	event: CheckoutSummaryEvent;
-	selectedTier: CheckoutSummaryTier | null;
+	selectedTiers: CheckoutSummaryTier[];
 	className?: string;
 	currency?: string;
 }
@@ -23,15 +25,25 @@ function formatMoney(amount: number, currency: string) {
 		style: "currency",
 		currency,
 		maximumFractionDigits: 0,
-	}).format(amount / 100);
+	}).format(amount);
 }
 
 export function CheckoutSummary({
 	event,
-	selectedTier,
+	selectedTiers,
 	className,
 	currency = "INR",
 }: CheckoutSummaryProps) {
+	const totalAmount = selectedTiers.reduce(
+		(total, tier) => total + tier.price * tier.quantity,
+		0,
+	);
+
+	const totalTickets = selectedTiers.reduce(
+		(total, tier) => total + tier.quantity,
+		0,
+	);
+
 	return (
 		<aside
 			className={cn(

@@ -6,13 +6,35 @@ function normalizeUrl(value: string) {
 	return value.trim().replace(/\/+$/, "");
 }
 
+function normalizeConfiguredList(value?: string) {
+	return value ? value.split(",").map(normalizeUrl).filter(Boolean) : [];
+}
+
+function isDefinedString(value: string | undefined): value is string {
+	return typeof value === "string" && value.length > 0;
+}
+
+function isLocalHostname(hostname: string) {
+	return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+function isLocalUrl(url: string) {
+	try {
+		const parsed = new URL(url);
+		return isLocalHostname(parsed.hostname);
+	} catch {
+		return false;
+	}
+}
+
 function getConfiguredBackendUrls() {
 	const list = [
+		env.NEXT_PUBLIC_API_URL,
 		env.NEXT_PUBLIC_SERVER_URL,
-		...(env.NEXT_PUBLIC_SERVER_URLS
-			? env.NEXT_PUBLIC_SERVER_URLS.split(",")
-			: []),
+		...normalizeConfiguredList(env.NEXT_PUBLIC_API_URLS),
+		...normalizeConfiguredList(env.NEXT_PUBLIC_SERVER_URLS),
 	]
+		.filter(isDefinedString)
 		.map(normalizeUrl)
 		.filter(Boolean);
 
@@ -20,14 +42,24 @@ function getConfiguredBackendUrls() {
 }
 
 function getLocalBackendUrl(configured: string[]) {
-	return configured.find((url) => {
+	return configured.find((url) => isLocalUrl(url));
+}
+
+function getDeployedBackendUrl(configured: string[]) {
+	const preferredHostnames = ["api.unievent.in"];
+	const preferred = configured.find((url) => {
 		try {
-			const parsed = new URL(url);
-			return parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+			return preferredHostnames.includes(new URL(url).hostname);
 		} catch {
 			return false;
 		}
 	});
+
+	if (preferred) {
+		return preferred;
+	}
+
+	return configured.find((url) => !isLocalUrl(url));
 }
 
 export function getAvailableBackendUrls() {
@@ -36,18 +68,32 @@ export function getAvailableBackendUrls() {
 
 export function getActiveBackendUrl() {
 	if (typeof window === "undefined") {
-		return normalizeUrl(env.NEXT_PUBLIC_SERVER_URL);
+		return normalizeUrl(env.NEXT_PUBLIC_API_URL ?? env.NEXT_PUBLIC_SERVER_URL);
 	}
 
 	const configured = getConfiguredBackendUrls();
-	const isLocalFrontend =
-		window.location.hostname === "localhost" ||
-		window.location.hostname === "127.0.0.1";
+	const isLocalFrontend = isLocalHostname(window.location.hostname);
 
 	if (isLocalFrontend) {
 		const localBackend = getLocalBackendUrl(configured);
 		if (localBackend) {
 			return localBackend;
+		}
+	} else {
+		const deployedBackend = getDeployedBackendUrl(configured);
+		if (deployedBackend) {
+			const stored = localStorage.getItem(ACTIVE_BACKEND_KEY);
+			if (stored) {
+				const normalizedStored = normalizeUrl(stored);
+				if (
+					configured.includes(normalizedStored) &&
+					!isLocalUrl(normalizedStored)
+				) {
+					return normalizedStored;
+				}
+			}
+
+			return deployedBackend;
 		}
 	}
 
@@ -59,7 +105,7 @@ export function getActiveBackendUrl() {
 		}
 	}
 
-	return normalizeUrl(env.NEXT_PUBLIC_SERVER_URL);
+	return normalizeUrl(env.NEXT_PUBLIC_API_URL ?? env.NEXT_PUBLIC_SERVER_URL);
 }
 
 export function setActiveBackendUrl(url: string) {
@@ -67,10 +113,16 @@ export function setActiveBackendUrl(url: string) {
 	const configured = getConfiguredBackendUrls();
 
 	if (!configured.includes(normalized)) {
-		throw new Error("Backend URL is not listed in NEXT_PUBLIC_SERVER_URLS");
+		throw new Error(
+			"Backend URL is not listed in the configured public backend URLs",
+		);
 	}
 
 	if (typeof window !== "undefined") {
+		if (!isLocalHostname(window.location.hostname) && isLocalUrl(normalized)) {
+			throw new Error("Local backend URLs are blocked on production domains");
+		}
+
 		localStorage.setItem(ACTIVE_BACKEND_KEY, normalized);
 	}
 }

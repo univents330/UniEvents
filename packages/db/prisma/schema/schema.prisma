@@ -87,6 +87,7 @@ model User {
   emailVerified Boolean  @default(false)
   image         String?
   role          UserRole @default(USER)
+  skills        String[] @default([])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -209,7 +210,7 @@ model TicketTier {
 
   name        String           // e.g. "General Admission", "VIP"
   description String?
-  price       Int              // in minor units (paise / cents). 0 for free tiers
+  price       Int              // in rupees. 0 for free tiers
   maxQuantity Int              // total available
   soldCount   Int      @default(0) // maintained via application logic or triggers
 
@@ -237,7 +238,7 @@ model Ticket {
   tierId       String
   tier         TicketTier @relation(fields: [tierId], references: [id], onDelete: Restrict)
 
-  // Snapshot price at time of purchase — tier price may change later
+  // Snapshot price in rupees at time of purchase — tier price may change later
   pricePaid    Int
 
   createdAt    DateTime   @default(now())

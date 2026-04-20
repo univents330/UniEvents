@@ -2,11 +2,13 @@ import crypto from "node:crypto";
 import { Prisma, prisma, type UserRole } from "@voltaze/db";
 import { env } from "@voltaze/env/server";
 import {
+	type ConfirmFreeOrderInput,
 	createPaginationMeta,
 	type InitiatePaymentInput,
 	type PaymentFilterInput,
 	type RazorpayWebhookInput,
 	type RefundPaymentInput,
+	type TicketHolderInput,
 	type UpdatePaymentInput,
 	type VerifyPaymentInput,
 } from "@voltaze/schema";
@@ -17,6 +19,7 @@ import {
 	ForbiddenError,
 	NotFoundError,
 } from "@/common/exceptions/app-error";
+import { sendEmailViaBrevo } from "@/common/utils/brevo";
 import {
 	createRazorpayOrder,
 	createRazorpayRefund,
@@ -36,10 +39,33 @@ type CheckoutItem = {
 	quantity: number;
 };
 
+type TicketHolder = TicketHolderInput;
+
+type TicketEmailTicket = {
+	id: string;
+	createdAt: Date;
+	tier: {
+		id: string;
+		name: string;
+	};
+	pass: {
+		code: string;
+	};
+};
+
 const CUID_REGEX = /^c[a-z0-9]{24}$/i;
 
 function isCuid(value: string) {
 	return CUID_REGEX.test(value);
+}
+
+function escapeHtml(value: string) {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
 }
 
 function mapWebhookEventToPaymentStatus(
@@ -242,6 +268,49 @@ export class PaymentsService {
 		}));
 	}
 
+	private normalizeTicketHolders(holders?: unknown[]): TicketHolder[] {
+		if (!holders || holders.length === 0) {
+			return [];
+		}
+
+		const normalized: TicketHolder[] = [];
+
+		for (const holder of holders) {
+			if (!holder || typeof holder !== "object" || Array.isArray(holder)) {
+				continue;
+			}
+
+			const {
+				tierId,
+				name,
+				email,
+				phone,
+			}: {
+				tierId?: unknown;
+				name?: unknown;
+				email?: unknown;
+				phone?: unknown;
+			} = holder;
+
+			if (
+				typeof tierId !== "string" ||
+				typeof name !== "string" ||
+				typeof email !== "string"
+			) {
+				continue;
+			}
+
+			normalized.push({
+				tierId,
+				name: name.trim(),
+				email: email.trim().toLowerCase(),
+				phone: typeof phone === "string" ? phone.trim() : null,
+			});
+		}
+
+		return normalized;
+	}
+
 	private buildCheckoutFromExistingTickets(
 		tickets: Array<{ tierId: string; pricePaid: number }>,
 	) {
@@ -253,7 +322,7 @@ export class PaymentsService {
 				ticket.tierId,
 				(quantityByTier.get(ticket.tierId) ?? 0) + 1,
 			);
-			totalAmount += ticket.pricePaid;
+			totalAmount += ticket.pricePaid * 100;
 		}
 
 		return {
@@ -307,7 +376,7 @@ export class PaymentsService {
 				);
 			}
 
-			totalAmount += tier.price * item.quantity;
+			totalAmount += tier.price * item.quantity * 100;
 		}
 
 		return { checkoutItems, totalAmount };
@@ -397,6 +466,241 @@ export class PaymentsService {
 					},
 				});
 			}
+		}
+	}
+
+	private formatMinorAmount(amount: number, currency: string) {
+		const normalizedCurrency = currency.toUpperCase();
+
+		try {
+			return new Intl.NumberFormat("en-IN", {
+				style: "currency",
+				currency: normalizedCurrency,
+				maximumFractionDigits: 2,
+			}).format(amount / 100);
+		} catch {
+			return `${(amount / 100).toFixed(2)} ${normalizedCurrency}`;
+		}
+	}
+
+	private buildTicketEmailContent(args: {
+		attendeeName: string;
+		eventName: string;
+		eventStartDate: Date;
+		eventTimezone: string;
+		orderId: string;
+		amount: number;
+		currency: string;
+		tickets: TicketEmailTicket[];
+		ticketHolders: TicketHolder[];
+	}) {
+		const {
+			attendeeName,
+			eventName,
+			eventStartDate,
+			eventTimezone,
+			orderId,
+			amount,
+			currency,
+			tickets,
+			ticketHolders,
+		} = args;
+
+		const safeAttendeeName = escapeHtml(attendeeName);
+		const safeEventName = escapeHtml(eventName);
+		const formattedAmount = this.formatMinorAmount(amount, currency);
+		const formattedEventDate = new Intl.DateTimeFormat("en-IN", {
+			dateStyle: "full",
+			timeStyle: "short",
+			timeZone: eventTimezone,
+		}).format(eventStartDate);
+
+		const buildHolderQueueByTier = () => {
+			const queueMap = new Map<string, TicketHolder[]>();
+			for (const holder of ticketHolders) {
+				const queue = queueMap.get(holder.tierId) ?? [];
+				queue.push(holder);
+				queueMap.set(holder.tierId, queue);
+			}
+
+			return queueMap;
+		};
+
+		const htmlHolderQueueByTier = buildHolderQueueByTier();
+
+		const ticketsListHtml = tickets
+			.map((ticket, index) => {
+				const createdAt = new Intl.DateTimeFormat("en-IN", {
+					dateStyle: "medium",
+					timeStyle: "short",
+					timeZone: eventTimezone,
+				}).format(ticket.createdAt);
+				const assignedHolder = htmlHolderQueueByTier
+					.get(ticket.tier.id)
+					?.shift();
+				const assignedTo = assignedHolder
+					? `<br/>Assigned To: ${escapeHtml(assignedHolder.name)} (${escapeHtml(assignedHolder.email)})`
+					: "";
+
+				return `<li><strong>Ticket ${index + 1}</strong><br/>Tier: ${escapeHtml(ticket.tier.name)}${assignedTo}<br/>Pass Code: <code>${escapeHtml(ticket.pass.code)}</code><br/>Issued: ${escapeHtml(createdAt)}</li>`;
+			})
+			.join("");
+
+		const htmlContent = `
+			<h1>Your Voltaze ticket is confirmed</h1>
+			<p>Hi ${safeAttendeeName},</p>
+			<p>Your registration for <strong>${safeEventName}</strong> is successful.</p>
+			<p><strong>Order ID:</strong> ${escapeHtml(orderId)}<br/>
+			<strong>Amount Paid:</strong> ${escapeHtml(formattedAmount)}<br/>
+			<strong>Event Time:</strong> ${escapeHtml(formattedEventDate)} (${escapeHtml(eventTimezone)})</p>
+			<p><strong>Your passes:</strong></p>
+			<ol>${ticketsListHtml}</ol>
+			<p>Please keep this email handy at venue check-in.</p>
+		`;
+
+		const textHolderQueueByTier = buildHolderQueueByTier();
+
+		const ticketsText = tickets
+			.map((ticket, index) => {
+				const assignedHolder = textHolderQueueByTier
+					.get(ticket.tier.id)
+					?.shift();
+				const assignedLabel = assignedHolder
+					? `, Assigned To: ${assignedHolder.name} <${assignedHolder.email}>`
+					: "";
+
+				return `${index + 1}. Tier: ${ticket.tier.name}${assignedLabel}, Pass Code: ${ticket.pass.code}`;
+			})
+			.join("\n");
+
+		const textContent = [
+			"Your Voltaze ticket is confirmed",
+			`Hi ${attendeeName},`,
+			`Your registration for ${eventName} is successful.`,
+			`Order ID: ${orderId}`,
+			`Amount Paid: ${formattedAmount}`,
+			`Event Time: ${formattedEventDate} (${eventTimezone})`,
+			"",
+			"Your passes:",
+			ticketsText,
+		].join("\n");
+
+		return {
+			subject: `Your ticket for ${eventName}`,
+			htmlContent,
+			textContent,
+		};
+	}
+
+	private async sendTicketConfirmationEmailIfNeeded(paymentId: string) {
+		const payment = await prisma.payment.findUnique({
+			where: { id: paymentId },
+			select: {
+				id: true,
+				status: true,
+				deletedAt: true,
+				amount: true,
+				currency: true,
+				gatewayMeta: true,
+				order: {
+					select: {
+						id: true,
+						event: {
+							select: {
+								name: true,
+								startDate: true,
+								timezone: true,
+							},
+						},
+						attendee: {
+							select: {
+								name: true,
+								email: true,
+							},
+						},
+						tickets: {
+							orderBy: {
+								createdAt: "asc",
+							},
+							select: {
+								id: true,
+								createdAt: true,
+								tier: {
+									select: {
+										id: true,
+										name: true,
+									},
+								},
+								pass: {
+									select: {
+										code: true,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		});
+
+		if (!payment || payment.deletedAt || payment.status !== "SUCCESS") {
+			return;
+		}
+
+		const gatewayMeta = this.normalizeGatewayMeta(payment.gatewayMeta);
+		if (typeof gatewayMeta.ticketEmailSentAt === "string") {
+			return;
+		}
+
+		const ticketHolders = this.normalizeTicketHolders(
+			Array.isArray(gatewayMeta.ticketHolders)
+				? gatewayMeta.ticketHolders
+				: undefined,
+		);
+
+		const tickets = payment.order.tickets.filter(
+			(ticket): ticket is TicketEmailTicket =>
+				Boolean(ticket.pass?.code) && Boolean(ticket.tier?.name),
+		);
+
+		if (tickets.length === 0) {
+			return;
+		}
+
+		const { subject, htmlContent, textContent } = this.buildTicketEmailContent({
+			attendeeName: payment.order.attendee.name,
+			eventName: payment.order.event.name,
+			eventStartDate: payment.order.event.startDate,
+			eventTimezone: payment.order.event.timezone,
+			orderId: payment.order.id,
+			amount: payment.amount,
+			currency: payment.currency,
+			tickets,
+			ticketHolders,
+		});
+
+		try {
+			await sendEmailViaBrevo({
+				to: payment.order.attendee.email,
+				subject,
+				htmlContent,
+				textContent,
+			});
+
+			await prisma.payment.update({
+				where: { id: payment.id },
+				data: {
+					gatewayMeta: {
+						...gatewayMeta,
+						ticketEmailSentAt: new Date().toISOString(),
+					} as Prisma.InputJsonValue,
+				},
+			});
+		} catch (error) {
+			console.error(
+				`Failed to send ticket confirmation email for payment ${payment.id}:`,
+				error,
+			);
 		}
 	}
 
@@ -494,6 +798,9 @@ export class PaymentsService {
 		}
 
 		const requestedCheckoutItems = this.normalizeCheckoutItems(input.items);
+		const requestedTicketHolders = this.normalizeTicketHolders(
+			input.ticketHolders,
+		);
 		if (requestedCheckoutItems.length > 0 && order.tickets.length > 0) {
 			throw new BadRequestError(
 				"Order already contains issued tickets. Initiate payment without checkout items.",
@@ -545,6 +852,7 @@ export class PaymentsService {
 					razorpayOrderId: razorpayOrder.id,
 					razorpayOrderStatus: razorpayOrder.status,
 					checkoutItems,
+					ticketHolders: requestedTicketHolders,
 					issueTicketsOnVerify,
 				} as Prisma.InputJsonValue,
 			},
@@ -567,6 +875,110 @@ export class PaymentsService {
 				eventName: order.event.name,
 			},
 		};
+	}
+
+	async confirmFreeOrder(input: ConfirmFreeOrderInput, actor: PaymentActor) {
+		const orderWhere: Prisma.OrderWhereInput = {
+			id: input.orderId,
+			deletedAt: null,
+		};
+
+		if (actor.role === "HOST") {
+			orderWhere.event = {
+				userId: actor.userId,
+			};
+		} else if (actor.role === "USER") {
+			orderWhere.attendee = {
+				userId: actor.userId,
+			};
+		}
+
+		const order = await prisma.order.findFirst({
+			where: orderWhere,
+			include: {
+				event: true,
+				attendee: true,
+			},
+		});
+
+		if (!order) {
+			throw new NotFoundError("Order not found");
+		}
+
+		if (order.status !== "PENDING") {
+			throw new BadRequestError(
+				"Can only confirm free checkout for pending orders",
+			);
+		}
+
+		const existingPayment = await prisma.payment.findFirst({
+			where: {
+				orderId: order.id,
+				deletedAt: null,
+				status: { in: ["PENDING", "SUCCESS"] },
+			},
+		});
+
+		if (existingPayment) {
+			if (existingPayment.status === "SUCCESS") {
+				await this.sendTicketConfirmationEmailIfNeeded(existingPayment.id);
+				return { payment: existingPayment, alreadyVerified: true };
+			}
+
+			throw new ConflictError("A payment already exists for this order");
+		}
+
+		const checkoutItems = this.normalizeCheckoutItems(input.items);
+		const ticketHolders = this.normalizeTicketHolders(input.ticketHolders);
+		const checkoutPlan = await this.buildCheckoutFromRequestedItems(
+			order.eventId,
+			checkoutItems,
+		);
+
+		if (checkoutPlan.totalAmount > 0) {
+			throw new BadRequestError(
+				"Selected tiers are paid. Use payment initiation for this order.",
+			);
+		}
+
+		const payment = await prisma.$transaction(async (tx) => {
+			await this.issueTicketsAndPassesForCheckout(
+				tx,
+				{
+					id: order.id,
+					eventId: order.eventId,
+					attendeeId: order.attendeeId,
+				},
+				checkoutItems,
+			);
+
+			const created = await tx.payment.create({
+				data: {
+					orderId: order.id,
+					amount: 0,
+					currency: input.currency,
+					gateway: "RAZORPAY",
+					status: "SUCCESS",
+					gatewayMeta: {
+						freeCheckout: true,
+						checkoutItems,
+						ticketHolders,
+						verifiedAt: new Date().toISOString(),
+					} as Prisma.InputJsonValue,
+				},
+			});
+
+			await tx.order.update({
+				where: { id: order.id },
+				data: { status: "COMPLETED" },
+			});
+
+			return created;
+		});
+
+		await this.sendTicketConfirmationEmailIfNeeded(payment.id);
+
+		return { payment, alreadyVerified: false };
 	}
 
 	async verify(input: VerifyPaymentInput, actor: PaymentActor) {
@@ -625,6 +1037,8 @@ export class PaymentsService {
 				});
 			}
 
+			await this.sendTicketConfirmationEmailIfNeeded(payment.id);
+
 			return { payment, alreadyVerified: true };
 		}
 
@@ -680,6 +1094,8 @@ export class PaymentsService {
 
 			return updated;
 		});
+
+		await this.sendTicketConfirmationEmailIfNeeded(updatedPayment.id);
 
 		return { payment: updatedPayment, alreadyVerified: false };
 	}
@@ -815,7 +1231,7 @@ export class PaymentsService {
 		} = input;
 
 		try {
-			return await prisma.$transaction(async (tx) => {
+			const updatedPayment = await prisma.$transaction(async (tx) => {
 				const updatedPayment = await tx.payment.update({
 					where: { id: payment.id },
 					data: {
@@ -829,6 +1245,12 @@ export class PaymentsService {
 
 				return updatedPayment;
 			});
+
+			if (nextStatus === "SUCCESS") {
+				await this.sendTicketConfirmationEmailIfNeeded(updatedPayment.id);
+			}
+
+			return updatedPayment;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2002") {
@@ -996,6 +1418,11 @@ export class PaymentsService {
 			payment.transactionId === transactionId
 		) {
 			await ensureDeferredIssuance();
+
+			if (mappedStatus === "SUCCESS") {
+				await this.sendTicketConfirmationEmailIfNeeded(payment.id);
+			}
+
 			return payment;
 		}
 
@@ -1005,6 +1432,7 @@ export class PaymentsService {
 
 		if (payment.status === "SUCCESS" && mappedStatus !== "REFUNDED") {
 			await ensureDeferredIssuance();
+			await this.sendTicketConfirmationEmailIfNeeded(payment.id);
 			return payment;
 		}
 
@@ -1015,7 +1443,7 @@ export class PaymentsService {
 			webhookReceivedAt: new Date().toISOString(),
 		} as Prisma.InputJsonValue;
 
-		return prisma.$transaction(async (tx) => {
+		const updatedPayment = await prisma.$transaction(async (tx) => {
 			const updatedPayment = await tx.payment.update({
 				where: { id: payment.id },
 				data: {
@@ -1041,6 +1469,12 @@ export class PaymentsService {
 
 			return updatedPayment;
 		});
+
+		if (mappedStatus === "SUCCESS") {
+			await this.sendTicketConfirmationEmailIfNeeded(updatedPayment.id);
+		}
+
+		return updatedPayment;
 	}
 }
 

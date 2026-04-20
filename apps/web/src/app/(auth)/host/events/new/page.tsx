@@ -8,6 +8,12 @@ import { useMemo, useState } from "react";
 import { eventsService, useCreateEvent } from "../../../../../features/events";
 import { showNotification } from "../../../../../shared/lib/notifications";
 
+type TicketTierDraft = {
+	name: string;
+	price: string;
+	quantity: string;
+};
+
 function getDefaultTimezone() {
 	try {
 		return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
@@ -34,16 +40,42 @@ export default function CreateEventPage() {
 		visibility: "PUBLIC" as "PUBLIC" | "PRIVATE",
 		coverUrl: "",
 		thumbnail: "",
-		ticketTierName: "General Admission",
-		ticketTierPrice: "",
-		ticketTierQuantity: "",
 	});
+	const [ticketTiers, setTicketTiers] = useState<TicketTierDraft[]>([
+		{ name: "General Admission", price: "", quantity: "" },
+	]);
 
 	const onChange = <K extends keyof typeof form>(
 		key: K,
 		value: (typeof form)[K],
 	) => {
 		setForm((prev) => ({ ...prev, [key]: value }));
+	};
+
+	const addTier = () => {
+		setTicketTiers((current) => [
+			...current,
+			{ name: "", price: "", quantity: "" },
+		]);
+	};
+
+	const removeTier = (index: number) => {
+		setTicketTiers((current) => current.filter((_, i) => i !== index));
+	};
+
+	const updateTier = (
+		index: number,
+		field: keyof TicketTierDraft,
+		value: string,
+	) => {
+		setTicketTiers((current) => {
+			const next = [...current];
+			next[index] = {
+				...next[index],
+				[field]: value,
+			};
+			return next;
+		});
 	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,16 +100,29 @@ export default function CreateEventPage() {
 				visibility: form.visibility,
 			});
 
-			const tierPrice = Number(form.ticketTierPrice || 0);
-			const tierQuantity = Number(form.ticketTierQuantity || 0);
+			const validTiers = ticketTiers
+				.map((tier) => ({
+					name: tier.name.trim(),
+					price: Number(tier.price || 0),
+					quantity: Number(tier.quantity || 0),
+				}))
+				.filter((tier) => tier.name && tier.quantity > 0);
 
-			if (form.type === "PAID" && tierPrice > 0 && tierQuantity > 0) {
-				await eventsService.createTicketTier(createdEvent.id, {
-					name: form.ticketTierName.trim() || "General Admission",
-					description: "Default ticket tier",
-					price: tierPrice,
-					maxQuantity: tierQuantity,
-				});
+			if (form.type === "PAID") {
+				if (validTiers.length === 0) {
+					throw new Error(
+						"At least one ticket tier is required for paid events",
+					);
+				}
+
+				for (const tier of validTiers) {
+					await eventsService.createTicketTier(createdEvent.id, {
+						name: tier.name,
+						description: "Created by host",
+						price: tier.price,
+						maxQuantity: tier.quantity,
+					});
+				}
 			}
 
 			showNotification({
@@ -264,42 +309,69 @@ export default function CreateEventPage() {
 					</Section>
 
 					<Section title="Ticket pricing">
-						<div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-							<Field label="Ticket Tier Name">
-								<input
-									value={form.ticketTierName}
-									onChange={(e) => onChange("ticketTierName", e.target.value)}
-									className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
-									placeholder="General Admission"
-								/>
-							</Field>
-
-							<Field label="Ticket Price (INR)">
-								<input
-									value={form.ticketTierPrice}
-									onChange={(e) => onChange("ticketTierPrice", e.target.value)}
-									type="number"
-									min="0"
-									step="1"
-									className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
-									placeholder="1500"
-								/>
-							</Field>
-
-							<Field label="Quantity">
-								<input
-									value={form.ticketTierQuantity}
-									onChange={(e) =>
-										onChange("ticketTierQuantity", e.target.value)
-									}
-									type="number"
-									min="1"
-									step="1"
-									className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
-									placeholder="100"
-								/>
-							</Field>
+						<div className="space-y-4">
+							{ticketTiers.map((tier, index) => (
+								<div
+									key={`tier-${index}`}
+									className="rounded-xl border border-slate-200 bg-white p-4"
+								>
+									<div className="mb-3 flex items-center justify-between">
+										<p className="font-semibold text-slate-900 text-sm">
+											Tier {index + 1}
+										</p>
+										{ticketTiers.length > 1 ? (
+											<button
+												type="button"
+												onClick={() => removeTier(index)}
+												className="font-semibold text-rose-600 text-xs"
+											>
+												Remove
+											</button>
+										) : null}
+									</div>
+									<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+										<input
+											value={tier.name}
+											onChange={(e) =>
+												updateTier(index, "name", e.target.value)
+											}
+											className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
+											placeholder="General Admission"
+										/>
+										<input
+											value={tier.price}
+											onChange={(e) =>
+												updateTier(index, "price", e.target.value)
+											}
+											type="number"
+											min="0"
+											step="1"
+											className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
+											placeholder="1500"
+										/>
+										<input
+											value={tier.quantity}
+											onChange={(e) =>
+												updateTier(index, "quantity", e.target.value)
+											}
+											type="number"
+											min="1"
+											step="1"
+											className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
+											placeholder="100"
+										/>
+									</div>
+								</div>
+							))}
 						</div>
+
+						<button
+							type="button"
+							onClick={addTier}
+							className="rounded-lg border border-[#0a4bb8] px-4 py-2 font-semibold text-[#0a4bb8] text-sm hover:bg-[#0a4bb8]/5"
+						>
+							+ Add Another Tier
+						</button>
 
 						<p className="text-slate-500 text-sm">
 							Ticket amount is stored in the backend as a tier price. For paid

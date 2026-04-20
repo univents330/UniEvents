@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { env } from "@voltaze/env/web";
 import type { Route } from "next";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { attendeesService } from "@/features/attendees/services/attendees.service";
 import { useCurrentUser } from "@/features/auth";
@@ -30,7 +30,6 @@ function formatMoney(amount: number) {
 
 export function CheckoutPaymentPage({ slug }: { slug: string }) {
 	const router = useRouter();
-	const searchParams = useSearchParams();
 	const queryClient = useQueryClient();
 	const { data: user } = useCurrentUser();
 	const { data: event, isLoading: isEventLoading } = useEvent(slug);
@@ -47,11 +46,34 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 		[tiersResponse?.data],
 	);
 
-	const requestedTierId = searchParams.get("tierId");
-	const selectedTier =
-		paidTiers.find((tier) => tier.id === requestedTierId) ||
-		paidTiers.find((tier) => tier.id === draftState?.tierId) ||
-		null;
+	const selectedItems = useMemo(
+		() => draftState?.items ?? [],
+		[draftState?.items],
+	);
+
+	const checkoutAmountMinor = useMemo(() => {
+		if (!draftState) {
+			return 0;
+		}
+
+		const tierMap = new Map(paidTiers.map((tier) => [tier.id, tier]));
+		return draftState.items.reduce((total, item) => {
+			const tier = tierMap.get(item.tierId);
+			if (!tier) {
+				return total;
+			}
+
+			return total + tier.price * item.quantity * 100;
+		}, 0);
+	}, [draftState, paidTiers]);
+
+	const checkoutDescription = useMemo(() => {
+		const totalCount = selectedItems.reduce(
+			(sum, item) => sum + item.quantity,
+			0,
+		);
+		return `${totalCount} ticket${totalCount > 1 ? "s" : ""} for ${event?.name ?? "event"}`;
+	}, [event?.name, selectedItems]);
 
 	useEffect(() => {
 		if (!user) {
@@ -85,7 +107,7 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 	}, [event, router]);
 
 	const handlePayNow = useCallback(async () => {
-		if (!event || !selectedTier || !draftState) {
+		if (!event || !draftState || selectedItems.length === 0) {
 			showNotification({
 				title: "Missing checkout details",
 				message: "Please complete attendee details before payment.",
@@ -97,8 +119,6 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 		setIsPaying(true);
 
 		try {
-			await loadRazorpayCheckoutScript();
-
 			const attendeeResponse = await attendeesService.getAttendees({
 				eventId: event.id,
 				page: 1,
@@ -109,13 +129,15 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 
 			const attendee =
 				attendeeResponse.data.find(
-					(item) => item.email.toLowerCase() === draftState.email.toLowerCase(),
+					(item) =>
+						item.email.toLowerCase() ===
+						draftState.purchaserEmail.toLowerCase(),
 				) ??
 				(await attendeesService.createAttendee({
 					eventId: event.id,
-					name: draftState.name,
-					email: draftState.email,
-					phone: draftState.phone || null,
+					name: draftState.purchaserName,
+					email: draftState.purchaserEmail,
+					phone: draftState.purchaserPhone || null,
 				}));
 
 			const order = await ordersService.createOrder({
@@ -123,12 +145,38 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 				eventId: event.id,
 			});
 
+			if (checkoutAmountMinor === 0) {
+				await paymentsService.confirmFreeOrder({
+					orderId: order.id,
+					currency: "INR",
+					items: selectedItems,
+					ticketHolders: draftState.ticketHolders,
+				});
+
+				clearCheckoutDraft(event.slug);
+				await queryClient.invalidateQueries({ queryKey: ["orders"] });
+				await queryClient.invalidateQueries({ queryKey: ["payments"] });
+				await queryClient.invalidateQueries({ queryKey: ["events"] });
+
+				showNotification({
+					title: "Booking confirmed",
+					message: "Free tickets generated. Confirmation email has been sent.",
+					color: "green",
+				});
+
+				startTopLoader();
+				router.push(`/events/${event.slug}` as Route);
+				setIsPaying(false);
+				return;
+			}
+
+			await loadRazorpayCheckoutScript();
+
 			const payment = await paymentsService.initiatePayment({
 				orderId: order.id,
 				currency: "INR",
-				items: [
-					{ tierId: selectedTier.id, quantity: draftState.quantity || 1 },
-				],
+				items: selectedItems,
+				ticketHolders: draftState.ticketHolders,
 			});
 
 			const razorpayKeyId =
@@ -144,7 +192,7 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 				currency: payment.currency,
 				order_id: payment.razorpayOrderId,
 				name: event.name,
-				description: `${selectedTier.name} ticket for ${event.name}`,
+				description: checkoutDescription,
 				prefill: payment.prefill,
 				notes: payment.notes,
 				theme: {
@@ -200,13 +248,21 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 				color: "red",
 			});
 		}
-	}, [draftState, event, queryClient, router, selectedTier]);
+	}, [
+		checkoutAmountMinor,
+		checkoutDescription,
+		draftState,
+		event,
+		queryClient,
+		router,
+		selectedItems,
+	]);
 
 	useEffect(() => {
 		if (
 			!event ||
-			!selectedTier ||
 			!draftState ||
+			selectedItems.length === 0 ||
 			isPaying ||
 			hasStartedCheckout
 		) {
@@ -221,10 +277,10 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 		hasStartedCheckout,
 		handlePayNow,
 		isPaying,
-		selectedTier,
+		selectedItems.length,
 	]);
 
-	if (isEventLoading || !event || !draftState) {
+	if (isEventLoading || !event || !draftState || selectedItems.length === 0) {
 		return (
 			<div className="min-h-screen bg-[#f7f8fb]">
 				<Navbar />
@@ -246,7 +302,7 @@ export function CheckoutPaymentPage({ slug }: { slug: string }) {
 					<p className="mt-4 font-semibold text-[#070190] text-xs sm:mt-5 sm:text-sm md:mt-6 md:text-base">
 						{isPaying
 							? "Starting payment..."
-							: `Amount: ${selectedTier ? formatMoney(selectedTier.price) : "-"}`}
+							: `Amount: ${formatMoney(checkoutAmountMinor)}`}
 					</p>
 				</section>
 			</div>

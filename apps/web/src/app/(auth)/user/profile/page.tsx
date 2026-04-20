@@ -1,16 +1,14 @@
 "use client";
 
 import {
+	Briefcase,
 	Check,
-	Eye,
-	EyeOff,
-	KeyRound,
 	Loader2,
 	LogOut,
 	Mail,
 	Monitor,
 	Pencil,
-	Shield,
+	Plus,
 	Smartphone,
 	User,
 	X,
@@ -21,12 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	authService,
-	useChangePassword,
-	useCurrentUser,
-	useUpdateProfile,
-} from "@/features/auth";
+import { authService, useCurrentUser, useUpdateProfile } from "@/features/auth";
 import { showNotification } from "@/shared/lib/notifications";
 
 /* ------------------------------------------------------------------ */
@@ -72,8 +65,8 @@ export default function UserProfilePage() {
 			{/* Personal Info */}
 			<PersonalInfoCard user={user} />
 
-			{/* Change Password */}
-			<ChangePasswordCard />
+			{/* Skills */}
+			<SkillsCard user={user as any} />
 
 			{/* Active Sessions */}
 			<ActiveSessionsCard />
@@ -106,7 +99,7 @@ function ProfileCard({
 	return (
 		<div className="relative overflow-hidden rounded-2xl border border-[#dbe7ff] bg-white shadow-sm">
 			{/* Gradient banner */}
-			<div className="h-32 bg-gradient-to-r from-[#071a78] via-[#1e3faa] to-[#4f6fdb]" />
+			<div className="h-32 bg-linear-to-r from-[#071a78] via-[#1e3faa] to-[#4f6fdb]" />
 
 			<div className="relative px-6 pb-6">
 				{/* Avatar — centered overlap */}
@@ -120,7 +113,7 @@ function ProfileCard({
 							className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-lg"
 						/>
 					) : (
-						<div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-[#071a78] to-[#4f6fdb] shadow-lg">
+						<div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-linear-to-br from-[#071a78] to-[#4f6fdb] shadow-lg">
 							<span className="font-bold text-3xl text-white">
 								{user.name?.charAt(0)?.toUpperCase() ||
 									user.email.charAt(0).toUpperCase()}
@@ -325,226 +318,183 @@ function PersonalInfoCard({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Change Password                                                    */
+/*  Skills                                                             */
 /* ------------------------------------------------------------------ */
 
-function ChangePasswordCard() {
-	const [isOpen, setIsOpen] = useState(false);
-	const [currentPassword, setCurrentPassword] = useState("");
-	const [newPassword, setNewPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
-	const [showCurrent, setShowCurrent] = useState(false);
-	const [showNew, setShowNew] = useState(false);
-	const [showConfirm, setShowConfirm] = useState(false);
+function SkillsCard({
+	user,
+}: {
+	user: {
+		skills?: string[];
+	};
+}) {
+	const [isEditing, setIsEditing] = useState(false);
+	const [skills, setSkills] = useState<string[]>(user.skills || []);
+	const [newSkill, setNewSkill] = useState("");
+	const updateProfile = useUpdateProfile();
 
-	const changePassword = useChangePassword();
+	// Sync when user data changes externally
+	useEffect(() => {
+		setSkills(user.skills || []);
+	}, [user.skills]);
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+	const handleSave = async () => {
+		await updateProfile.mutateAsync({ skills });
+		setIsEditing(false);
+	};
 
-		if (newPassword.length < 8) {
+	const handleCancel = () => {
+		setSkills(user.skills || []);
+		setNewSkill("");
+		setIsEditing(false);
+	};
+
+	const handleAddSkill = () => {
+		const skill = newSkill.trim();
+		if (!skill) return;
+		if (skills.includes(skill)) {
 			showNotification({
-				title: "Password too short",
-				message: "New password must be at least 8 characters long.",
+				title: "Already added",
+				message: "You have already added this skill.",
 				color: "red",
 			});
 			return;
 		}
-
-		if (newPassword !== confirmPassword) {
+		if (skills.length >= 5) {
 			showNotification({
-				title: "Passwords don't match",
-				message: "Please make sure both passwords match.",
+				title: "Limit reached",
+				message: "You can only add up to 5 skills.",
 				color: "red",
 			});
 			return;
 		}
+		setSkills([...skills, skill]);
+		setNewSkill("");
+	};
 
-		await changePassword.mutateAsync({
-			oldPassword: currentPassword,
-			newPassword,
-		});
-
-		// Reset form
-		setCurrentPassword("");
-		setNewPassword("");
-		setConfirmPassword("");
-		setIsOpen(false);
+	const handleRemoveSkill = (skillToRemove: string) => {
+		setSkills(skills.filter((s) => s !== skillToRemove));
 	};
 
 	return (
 		<div className="rounded-2xl border border-[#dbe7ff] bg-white p-6 shadow-sm">
-			<div className="flex items-center justify-between">
+			<div className="mb-5 flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<KeyRound className="h-5 w-5 text-[#071a78]" />
+					<Briefcase className="h-5 w-5 text-[#071a78]" />
 					<h3 className="font-semibold text-[#071a78] text-lg">
-						Password & Security
+						Professional Skills
 					</h3>
 				</div>
-				{!isOpen && (
+				{!isEditing ? (
 					<Button
 						variant="outline"
 						size="sm"
-						onClick={() => setIsOpen(true)}
+						onClick={() => setIsEditing(true)}
 						className="gap-1.5 rounded-lg border-[#dbe7ff] text-[#071a78] hover:bg-[#f0f4ff]"
 					>
-						<KeyRound className="h-3.5 w-3.5" />
-						Change Password
+						<Pencil className="h-3.5 w-3.5" />
+						Edit
 					</Button>
-				)}
-			</div>
-
-			{!isOpen ? (
-				<p className="mt-2 text-slate-500 text-sm">
-					It&apos;s recommended to change your password regularly to keep your
-					account secure.
-				</p>
-			) : (
-				<form onSubmit={handleSubmit} className="mt-5 space-y-4">
-					{/* Current Password */}
-					<div>
-						<label
-							htmlFor="current-password"
-							className="mb-1.5 block font-medium text-slate-700 text-sm"
-						>
-							Current Password
-						</label>
-						<div className="relative">
-							<Input
-								id="current-password"
-								type={showCurrent ? "text" : "password"}
-								value={currentPassword}
-								onChange={(e) => setCurrentPassword(e.target.value)}
-								placeholder="Enter current password"
-								className="rounded-lg border-[#dbe7ff] pr-10 focus-visible:ring-[#071a78]"
-								required
-								minLength={8}
-							/>
-							<button
-								type="button"
-								onClick={() => setShowCurrent(!showCurrent)}
-								className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-							>
-								{showCurrent ? (
-									<EyeOff className="h-4 w-4" />
-								) : (
-									<Eye className="h-4 w-4" />
-								)}
-							</button>
-						</div>
-					</div>
-
-					{/* New Password */}
-					<div>
-						<label
-							htmlFor="new-password"
-							className="mb-1.5 block font-medium text-slate-700 text-sm"
-						>
-							New Password
-						</label>
-						<div className="relative">
-							<Input
-								id="new-password"
-								type={showNew ? "text" : "password"}
-								value={newPassword}
-								onChange={(e) => setNewPassword(e.target.value)}
-								placeholder="Enter new password"
-								className="rounded-lg border-[#dbe7ff] pr-10 focus-visible:ring-[#071a78]"
-								required
-								minLength={8}
-								maxLength={72}
-							/>
-							<button
-								type="button"
-								onClick={() => setShowNew(!showNew)}
-								className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-							>
-								{showNew ? (
-									<EyeOff className="h-4 w-4" />
-								) : (
-									<Eye className="h-4 w-4" />
-								)}
-							</button>
-						</div>
-						{newPassword.length > 0 && newPassword.length < 8 && (
-							<p className="mt-1 text-red-500 text-xs">
-								Must be at least 8 characters
-							</p>
-						)}
-					</div>
-
-					{/* Confirm Password */}
-					<div>
-						<label
-							htmlFor="confirm-password"
-							className="mb-1.5 block font-medium text-slate-700 text-sm"
-						>
-							Confirm New Password
-						</label>
-						<div className="relative">
-							<Input
-								id="confirm-password"
-								type={showConfirm ? "text" : "password"}
-								value={confirmPassword}
-								onChange={(e) => setConfirmPassword(e.target.value)}
-								placeholder="Confirm new password"
-								className="rounded-lg border-[#dbe7ff] pr-10 focus-visible:ring-[#071a78]"
-								required
-								minLength={8}
-								maxLength={72}
-							/>
-							<button
-								type="button"
-								onClick={() => setShowConfirm(!showConfirm)}
-								className="absolute top-1/2 right-3 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-							>
-								{showConfirm ? (
-									<EyeOff className="h-4 w-4" />
-								) : (
-									<Eye className="h-4 w-4" />
-								)}
-							</button>
-						</div>
-						{confirmPassword.length > 0 && newPassword !== confirmPassword && (
-							<p className="mt-1 text-red-500 text-xs">
-								Passwords do not match
-							</p>
-						)}
-					</div>
-
-					{/* Buttons */}
-					<div className="flex justify-end gap-2 pt-2">
+				) : (
+					<div className="flex gap-2">
 						<Button
-							type="button"
 							variant="outline"
 							size="sm"
-							onClick={() => {
-								setIsOpen(false);
-								setCurrentPassword("");
-								setNewPassword("");
-								setConfirmPassword("");
-							}}
-							disabled={changePassword.isPending}
+							onClick={handleCancel}
+							disabled={updateProfile.isPending}
 							className="rounded-lg border-slate-200"
 						>
 							Cancel
 						</Button>
 						<Button
-							type="submit"
 							size="sm"
-							disabled={changePassword.isPending}
+							onClick={handleSave}
+							disabled={updateProfile.isPending}
 							className="rounded-lg bg-[#071a78] text-white hover:bg-[#0a24a0]"
 						>
-							{changePassword.isPending ? (
+							{updateProfile.isPending ? (
 								<Loader2 className="h-4 w-4 animate-spin" />
 							) : (
-								<Shield className="h-4 w-4" />
+								<Check className="h-4 w-4" />
 							)}
-							Update Password
+							Save
 						</Button>
 					</div>
-				</form>
-			)}
+				)}
+			</div>
+
+			<p className="mt-1 mb-5 text-slate-500 text-sm">
+				Highlight your top skills. You can add up to 5 skills to showcase your
+				expertise.
+			</p>
+
+			<div className="space-y-4">
+				{isEditing && skills.length < 5 && (
+					<div className="flex items-center gap-2">
+						<Input
+							value={newSkill}
+							onChange={(e) => setNewSkill(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									handleAddSkill();
+								}
+							}}
+							placeholder="e.g. React, Marketing"
+							className="rounded-lg border-[#dbe7ff] focus-visible:ring-[#071a78]"
+							maxLength={30}
+						/>
+						<Button
+							type="button"
+							onClick={handleAddSkill}
+							className="shrink-0 gap-1 rounded-lg bg-[#f7faff] text-[#071a78] hover:bg-[#eef3ff]"
+							variant="secondary"
+						>
+							<Plus className="h-4 w-4" />
+							Add
+						</Button>
+					</div>
+				)}
+
+				{skills.length === 0 ? (
+					<div className="rounded-xl bg-[#f7faff] p-6 text-center">
+						<Briefcase className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+						<p className="text-slate-500 text-sm">No skills added yet.</p>
+					</div>
+				) : (
+					<div className="flex flex-wrap gap-2">
+						{skills.map((skill) => (
+							<Badge
+								key={skill}
+								className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium ${
+									isEditing
+										? "bg-[#eef3ff] text-[#071a78] hover:bg-[#eef3ff]"
+										: "bg-[#f7faff] text-slate-700 hover:bg-[#f7faff]"
+								}`}
+								variant="secondary"
+							>
+								{skill}
+								{isEditing && (
+									<button
+										type="button"
+										onClick={() => handleRemoveSkill(skill)}
+										className="ml-1 rounded-full p-0.5 text-[#071a78]/60 hover:bg-[#071a78]/10 hover:text-[#071a78]"
+										aria-label={`Remove ${skill}`}
+									>
+										<X className="h-3 w-3" />
+									</button>
+								)}
+							</Badge>
+						))}
+					</div>
+				)}
+
+				{isEditing && (
+					<p className="text-right text-slate-400 text-xs">
+						{skills.length} / 5 skills added
+					</p>
+				)}
+			</div>
 		</div>
 	);
 }
@@ -796,7 +746,7 @@ function ProfileSkeleton() {
 				</div>
 			</div>
 
-			{/* Password skeleton */}
+			{/* Skills skeleton */}
 			<div className="rounded-2xl border border-[#dbe7ff] bg-white p-6">
 				<Skeleton className="h-6 w-44" />
 				<Skeleton className="mt-2 h-4 w-80" />

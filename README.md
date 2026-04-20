@@ -30,13 +30,24 @@ Create environment variables for web and server/database before running the app:
 
 ```bash
 # apps/web/.env
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3000
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+NEXT_PUBLIC_SERVER_URLS=http://localhost:3000
 
 # apps/server/.env
 DATABASE_URL=postgresql://...
 CORS_ORIGIN=http://localhost:3001,https://unieventsss.vercel.app,https://unievent.in,https://www.unievent.in
 BETTER_AUTH_API_KEY=your_better_auth_dashboard_api_key_if_you_use_the_hosted_dashboard
 ```
+
+## Production Deployment
+
+For the VPS deployment, use Dokploy with the guide in
+[docs/dokploy-deployment.md](docs/dokploy-deployment.md).
+
+Production uses the root [.env.example](.env.example) as the env template. Local
+development still uses `apps/server/.env` and `apps/web/.env`.
 
 ## Database Setup
 

@@ -72,7 +72,7 @@ export default function TicketsPage() {
 									<div>
 										<p className="font-medium text-slate-700">Price</p>
 										<p className="text-slate-600">
-											₹{(ticket.pricePaid / 100).toFixed(2)}
+											₹{ticket.pricePaid.toFixed(2)}
 										</p>
 									</div>
 								</div>

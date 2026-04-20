@@ -1,4 +1,5 @@
 import {
+	confirmFreeOrderSchema,
 	idParamSchema,
 	initiatePaymentSchema,
 	paymentFilterSchema,
@@ -40,6 +41,15 @@ export class PaymentsController {
 	async initiate(req: Request, res: Response) {
 		const body = initiatePaymentSchema.parse(req.body);
 		const result = await paymentsService.create(body, this.getActor(req));
+		res.status(201).json(result);
+	}
+
+	async confirmFreeOrder(req: Request, res: Response) {
+		const body = confirmFreeOrderSchema.parse(req.body);
+		const result = await paymentsService.confirmFreeOrder(
+			body,
+			this.getActor(req),
+		);
 		res.status(201).json(result);
 	}
 

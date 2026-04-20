@@ -27,11 +27,11 @@ export function createApp(): Express {
 			origin: getAllowedCorsOrigins(),
 			methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
 			credentials: true,
+			allowedHeaders: ["Content-Type", "Authorization"],
 		}),
 	);
 	app.use(requestIdMiddleware);
 	app.use(loggerMiddleware);
-	app.all("/api/auth/{*any}", toNodeHandler(auth));
 	app.get("/", (_req, res) => {
 		res.status(200).json({
 			message: "Voltaze server is running",
@@ -50,6 +50,7 @@ export function createApp(): Express {
 		res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 	});
 
+	app.use("/api/auth", toNodeHandler(auth));
 	registerModules(app);
 	app.use(notFoundMiddleware);
 	app.use(errorHandlerMiddleware);

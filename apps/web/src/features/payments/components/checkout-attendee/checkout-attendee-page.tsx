@@ -1,7 +1,7 @@
 "use client";
 
 import type { Route } from "next";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { useCurrentUser } from "@/features/auth";
 import { useEvent, useTicketTiers } from "@/features/events/hooks/use-events";
 import { CheckoutSummary } from "@/features/payments/components/checkout-summary";
 import {
+	type CheckoutDraftItem,
+	type CheckoutDraftTicketHolder,
 	readCheckoutDraft,
 	writeCheckoutDraft,
 } from "@/features/payments/utils/checkout-session";
@@ -21,20 +23,24 @@ function formatMoney(amount: number) {
 		style: "currency",
 		currency: "INR",
 		maximumFractionDigits: 0,
-	}).format(amount / 100);
+	}).format(amount);
 }
 
 export function CheckoutAttendeePage({ slug }: { slug: string }) {
 	const router = useRouter();
-	const searchParams = useSearchParams();
 	const { data: user } = useCurrentUser();
 	const { data: event, isLoading: isEventLoading } = useEvent(slug);
 	const { data: tiersResponse } = useTicketTiers(event?.id ?? "");
 
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
-	const [phone, setPhone] = useState("");
-	const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+	const [purchaserName, setPurchaserName] = useState("");
+	const [purchaserEmail, setPurchaserEmail] = useState("");
+	const [purchaserPhone, setPurchaserPhone] = useState("");
+	const [tierQuantities, setTierQuantities] = useState<Record<string, number>>(
+		{},
+	);
+	const [ticketHolders, setTicketHolders] = useState<
+		CheckoutDraftTicketHolder[]
+	>([]);
 
 	const paidTiers = useMemo(
 		() =>
@@ -44,10 +50,41 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 		[tiersResponse?.data],
 	);
 
-	const selectedTier =
-		paidTiers.find((tier) => tier.id === selectedTierId) ??
-		paidTiers[0] ??
-		null;
+	const selectedItems = useMemo<CheckoutDraftItem[]>(
+		() =>
+			paidTiers
+				.map((tier) => ({
+					tierId: tier.id,
+					quantity: tierQuantities[tier.id] ?? 0,
+				}))
+				.filter((item) => item.quantity > 0),
+		[paidTiers, tierQuantities],
+	);
+
+	const selectedTiers = useMemo(
+		() =>
+			selectedItems
+				.map((item) => {
+					const tier = paidTiers.find((value) => value.id === item.tierId);
+					if (!tier) {
+						return null;
+					}
+
+					return {
+						id: tier.id,
+						name: tier.name,
+						price: tier.price,
+						quantity: item.quantity,
+					};
+				})
+				.filter((value): value is NonNullable<typeof value> => Boolean(value)),
+		[selectedItems, paidTiers],
+	);
+
+	const totalTickets = useMemo(
+		() => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+		[selectedItems],
+	);
 
 	useEffect(() => {
 		if (!user) {
@@ -57,8 +94,8 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 			return;
 		}
 
-		setName((current) => current || user.name?.trim() || "");
-		setEmail((current) => current || user.email || "");
+		setPurchaserName((current) => current || user.name?.trim() || "");
+		setPurchaserEmail((current) => current || user.email || "");
 	}, [router, slug, user]);
 
 	useEffect(() => {
@@ -79,37 +116,127 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 
 		const draft = readCheckoutDraft(event.slug);
 		if (draft) {
-			setName((current) => current || draft.name);
-			setEmail((current) => current || draft.email);
-			setPhone((current) => current || draft.phone);
+			setPurchaserName((current) => current || draft.purchaserName);
+			setPurchaserEmail((current) => current || draft.purchaserEmail);
+			setPurchaserPhone((current) => current || draft.purchaserPhone);
+
+			setTierQuantities(() =>
+				draft.items.reduce<Record<string, number>>((acc, item) => {
+					acc[item.tierId] = item.quantity;
+					return acc;
+				}, {}),
+			);
+
+			setTicketHolders(draft.ticketHolders);
 		}
 	}, [event, router]);
 
 	useEffect(() => {
-		const requestedTierId = searchParams.get("tierId");
-		const draftTierId = readCheckoutDraft(slug)?.tierId;
-		const targetTierId =
-			requestedTierId || draftTierId || paidTiers[0]?.id || null;
-
-		if (targetTierId) {
-			setSelectedTierId(targetTierId);
+		if (paidTiers.length === 0) {
+			return;
 		}
-	}, [paidTiers, searchParams, slug]);
+
+		setTierQuantities((current) => {
+			const next: Record<string, number> = {};
+			for (const tier of paidTiers) {
+				next[tier.id] = Math.max(0, current[tier.id] ?? 0);
+			}
+
+			return next;
+		});
+	}, [paidTiers]);
+
+	useEffect(() => {
+		const holderSlots: string[] = [];
+		for (const tier of paidTiers) {
+			const quantity = tierQuantities[tier.id] ?? 0;
+			for (let index = 0; index < quantity; index++) {
+				holderSlots.push(`${tier.id}:${index}`);
+			}
+		}
+
+		if (holderSlots.length === 0) {
+			setTicketHolders([]);
+			return;
+		}
+
+		setTicketHolders((current) => {
+			const keyedCurrent = new Map(
+				current.map((holder, index) => {
+					const key = `${holder.tierId}:${index}`;
+					return [key, holder];
+				}),
+			);
+
+			return holderSlots.map((slot) => {
+				const [tierId] = slot.split(":");
+				return (
+					keyedCurrent.get(slot) ?? {
+						tierId,
+						name: purchaserName.trim(),
+						email: purchaserEmail.trim(),
+						phone: purchaserPhone.trim(),
+					}
+				);
+			});
+		});
+	}, [
+		paidTiers,
+		purchaserEmail,
+		purchaserName,
+		purchaserPhone,
+		tierQuantities,
+	]);
+
+	const updateTierQuantity = (tierId: string, quantity: number) => {
+		setTierQuantities((current) => ({
+			...current,
+			[tierId]: Math.max(0, quantity),
+		}));
+	};
+
+	const updateTicketHolder = (
+		index: number,
+		field: "name" | "email" | "phone",
+		value: string,
+	) => {
+		setTicketHolders((current) => {
+			const next = [...current];
+			next[index] = {
+				...next[index],
+				[field]: value,
+			};
+			return next;
+		});
+	};
 
 	const handleContinue = () => {
-		if (!event || !selectedTier) {
+		if (!event || selectedItems.length === 0) {
 			showNotification({
 				title: "Select a ticket",
-				message: "Please select an available paid ticket tier.",
+				message: "Please select at least one ticket tier and quantity.",
 				color: "red",
 			});
 			return;
 		}
 
-		if (!name.trim() || !email.trim()) {
+		if (!purchaserName.trim() || !purchaserEmail.trim()) {
 			showNotification({
 				title: "Missing attendee details",
-				message: "Name and email are required.",
+				message: "Purchaser name and email are required.",
+				color: "red",
+			});
+			return;
+		}
+
+		const hasInvalidHolder = ticketHolders.some(
+			(holder) => !holder.name.trim() || !holder.email.trim(),
+		);
+
+		if (hasInvalidHolder) {
+			showNotification({
+				title: "Missing ticket holder details",
+				message: "Each ticket holder must have a name and email.",
 				color: "red",
 			});
 			return;
@@ -118,17 +245,20 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 		writeCheckoutDraft({
 			eventId: event.id,
 			eventSlug: event.slug,
-			tierId: selectedTier.id,
-			quantity: 1,
-			name: name.trim(),
-			email: email.trim(),
-			phone: phone.trim(),
+			items: selectedItems,
+			purchaserName: purchaserName.trim(),
+			purchaserEmail: purchaserEmail.trim(),
+			purchaserPhone: purchaserPhone.trim(),
+			ticketHolders: ticketHolders.map((holder) => ({
+				tierId: holder.tierId,
+				name: holder.name.trim(),
+				email: holder.email.trim(),
+				phone: holder.phone.trim(),
+			})),
 		});
 
 		startTopLoader();
-		router.push(
-			`/events/${event.slug}/checkout/payment?tierId=${selectedTier.id}` as Route,
-		);
+		router.push(`/events/${event.slug}/checkout/payment` as Route);
 	};
 
 	if (isEventLoading || !event) {
@@ -158,12 +288,12 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 								htmlFor="attendee-name"
 								className="mb-1.5 block font-semibold text-[#1d4ed8] text-xs uppercase tracking-wide sm:mb-2"
 							>
-								Full Name
+								Purchaser Full Name
 							</label>
 							<Input
-								id="attendee-name"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
+								id="purchaser-name"
+								value={purchaserName}
+								onChange={(e) => setPurchaserName(e.target.value)}
 								placeholder="John Doe"
 								className="h-9 border-0 bg-white text-sm sm:h-10 md:h-11"
 							/>
@@ -173,12 +303,12 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 								htmlFor="attendee-email"
 								className="mb-1.5 block font-semibold text-[#1d4ed8] text-xs uppercase tracking-wide sm:mb-2"
 							>
-								Email Address
+								Purchaser Email Address
 							</label>
 							<Input
-								id="attendee-email"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
+								id="purchaser-email"
+								value={purchaserEmail}
+								onChange={(e) => setPurchaserEmail(e.target.value)}
 								placeholder="john@email.com"
 								className="h-9 border-0 bg-white text-sm sm:h-10 md:h-11"
 							/>
@@ -188,12 +318,12 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 								htmlFor="attendee-phone"
 								className="mb-1.5 block font-semibold text-[#1d4ed8] text-xs uppercase tracking-wide sm:mb-2"
 							>
-								Whatsapp Number
+								Purchaser Whatsapp Number
 							</label>
 							<Input
-								id="attendee-phone"
-								value={phone}
-								onChange={(e) => setPhone(e.target.value)}
+								id="purchaser-phone"
+								value={purchaserPhone}
+								onChange={(e) => setPurchaserPhone(e.target.value)}
 								placeholder="0000 0000 000"
 								className="h-9 border-0 bg-white text-sm sm:h-10 md:h-11"
 							/>
@@ -209,8 +339,7 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 						{paidTiers.map((tier, index) => {
 							const isSelected = selectedTier?.id === tier.id;
 							return (
-								<button
-									type="button"
+								<div
 									key={tier.id}
 									onClick={() => setSelectedTierId(tier.id)}
 									className={`rounded-lg border p-3 text-left transition sm:rounded-xl sm:p-3.5 md:p-4 ${
@@ -230,10 +359,101 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 									<p className="font-bold text-[#2563eb] text-xs sm:text-sm">
 										{formatMoney(tier.price)}
 									</p>
-								</button>
+									<p className="mt-1 text-slate-500 text-xs">
+										{remaining} seats left
+									</p>
+									<div className="mt-3 flex items-center gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											className="h-8 w-8 rounded-full p-0"
+											onClick={() =>
+												updateTierQuantity(tier.id, Math.max(0, quantity - 1))
+											}
+										>
+											-
+										</Button>
+										<Input
+											type="number"
+											min={0}
+											max={remaining}
+											value={quantity}
+											onChange={(e) =>
+												updateTierQuantity(
+													tier.id,
+													Math.min(remaining, Number(e.target.value) || 0),
+												)
+											}
+											className="h-8 w-20 border-0 bg-white text-center"
+										/>
+										<Button
+											type="button"
+											variant="outline"
+											className="h-8 w-8 rounded-full p-0"
+											onClick={() =>
+												updateTierQuantity(
+													tier.id,
+													Math.min(remaining, quantity + 1),
+												)
+											}
+										>
+											+
+										</Button>
+									</div>
+								</div>
 							);
 						})}
 					</div>
+
+					{totalTickets > 0 && (
+						<div className="mt-6 space-y-4">
+							<h2 className="font-semibold text-[#0f172a] text-lg">
+								Ticket Holder Details ({totalTickets})
+							</h2>
+							{ticketHolders.map((holder, index) => {
+								const tierName =
+									paidTiers.find((tier) => tier.id === holder.tierId)?.name ??
+									"Ticket";
+
+								return (
+									<div
+										key={`${holder.tierId}-${index}`}
+										className="rounded-xl border border-slate-200 bg-white p-4"
+									>
+										<p className="font-semibold text-slate-900 text-sm">
+											Ticket {index + 1} - {tierName}
+										</p>
+										<div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+											<Input
+												value={holder.name}
+												onChange={(e) =>
+													updateTicketHolder(index, "name", e.target.value)
+												}
+												placeholder="Holder name"
+												className="h-10 border border-slate-200 bg-white"
+											/>
+											<Input
+												value={holder.email}
+												onChange={(e) =>
+													updateTicketHolder(index, "email", e.target.value)
+												}
+												placeholder="Holder email"
+												className="h-10 border border-slate-200 bg-white"
+											/>
+											<Input
+												value={holder.phone}
+												onChange={(e) =>
+													updateTicketHolder(index, "phone", e.target.value)
+												}
+												placeholder="Holder phone (optional)"
+												className="h-10 border border-slate-200 bg-white"
+											/>
+										</div>
+									</div>
+								);
+							})}
+						</div>
+					)}
 
 					<Button
 						onClick={handleContinue}
@@ -243,7 +463,7 @@ export function CheckoutAttendeePage({ slug }: { slug: string }) {
 					</Button>
 				</section>
 
-				<CheckoutSummary event={event} selectedTier={selectedTier} />
+				<CheckoutSummary event={event} selectedTiers={selectedTiers} />
 			</div>
 		</div>
 	);

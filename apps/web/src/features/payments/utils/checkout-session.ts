@@ -1,11 +1,23 @@
-export type CheckoutDraft = {
-	eventId: string;
-	eventSlug: string;
+export type CheckoutDraftItem = {
 	tierId: string;
 	quantity: number;
+};
+
+export type CheckoutDraftTicketHolder = {
+	tierId: string;
 	name: string;
 	email: string;
 	phone: string;
+};
+
+export type CheckoutDraft = {
+	eventId: string;
+	eventSlug: string;
+	items: CheckoutDraftItem[];
+	purchaserName: string;
+	purchaserEmail: string;
+	purchaserPhone: string;
+	ticketHolders: CheckoutDraftTicketHolder[];
 };
 
 function storageKey(eventSlug: string) {

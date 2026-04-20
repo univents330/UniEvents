@@ -1,4 +1,5 @@
 import {
+	confirmFreeOrderSchema,
 	idParamSchema,
 	initiatePaymentSchema,
 	paymentFilterSchema,
@@ -39,6 +40,12 @@ export function createPaymentsRouter(): Router {
 		requireAuth,
 		validatePipe({ body: initiatePaymentSchema }),
 		asyncHandler((req, res) => paymentsController.initiate(req, res)),
+	);
+	router.post(
+		"/free-confirm",
+		requireAuth,
+		validatePipe({ body: confirmFreeOrderSchema }),
+		asyncHandler((req, res) => paymentsController.confirmFreeOrder(req, res)),
 	);
 	router.post(
 		"/verify",

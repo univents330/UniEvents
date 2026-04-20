@@ -1,11 +1,17 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { useEvent, useUpdateEvent } from "../../../../../features/events/index";
+import {
+	eventsService,
+	useEvent,
+	useTicketTiers,
+	useUpdateEvent,
+} from "../../../../../features/events/index";
 import { showNotification } from "../../../../../shared/lib/notifications";
 
 function toDateTimeLocal(date: string | Date) {
@@ -33,11 +39,22 @@ export default function EditHostEventPage() {
 	const params = useParams<{ eventId: string }>();
 	const eventId = typeof params?.eventId === "string" ? params.eventId : "";
 	const router = useRouter();
+	const queryClient = useQueryClient();
 
 	const eventQuery = useEvent(eventId);
+	const tiersQuery = useTicketTiers(eventId);
 	const updateEvent = useUpdateEvent(eventId);
 
 	const [form, setForm] = useState<EventFormState | null>(null);
+	const [isSavingTiers, setIsSavingTiers] = useState(false);
+	const [newTier, setNewTier] = useState({
+		name: "",
+		price: "",
+		maxQuantity: "",
+	});
+	const [tierDrafts, setTierDrafts] = useState<
+		Record<string, { name: string; price: string; maxQuantity: string }>
+	>({});
 
 	useEffect(() => {
 		const event = eventQuery.data;
@@ -58,6 +75,22 @@ export default function EditHostEventPage() {
 			thumbnail: event.thumbnail,
 		});
 	}, [eventQuery.data]);
+
+	useEffect(() => {
+		const tiers = tiersQuery.data?.data ?? [];
+		setTierDrafts((current) => {
+			const next = { ...current };
+			for (const tier of tiers) {
+				next[tier.id] = {
+					name: current[tier.id]?.name ?? tier.name,
+					price: current[tier.id]?.price ?? String(tier.price),
+					maxQuantity:
+						current[tier.id]?.maxQuantity ?? String(tier.maxQuantity),
+				};
+			}
+			return next;
+		});
+	}, [tiersQuery.data?.data]);
 
 	const isDirty = useMemo(() => {
 		const event = eventQuery.data;
@@ -113,6 +146,78 @@ export default function EditHostEventPage() {
 		});
 
 		router.push("/host/events" as Route);
+	};
+
+	const invalidateTierData = async () => {
+		await queryClient.invalidateQueries({ queryKey: ["events"] });
+	};
+
+	const handleCreateTier = async () => {
+		if (!eventId || !newTier.name.trim() || Number(newTier.maxQuantity) <= 0) {
+			showNotification({
+				title: "Invalid ticket tier",
+				message: "Tier name and quantity are required.",
+				color: "red",
+			});
+			return;
+		}
+
+		setIsSavingTiers(true);
+		try {
+			await eventsService.createTicketTier(eventId, {
+				name: newTier.name.trim(),
+				description: "Updated by host",
+				price: Number(newTier.price || 0),
+				maxQuantity: Number(newTier.maxQuantity),
+			});
+
+			setNewTier({ name: "", price: "", maxQuantity: "" });
+			await invalidateTierData();
+		} finally {
+			setIsSavingTiers(false);
+		}
+	};
+
+	const handleSaveTier = async (tierId: string) => {
+		if (!eventId) {
+			return;
+		}
+
+		const draft = tierDrafts[tierId];
+		if (!draft || !draft.name.trim() || Number(draft.maxQuantity) <= 0) {
+			showNotification({
+				title: "Invalid tier values",
+				message: "Tier name and quantity are required.",
+				color: "red",
+			});
+			return;
+		}
+
+		setIsSavingTiers(true);
+		try {
+			await eventsService.updateTicketTier(eventId, tierId, {
+				name: draft.name.trim(),
+				price: Number(draft.price || 0),
+				maxQuantity: Number(draft.maxQuantity),
+			});
+			await invalidateTierData();
+		} finally {
+			setIsSavingTiers(false);
+		}
+	};
+
+	const handleDeleteTier = async (tierId: string) => {
+		if (!eventId) {
+			return;
+		}
+
+		setIsSavingTiers(true);
+		try {
+			await eventsService.deleteTicketTier(eventId, tierId);
+			await invalidateTierData();
+		} finally {
+			setIsSavingTiers(false);
+		}
 	};
 
 	if (eventQuery.isLoading || !form) {
@@ -312,6 +417,152 @@ export default function EditHostEventPage() {
 					</div>
 				</form>
 			</div>
+
+			{form.type === "PAID" ? (
+				<div className="rounded-2xl border border-[#dbe7ff] bg-white p-6 shadow-sm">
+					<h2 className="font-bold text-slate-900 text-xl">Ticket Tiers</h2>
+					<p className="mt-1 text-slate-600 text-sm">
+						Manage multiple ticket tiers for this event.
+					</p>
+
+					<div className="mt-5 space-y-3">
+						{(tiersQuery.data?.data ?? []).map((tier) => {
+							const draft = tierDrafts[tier.id] ?? {
+								name: tier.name,
+								price: String(tier.price),
+								maxQuantity: String(tier.maxQuantity),
+							};
+
+							return (
+								<div
+									key={tier.id}
+									className="rounded-xl border border-slate-200 bg-[#f8fbff] p-4"
+								>
+									<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+										<input
+											value={draft.name}
+											onChange={(e) =>
+												setTierDrafts((current) => ({
+													...current,
+													[tier.id]: {
+														...draft,
+														name: e.target.value,
+													},
+												}))
+											}
+											className="w-full rounded-lg border border-slate-300 px-3 py-2"
+										/>
+										<input
+											type="number"
+											min="0"
+											value={draft.price}
+											onChange={(e) =>
+												setTierDrafts((current) => ({
+													...current,
+													[tier.id]: {
+														...draft,
+														price: e.target.value,
+													},
+												}))
+											}
+											className="w-full rounded-lg border border-slate-300 px-3 py-2"
+										/>
+										<input
+											type="number"
+											min="1"
+											value={draft.maxQuantity}
+											onChange={(e) =>
+												setTierDrafts((current) => ({
+													...current,
+													[tier.id]: {
+														...draft,
+														maxQuantity: e.target.value,
+													},
+												}))
+											}
+											className="w-full rounded-lg border border-slate-300 px-3 py-2"
+										/>
+									</div>
+									<div className="mt-3 flex items-center justify-between text-xs">
+										<span className="text-slate-500">
+											Sold: {tier.soldCount} / {tier.maxQuantity}
+										</span>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												onClick={() => void handleSaveTier(tier.id)}
+												className="rounded-md bg-[#0a4bb8] px-3 py-1.5 font-semibold text-white"
+												disabled={isSavingTiers}
+											>
+												Save Tier
+											</button>
+											<button
+												type="button"
+												onClick={() => void handleDeleteTier(tier.id)}
+												className="rounded-md bg-rose-50 px-3 py-1.5 font-semibold text-rose-700"
+												disabled={isSavingTiers}
+											>
+												Delete Tier
+											</button>
+										</div>
+									</div>
+								</div>
+							);
+						})}
+					</div>
+
+					<div className="mt-6 rounded-xl border border-slate-200 bg-[#f8fbff] p-4">
+						<p className="font-semibold text-slate-900 text-sm">Add New Tier</p>
+						<div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+							<input
+								value={newTier.name}
+								onChange={(e) =>
+									setNewTier((current) => ({
+										...current,
+										name: e.target.value,
+									}))
+								}
+								placeholder="Tier name"
+								className="w-full rounded-lg border border-slate-300 px-3 py-2"
+							/>
+							<input
+								type="number"
+								min="0"
+								value={newTier.price}
+								onChange={(e) =>
+									setNewTier((current) => ({
+										...current,
+										price: e.target.value,
+									}))
+								}
+								placeholder="Price"
+								className="w-full rounded-lg border border-slate-300 px-3 py-2"
+							/>
+							<input
+								type="number"
+								min="1"
+								value={newTier.maxQuantity}
+								onChange={(e) =>
+									setNewTier((current) => ({
+										...current,
+										maxQuantity: e.target.value,
+									}))
+								}
+								placeholder="Quantity"
+								className="w-full rounded-lg border border-slate-300 px-3 py-2"
+							/>
+						</div>
+						<button
+							type="button"
+							onClick={() => void handleCreateTier()}
+							disabled={isSavingTiers}
+							className="mt-3 rounded-md bg-[#0a4bb8] px-4 py-2 font-semibold text-sm text-white"
+						>
+							Add Tier
+						</button>
+					</div>
+				</div>
+			) : null}
 		</div>
 	);
 }

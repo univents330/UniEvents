@@ -58,6 +58,17 @@ export const paymentsService = {
 	},
 
 	/**
+	 * Confirm free order and issue tickets without Razorpay checkout
+	 */
+	async confirmFreeOrder(data: InitiatePaymentInput) {
+		const response = await apiClient.post<VerifyPaymentResponse>(
+			"/payments/free-confirm",
+			data,
+		);
+		return response.data;
+	},
+
+	/**
 	 * Verify payment from Razorpay
 	 */
 	async verifyPayment(data: VerifyPaymentInput) {
