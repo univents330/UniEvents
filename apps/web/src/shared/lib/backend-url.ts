@@ -10,6 +10,10 @@ function normalizeConfiguredList(value?: string) {
 	return value ? value.split(",").map(normalizeUrl).filter(Boolean) : [];
 }
 
+function isDefinedString(value: string | undefined): value is string {
+	return typeof value === "string" && value.length > 0;
+}
+
 function isLocalHostname(hostname: string) {
 	return hostname === "localhost" || hostname === "127.0.0.1";
 }
@@ -30,6 +34,7 @@ function getConfiguredBackendUrls() {
 		...normalizeConfiguredList(env.NEXT_PUBLIC_API_URLS),
 		...normalizeConfiguredList(env.NEXT_PUBLIC_SERVER_URLS),
 	]
+		.filter(isDefinedString)
 		.map(normalizeUrl)
 		.filter(Boolean);
 
