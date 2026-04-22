@@ -1,1 +1,1 @@
-export { HostSidebar } from "./host-sidebar";
+export { HostSidebar, navSections } from "./host-sidebar";

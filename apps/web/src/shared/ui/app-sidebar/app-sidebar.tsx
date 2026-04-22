@@ -4,7 +4,7 @@ import { LogOut } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useLogout } from "@/features/auth";
 import { cn } from "@/shared/lib/utils";
 
@@ -28,13 +28,23 @@ export function AppSidebar({ sections }: AppSidebarProps) {
 	const pathname = usePathname();
 	const router = useRouter();
 	const logoutMutation = useLogout();
+	const activeHref = useMemo(() => {
+		const matchedHrefs = sections
+			.flatMap((section) => section.items)
+			.map((item) => item.href)
+			.filter((href) => pathname === href || pathname.startsWith(`${href}/`));
 
-	const isActive = (href: string) => {
-		if (pathname === href) {
-			return true;
+		if (matchedHrefs.length === 0) {
+			return null;
 		}
 
-		return pathname.startsWith(`${href}/`);
+		return matchedHrefs.reduce((best, current) =>
+			current.length > best.length ? current : best,
+		);
+	}, [pathname, sections]);
+
+	const isActive = (href: string) => {
+		return activeHref === href;
 	};
 
 	const handleLogout = async () => {

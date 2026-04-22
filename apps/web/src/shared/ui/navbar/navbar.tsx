@@ -1,18 +1,29 @@
 "use client";
 
 import {
+	BarChart3,
 	Bell,
-	CheckCheck,
+	CheckCircle,
 	ChevronDown,
+	CreditCard,
 	Globe,
 	Heart,
+	HelpCircle,
+	Home,
+	LayoutGrid,
 	LocateFixed,
 	LogOut,
 	MapPin,
+	Plus,
 	Search,
+	Settings,
+	Ticket,
 	Trash2,
+	User,
 	UserCircle2,
+	Users,
 	X,
+	Zap,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,6 +46,7 @@ import {
 	subscribeNotifications,
 } from "@/shared/lib/notification-center";
 import { startTopLoader } from "@/shared/lib/top-loader-events";
+import { navSections as hostNavSections } from "@/shared/ui/host-sidebar";
 
 function getProfileInitial(
 	name: string | null | undefined,
@@ -73,6 +85,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 	const logoutMutation = useLogout();
 	const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 	const [isMobileProfileMenuOpen, setIsMobileProfileMenuOpen] = useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [showScrolledSearch, setShowScrolledSearch] = useState(false);
 	const [isLocationMenuOpen, setIsLocationMenuOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -337,10 +350,69 @@ export function Navbar({ minimal = false }: NavbarProps) {
 		return sections;
 	}, [minimal, dashboardHref, isManagementRoute]);
 
+	const hostDrawerItems = useMemo(
+		() => hostNavSections.flatMap((section) => section.items),
+		[],
+	);
+
+	const userDrawerRoutes = useMemo(
+		() => [
+			"/user/dashboard",
+			"/events",
+			"/liked-events",
+			"/user/profile",
+			"/user/tickets",
+			"/user/orders",
+			"/user/payments",
+			"/user/settings",
+		],
+		[],
+	);
+
+	const isAppDrawerRoute = useMemo(() => {
+		const hostMatch = hostDrawerItems.some(
+			(item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+		);
+
+		const userMatch = userDrawerRoutes.some(
+			(route) => pathname === route || pathname.startsWith(`${route}/`),
+		);
+
+		const adminMatch =
+			pathname === "/admin/dashboard" ||
+			pathname.startsWith("/admin/dashboard/");
+
+		return hostMatch || userMatch || adminMatch;
+	}, [hostDrawerItems, pathname, userDrawerRoutes]);
+
+	const activeHostDrawerHref = useMemo(() => {
+		const matchedHrefs = hostDrawerItems
+			.map((item) => item.href)
+			.filter((href) => pathname === href || pathname.startsWith(`${href}/`));
+
+		if (matchedHrefs.length === 0) {
+			return null;
+		}
+
+		return matchedHrefs.reduce((best, current) =>
+			current.length > best.length ? current : best,
+		);
+	}, [hostDrawerItems, pathname]);
+
+	const isDrawerItemActive = (href: string) => {
+		return activeHostDrawerHref === href;
+	};
+
 	const profileInitial = getProfileInitial(user?.name, user?.email);
 	const alwaysShowSearch = pathname !== "/";
 	const isSearchVisible =
 		!minimal && !isManagementRoute && (alwaysShowSearch || showScrolledSearch);
+
+	useEffect(() => {
+		if (!isAppDrawerRoute && isMobileMenuOpen) {
+			setIsMobileMenuOpen(false);
+		}
+	}, [isAppDrawerRoute, isMobileMenuOpen]);
 
 	return (
 		<header className="fixed top-0 right-0 left-0 z-50 border-slate-100 border-b bg-white/80 backdrop-blur-md">
@@ -366,7 +438,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 							height={40}
 							priority
 						/>
-						<span className="font-black text-2xl text-[#070190] leading-none tracking-tight md:text-[29px]">
+						<span className="hidden font-black text-2xl text-[#070190] leading-none tracking-tight md:inline md:text-[29px]">
 							UniEvent
 						</span>
 					</Link>
@@ -685,6 +757,27 @@ export function Navbar({ minimal = false }: NavbarProps) {
 						ref={mobileProfileMenuRef}
 						className="relative flex items-center gap-2 md:hidden"
 					>
+						{isAppDrawerRoute && (
+							<button
+								type="button"
+								onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+								className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+									isMobileMenuOpen
+										? "border-[#c9d7ff] bg-[#eef3ff] text-[#030370] shadow-[0_0_0_1px_rgba(3,3,112,0.08)]"
+										: "border-slate-200 bg-white text-slate-600 hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-[#030370]"
+								}`}
+								aria-label="Open menu"
+								aria-expanded={isMobileMenuOpen}
+								aria-pressed={isMobileMenuOpen}
+							>
+								<LayoutGrid
+									className={`h-4 w-4 transition-colors ${
+										isMobileMenuOpen ? "text-[#030370]" : "text-inherit"
+									}`}
+								/>
+							</button>
+						)}
+
 						{isSearchVisible && (
 							<Button
 								type="button"
@@ -695,15 +788,6 @@ export function Navbar({ minimal = false }: NavbarProps) {
 								<Search className="h-4 w-4" />
 							</Button>
 						)}
-
-						<button
-							type="button"
-							onClick={handleNavigateToLikedEvents}
-							className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition-colors hover:border-[#ccd5f7] hover:bg-[#f7f9ff] hover:text-rose-500"
-							aria-label="Open liked events"
-						>
-							<Heart className="h-4 w-4" />
-						</button>
 
 						<button
 							type="button"
@@ -933,7 +1017,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 								onClick={() => markAllNotificationsAsRead()}
 								className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 font-semibold text-[#1d2b57] text-xs transition-colors hover:bg-slate-50"
 							>
-								<CheckCheck className="h-3.5 w-3.5" />
+								<CheckCircle className="h-3.5 w-3.5" />
 								Mark all read
 							</button>
 							<button
@@ -1005,6 +1089,226 @@ export function Navbar({ minimal = false }: NavbarProps) {
 					</div>
 				</div>
 			</aside>
+
+			{/* Mobile Menu Backdrop */}
+			{isAppDrawerRoute && isMobileMenuOpen && (
+				<button
+					type="button"
+					className="fixed inset-x-0 top-16 bottom-0 z-30 bg-black/30"
+					aria-label="Close mobile menu"
+					onClick={() => setIsMobileMenuOpen(false)}
+				/>
+			)}
+
+			{/* Mobile Menu Drawer */}
+			{isAppDrawerRoute && (
+				<div
+					className={`fixed inset-x-0 top-16 z-40 max-h-[calc(100vh-4rem)] w-full overflow-y-auto bg-white transition-all duration-300 ${
+						isMobileMenuOpen
+							? "visible translate-y-0 opacity-100"
+							: "invisible -translate-y-2 opacity-0"
+					}`}
+					aria-hidden={!isMobileMenuOpen}
+				>
+					<div className="flex min-h-full flex-col">
+						{/* Grid Menu Items */}
+						<div className="flex-1 px-4 py-6">
+							<div className="grid grid-cols-3 gap-3">
+								{isManagementRoute ? (
+									<>
+										{/* Host/Admin Menu Items */}
+										{hostDrawerItems.map((item) => (
+											<button
+												key={item.href}
+												type="button"
+												onClick={() => {
+													startTopLoader();
+													window.location.assign(item.href);
+													setIsMobileMenuOpen(false);
+												}}
+												className={`flex flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-4 transition-all ${
+													isDrawerItemActive(item.href)
+														? "bg-[#030370] text-white shadow-[0_8px_24px_rgba(3,3,112,0.15)]"
+														: "bg-slate-100 text-slate-700 hover:bg-slate-200"
+												}`}
+											>
+												{item.icon}
+												<span className="text-center font-medium text-xs">
+													{item.label}
+												</span>
+											</button>
+										))}
+
+										{userRole === "ADMIN" && (
+											<>
+												<button
+													type="button"
+													onClick={() => {
+														startTopLoader();
+														window.location.assign("/admin/dashboard");
+														setIsMobileMenuOpen(false);
+													}}
+													className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+												>
+													<User className="h-5 w-5" />
+													<span className="text-center font-medium text-xs">
+														Admin
+													</span>
+												</button>
+											</>
+										)}
+									</>
+								) : (
+									<>
+										{/* User Menu Items */}
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/user/dashboard");
+												setIsMobileMenuOpen(false);
+											}}
+											className={`flex flex-col items-center justify-center gap-1.5 rounded-xl px-3 py-4 transition-all ${
+												pathname === "/user/dashboard"
+													? "bg-[#030370] text-white shadow-[0_8px_24px_rgba(3,3,112,0.15)]"
+													: "bg-slate-100 text-slate-700 hover:bg-slate-200"
+											}`}
+										>
+											<Home className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												Home
+											</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/events");
+												setIsMobileMenuOpen(false);
+											}}
+											className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+										>
+											<Globe className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												Discover
+											</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/liked-events");
+												setIsMobileMenuOpen(false);
+											}}
+											className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+										>
+											<Heart className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												Liked
+											</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/user/profile");
+												setIsMobileMenuOpen(false);
+											}}
+											className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+										>
+											<User className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												Profile
+											</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/user/tickets");
+												setIsMobileMenuOpen(false);
+											}}
+											className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+										>
+											<Ticket className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												My Tickets
+											</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/user/orders");
+												setIsMobileMenuOpen(false);
+											}}
+											className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+										>
+											<CreditCard className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												Orders
+											</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/user/payments");
+												setIsMobileMenuOpen(false);
+											}}
+											className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+										>
+											<CreditCard className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												Payments
+											</span>
+										</button>
+
+										<button
+											type="button"
+											onClick={() => {
+												startTopLoader();
+												window.location.assign("/user/settings");
+												setIsMobileMenuOpen(false);
+											}}
+											className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-4 text-slate-700 transition-all hover:bg-slate-200"
+										>
+											<Settings className="h-5 w-5" />
+											<span className="text-center font-medium text-xs">
+												Settings
+											</span>
+										</button>
+									</>
+								)}
+							</div>
+						</div>
+
+						{/* Logout Button */}
+						{user && (
+							<div className="border-slate-200 border-t px-6 py-6">
+								<button
+									type="button"
+									onClick={() => {
+										handleLogout();
+										setIsMobileMenuOpen(false);
+									}}
+									disabled={logoutMutation.isPending}
+									className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold text-rose-600 text-sm transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									<LogOut className="h-5 w-5" />
+									{logoutMutation.isPending ? "Logging out..." : "Logout"}
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
+			)}
 		</header>
 	);
 }
