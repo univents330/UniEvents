@@ -3,6 +3,7 @@ import { prisma } from "@unievent/db";
 import { env } from "@unievent/env/server";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import type { GoogleProfile } from "better-auth/social-providers";
 import { sendEmailViaBrevo } from "./brevo";
 import { getAllowedCorsOrigins } from "./cors-origins";
 
@@ -19,6 +20,10 @@ const googleProvider =
 		? {
 				clientId: env.GOOGLE_CLIENT_ID,
 				clientSecret: env.GOOGLE_CLIENT_SECRET,
+				mapProfileToUser: (profile: GoogleProfile) => ({
+					image:
+						typeof profile.picture === "string" ? profile.picture : undefined,
+				}),
 			}
 		: undefined;
 
@@ -53,7 +58,7 @@ export const auth = betterAuth({
 			}
 		: undefined,
 	emailAndPassword: {
-		enabled: true,
+		enabled: false,
 		sendResetPassword: async (data: BetterAuthEmailHookPayload) => {
 			const resetLink = data.url;
 			await sendEmailViaBrevo({

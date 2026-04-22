@@ -1,17 +1,14 @@
-import { Prisma, prisma, type User, type UserRole } from "@unievent/db";
+import { type Prisma, prisma, type User, type UserRole } from "@unievent/db";
 import {
-	type UpdateProfileInput,
 	type AdminUpdateUserInput,
-	type UserFilterInput,
-	publicUserSchema,
 	createPaginationMeta,
 	type PublicUser,
+	publicUserSchema,
+	type UpdateProfileInput,
+	type UserFilterInput,
 } from "@unievent/schema";
 
-import {
-	ForbiddenError,
-	NotFoundError,
-} from "@/common/exceptions/app-error";
+import { ForbiddenError, NotFoundError } from "@/common/exceptions/app-error";
 
 type UserActor = {
 	userId: string;
@@ -42,8 +39,7 @@ export class UsersService {
 		const skip = (page - 1) * limit;
 
 		// Non-admins may only browse HOST profiles
-		const effectiveRole =
-			actor.role === "ADMIN" ? role : role ?? "HOST";
+		const effectiveRole = actor.role === "ADMIN" ? role : (role ?? "HOST");
 		if (actor.role !== "ADMIN" && role && role !== "HOST") {
 			throw new ForbiddenError("You may only browse host profiles");
 		}
@@ -153,6 +149,35 @@ export class UsersService {
 		});
 
 		return this.toPublicUser(user);
+	}
+
+	/** Set the current user's host mode on or off. */
+	async setHostMode(userId: string, enabled: boolean): Promise<PublicUser> {
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: PUBLIC_USER_SELECT,
+		});
+
+		if (!user) {
+			throw new NotFoundError("User not found");
+		}
+
+		if (user.role === "ADMIN") {
+			throw new ForbiddenError("Administrators cannot toggle host mode");
+		}
+
+		const nextRole = enabled ? "HOST" : "USER";
+		if (user.role === nextRole) {
+			return this.toPublicUser(user);
+		}
+
+		const updated = await prisma.user.update({
+			where: { id: userId },
+			data: { role: nextRole },
+			select: PUBLIC_USER_SELECT,
+		});
+
+		return this.toPublicUser(updated);
 	}
 
 	/** Admin-only: update any user's role or full profile. */

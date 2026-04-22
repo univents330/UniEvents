@@ -1,6 +1,7 @@
 import {
-	updateProfileSchema,
 	adminUpdateUserSchema,
+	hostModeSchema,
+	updateProfileSchema,
 	userFilterSchema,
 	userIdParamSchema,
 } from "@unievent/schema";
@@ -46,6 +47,13 @@ export class UsersController {
 		const body = updateProfileSchema.parse(req.body);
 		const actor = this.getActor(req);
 		const user = await usersService.updateProfile(actor.userId, body);
+		res.status(200).json(user);
+	}
+
+	async setHostMode(req: Request, res: Response) {
+		const body = hostModeSchema.parse(req.body);
+		const actor = this.getActor(req);
+		const user = await usersService.setHostMode(actor.userId, body.enabled);
 		res.status(200).json(user);
 	}
 

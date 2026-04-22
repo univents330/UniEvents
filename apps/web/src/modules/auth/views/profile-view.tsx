@@ -1,13 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
+import { getApiErrorMessage } from "@/core/lib/api-error";
 import { useAuth } from "@/core/providers/auth-provider";
-import { useMe, useUpdateMe } from "../hooks/use-users";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { SectionTitle } from "@/shared/ui/section-title";
-import { Badge } from "@/shared/ui/badge";
-import { getApiErrorMessage } from "@/core/lib/api-error";
+import { Switch } from "@/shared/ui/switch";
+import { useMe, useSetHostMode, useUpdateMe } from "../hooks/use-users";
 
 function formatDate(value: string) {
 	return new Intl.DateTimeFormat("en", {
@@ -17,15 +19,17 @@ function formatDate(value: string) {
 }
 
 export function ProfileView() {
-	const { user: sessionUser, signOut } = useAuth();
+	const { user: sessionUser, signOut, refresh } = useAuth();
 	const meQuery = useMe();
 	const updateMe = useUpdateMe();
+	const setHostMode = useSetHostMode();
 	const profile = meQuery.data;
 
 	const [name, setName] = useState("");
 	const [skills, setSkills] = useState("");
 	const [isEditing, setIsEditing] = useState(false);
 	const [error, setError] = useState("");
+	const [hostModeError, setHostModeError] = useState("");
 
 	function startEdit() {
 		if (!profile) return;
@@ -55,6 +59,17 @@ export function ProfileView() {
 		}
 	}
 
+	async function handleHostModeChange(enabled: boolean) {
+		setHostModeError("");
+
+		try {
+			await setHostMode.mutateAsync(enabled);
+			await refresh();
+		} catch (err) {
+			setHostModeError(getApiErrorMessage(err, "Unable to update host mode."));
+		}
+	}
+
 	if (!sessionUser) {
 		return (
 			<div className="panel-soft p-6 text-[#5f6984]">
@@ -65,9 +80,7 @@ export function ProfileView() {
 
 	if (meQuery.isLoading) {
 		return (
-			<div className="panel-soft p-6 text-[#5f6984]">
-				Loading profile...
-			</div>
+			<div className="panel-soft p-6 text-[#5f6984]">Loading profile...</div>
 		);
 	}
 
@@ -97,27 +110,29 @@ export function ProfileView() {
 					{isEditing ? (
 						<form onSubmit={handleSave} className="space-y-5">
 							{error && (
-								<div className="rounded-xl border border-[#fecaca] bg-[#fff5f5] px-4 py-3 text-sm text-[#c53030]">
+								<div className="rounded-xl border border-[#fecaca] bg-[#fff5f5] px-4 py-3 text-[#c53030] text-sm">
 									{error}
 								</div>
 							)}
 
-							<label className="block space-y-2">
+							<label htmlFor="profile-name" className="block space-y-2">
 								<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
 									Name
 								</span>
 								<Input
+									id="profile-name"
 									value={name}
 									onChange={(e) => setName(e.target.value)}
 									placeholder="Your name"
 								/>
 							</label>
 
-							<label className="block space-y-2">
+							<label htmlFor="profile-skills" className="block space-y-2">
 								<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
 									Skills (comma-separated)
 								</span>
 								<Input
+									id="profile-skills"
 									value={skills}
 									onChange={(e) => setSkills(e.target.value)}
 									placeholder="React, TypeScript, Design"
@@ -141,7 +156,9 @@ export function ProfileView() {
 						<div className="space-y-5">
 							<div className="flex items-center gap-4">
 								{profile.image ? (
-									<img
+									<Image
+										width={64}
+										height={64}
 										src={profile.image}
 										alt={profile.name ?? "Avatar"}
 										className="h-16 w-16 rounded-full border-2 border-[#d6def4] object-cover"
@@ -152,7 +169,7 @@ export function ProfileView() {
 									</div>
 								)}
 								<div>
-									<h3 className="display-font font-bold text-xl text-[#0e1838]">
+									<h3 className="display-font font-bold text-[#0e1838] text-xl">
 										{profile.name ?? "Unnamed user"}
 									</h3>
 									<p className="text-[#5f6984] text-sm">{profile.email}</p>
@@ -165,8 +182,14 @@ export function ProfileView() {
 									label="Verified"
 									value={profile.emailVerified ? "Yes" : "No"}
 								/>
-								<InfoBlock label="Joined" value={formatDate(profile.createdAt)} />
-								<InfoBlock label="Updated" value={formatDate(profile.updatedAt)} />
+								<InfoBlock
+									label="Joined"
+									value={formatDate(profile.createdAt)}
+								/>
+								<InfoBlock
+									label="Updated"
+									value={formatDate(profile.updatedAt)}
+								/>
 							</div>
 
 							{profile.skills.length > 0 && (
@@ -188,18 +211,31 @@ export function ProfileView() {
 				</div>
 
 				<div className="panel-soft space-y-4 p-6 md:p-8">
-					<h3 className="display-font font-bold text-lg text-[#112152]">
+					<h3 className="display-font font-bold text-[#112152] text-lg">
 						Account details
 					</h3>
+					{hostModeError && (
+						<div className="rounded-xl border border-[#fecaca] bg-[#fff5f5] px-4 py-3 text-[#c53030] text-sm">
+							{hostModeError}
+						</div>
+					)}
 					<div className="space-y-3 text-sm">
 						<div className="flex items-center justify-between rounded-xl border border-[#d7e0f8] bg-white px-4 py-3">
 							<span className="text-[#5f6984]">Email</span>
-							<span className="font-semibold text-[#1e2a4d]">{profile.email}</span>
+							<span className="font-semibold text-[#1e2a4d]">
+								{profile.email}
+							</span>
 						</div>
 						<div className="flex items-center justify-between rounded-xl border border-[#d7e0f8] bg-white px-4 py-3">
 							<span className="text-[#5f6984]">Role</span>
 							<Badge
-								variant={profile.role === "ADMIN" ? "destructive" : profile.role === "HOST" ? "warning" : "default"}
+								variant={
+									profile.role === "ADMIN"
+										? "destructive"
+										: profile.role === "HOST"
+											? "warning"
+											: "default"
+								}
 							>
 								{profile.role}
 							</Badge>
@@ -211,6 +247,20 @@ export function ProfileView() {
 							</Badge>
 						</div>
 					</div>
+
+					{profile.role !== "ADMIN" ? (
+						<Switch
+							checked={profile.role === "HOST"}
+							onCheckedChange={handleHostModeChange}
+							disabled={setHostMode.isPending}
+							label="Host mode"
+							description="Turn this on to access host tools and event management."
+						/>
+					) : (
+						<div className="rounded-xl border border-[#d7e0f8] bg-white px-4 py-3 text-[#5f6984] text-sm">
+							Admin accounts always have host access.
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
@@ -223,7 +273,7 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
 			<p className="font-semibold text-[#6e7999] text-xs uppercase tracking-wide">
 				{label}
 			</p>
-			<p className="mt-2 text-sm font-semibold text-[#1e2a4d]">{value}</p>
+			<p className="mt-2 font-semibold text-[#1e2a4d] text-sm">{value}</p>
 		</div>
 	);
 }

@@ -3,9 +3,7 @@ import { z } from "zod";
 
 export type { Account, Session, User, Verification };
 
-const ulidSchema = z
-	.string()
-	.min(10);
+const ulidSchema = z.string().min(10);
 
 export const userRoleSchema = z.enum(["ADMIN", "HOST", "USER"]);
 
@@ -92,7 +90,6 @@ export const updateProfileSchema = z.object({
 export const adminUpdateUserSchema = updateProfileSchema.extend({
 	role: userRoleSchema.optional(),
 });
-
 
 export const userFilterSchema = z.object({
 	role: userRoleSchema.optional(),
@@ -208,6 +205,10 @@ export const verifyEmailSchema = z.object({
 	token: z.string().min(1),
 });
 
+export const hostModeSchema = z.object({
+	enabled: z.boolean(),
+});
+
 export const authTokensSchema = z.object({
 	accessToken: z.string().min(1),
 	refreshToken: z.string().min(1),
@@ -237,6 +238,7 @@ export type RequestEmailVerificationInput = z.infer<
 	typeof requestEmailVerificationSchema
 >;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type HostModeInput = z.infer<typeof hostModeSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type AdminUpdateUserInput = z.infer<typeof adminUpdateUserSchema>;
 export type UserFilterInput = z.infer<typeof userFilterSchema>;

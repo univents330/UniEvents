@@ -2,14 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UpdateProfileInput } from "@unievent/schema";
-import { usersService, type UserListQuery } from "../services/users.service";
+import { type UserListQuery, usersService } from "../services/users.service";
 
 const usersKeys = {
 	all: ["users"] as const,
 	me: () => [...usersKeys.all, "me"] as const,
 	lists: () => [...usersKeys.all, "list"] as const,
-	list: (query?: UserListQuery) =>
-		[...usersKeys.lists(), query ?? {}] as const,
+	list: (query?: UserListQuery) => [...usersKeys.lists(), query ?? {}] as const,
 	details: () => [...usersKeys.all, "detail"] as const,
 	detail: (userId: string) => [...usersKeys.details(), userId] as const,
 	hostProfile: (userId: string) =>
@@ -28,6 +27,17 @@ export function useUpdateMe() {
 
 	return useMutation({
 		mutationFn: (input: UpdateProfileInput) => usersService.updateMe(input),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: usersKeys.me() });
+		},
+	});
+}
+
+export function useSetHostMode() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (enabled: boolean) => usersService.setHostMode(enabled),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: usersKeys.me() });
 		},

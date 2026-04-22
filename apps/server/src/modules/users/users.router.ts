@@ -1,8 +1,14 @@
-import { updateProfileSchema, userFilterSchema, userIdParamSchema } from "@unievent/schema";
+import {
+	hostModeSchema,
+	updateProfileSchema,
+	userFilterSchema,
+	userIdParamSchema,
+} from "@unievent/schema";
 import { Router } from "express";
-
-import { requireAuth } from "@/common/middlewares/auth.middleware";
-import { requireRoles } from "@/common/middlewares/auth.middleware";
+import {
+	requireAuth,
+	requireRoles,
+} from "@/common/middlewares/auth.middleware";
 import { validatePipe } from "@/common/pipes/validate.pipe";
 import { asyncHandler } from "@/common/utils/async-handler";
 
@@ -30,6 +36,17 @@ export function createUsersRouter(): Router {
 		requireAuth,
 		validatePipe({ body: updateProfileSchema }),
 		asyncHandler((req, res) => usersController.updateMe(req, res)),
+	);
+
+	/**
+	 * PATCH /users/me/host-mode
+	 * Toggle the current authenticated user's host mode on or off.
+	 */
+	router.patch(
+		"/me/host-mode",
+		requireAuth,
+		validatePipe({ body: hostModeSchema }),
+		asyncHandler((req, res) => usersController.setHostMode(req, res)),
 	);
 
 	/**

@@ -1,112 +1,37 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/core/lib/auth-client";
-import { useAuth } from "@/core/providers/auth-provider";
-import { Button } from "@/shared/ui/button";
-import { Input } from "@/shared/ui/input";
+import { useState } from "react";
 import { SectionTitle } from "@/shared/ui/section-title";
-import { getApiErrorMessage } from "@/core/lib/api-error";
+import { GoogleOAuthSection } from "../components/google-oauth-section";
 
 export function SignUpView() {
-	const router = useRouter();
-	const { refresh } = useAuth();
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
-	const [isSubmitting, setIsSubmitting] = useState(false);
-
-	async function handleSubmit(event: React.FormEvent) {
-		event.preventDefault();
-		setError("");
-		setIsSubmitting(true);
-
-		try {
-			const result = await authClient.signUp.email({
-				email,
-				password,
-				name: name.trim() || email,
-			});
-			if (result.error) {
-				setError(result.error.message ?? "Unable to create account.");
-				return;
-			}
-			await refresh();
-			router.push("/dashboard");
-		} catch (err) {
-			setError(getApiErrorMessage(err, "Unable to create account."));
-		} finally {
-			setIsSubmitting(false);
-		}
-	}
 
 	return (
 		<div className="mx-auto max-w-md space-y-8">
 			<SectionTitle
 				eyebrow="Get started"
 				title="Create your account"
-				description="Join UniEvents to discover events, manage tickets, and more."
+				description="Sign up with Google. Email/password is currently disabled."
 			/>
 
-			<form onSubmit={handleSubmit} className="panel space-y-5 p-6 md:p-8">
+			<div className="panel space-y-5 p-6 md:p-8">
 				{error && (
-					<div className="rounded-xl border border-[#fecaca] bg-[#fff5f5] px-4 py-3 text-sm text-[#c53030]">
+					<div className="rounded-xl border border-[#fecaca] bg-[#fff5f5] px-4 py-3 text-[#c53030] text-sm">
 						{error}
 					</div>
 				)}
 
-				<label className="block space-y-2">
-					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
-						Name
-					</span>
-					<Input
-						type="text"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="Your full name"
-						autoComplete="name"
-					/>
-				</label>
+				<GoogleOAuthSection
+					onError={setError}
+					actionLabel="Continue with Google"
+					dividerLabel="google sign up"
+				/>
 
-				<label className="block space-y-2">
-					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
-						Email
-					</span>
-					<Input
-						type="email"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
-						placeholder="you@university.edu"
-						required
-						autoComplete="email"
-					/>
-				</label>
-
-				<label className="block space-y-2">
-					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
-						Password
-					</span>
-					<Input
-						type="password"
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						placeholder="Minimum 8 characters"
-						required
-						autoComplete="new-password"
-						minLength={8}
-					/>
-				</label>
-
-				<Button
-					type="submit"
-					className="w-full"
-					disabled={isSubmitting}
-				>
-					{isSubmitting ? "Creating account..." : "Create account"}
-				</Button>
+				<p className="text-center text-[#5f6984] text-sm">
+					Email/password registration is temporarily disabled.
+				</p>
 
 				<p className="text-center text-[#5f6984] text-sm">
 					Already have an account?{" "}
@@ -117,7 +42,7 @@ export function SignUpView() {
 						Sign in
 					</Link>
 				</p>
-			</form>
+			</div>
 		</div>
 	);
 }

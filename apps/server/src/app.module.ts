@@ -50,8 +50,8 @@ export function createApp(): Express {
 		res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 	});
 
-	app.use("/api/auth", toNodeHandler(auth));
 	registerModules(app);
+	app.use("/api/auth", toNodeHandler(auth));
 	app.use(notFoundMiddleware);
 	app.use(errorHandlerMiddleware);
 
