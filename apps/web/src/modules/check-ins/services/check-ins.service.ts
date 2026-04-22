@@ -4,7 +4,11 @@ import type {
 	CreateCheckInInput,
 	PaginatedResponse,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type CheckInListQuery = Partial<CheckInFilterInput>;
 
@@ -29,9 +33,7 @@ export type { CheckInRecord };
 export const checkInsService = {
 	async list(query?: CheckInListQuery) {
 		const response = await apiClient.get<CheckInListResponse>("/check-ins", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
+			params: serializeQuery(query as Record<string, QueryValue> | undefined),
 		});
 		return response.data;
 	},
@@ -42,10 +44,7 @@ export const checkInsService = {
 	},
 
 	async create(input: CreateCheckInInput) {
-		const response = await apiClient.post<CheckInRecord>(
-			"/check-ins",
-			input,
-		);
+		const response = await apiClient.post<CheckInRecord>("/check-ins", input);
 		return response.data;
 	},
 

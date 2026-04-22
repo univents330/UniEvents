@@ -2,7 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateTicketInput, UpdateTicketInput } from "@unievent/schema";
-import { ticketsService, type TicketListQuery } from "../services/tickets.service";
+import {
+	type TicketListQuery,
+	ticketsService,
+} from "../services/tickets.service";
 
 const ticketsKeys = {
 	all: ["tickets"] as const,
@@ -43,7 +46,8 @@ export function useUpdateTicket(ticketId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: UpdateTicketInput) => ticketsService.update(ticketId, input),
+		mutationFn: (input: UpdateTicketInput) =>
+			ticketsService.update(ticketId, input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ticketsKeys.all });
 			queryClient.invalidateQueries({ queryKey: ticketsKeys.detail(ticketId) });

@@ -6,7 +6,11 @@ import type {
 	UpdatePassInput,
 	ValidatePassInput,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type PassListQuery = Partial<PassFilterInput>;
 
@@ -38,9 +42,7 @@ export type { PassRecord };
 export const passesService = {
 	async list(query?: PassListQuery) {
 		const response = await apiClient.get<PassListResponse>("/passes", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
+			params: serializeQuery(query as Record<string, QueryValue> | undefined),
 		});
 		return response.data;
 	},
@@ -56,10 +58,7 @@ export const passesService = {
 	},
 
 	async update(id: string, input: UpdatePassInput) {
-		const response = await apiClient.patch<PassRecord>(
-			`/passes/${id}`,
-			input,
-		);
+		const response = await apiClient.patch<PassRecord>(`/passes/${id}`, input);
 		return response.data;
 	},
 

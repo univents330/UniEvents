@@ -15,6 +15,7 @@ import {
 
 type OrderActor = {
 	userId: string;
+	email: string;
 	role: UserRole;
 };
 
@@ -38,7 +39,7 @@ export class OrdersService {
 
 		return {
 			attendee: {
-				userId: actor.userId,
+				OR: [{ userId: actor.userId }, { email: actor.email }],
 			},
 		};
 	}
@@ -51,6 +52,12 @@ export class OrdersService {
 			return;
 		}
 
+		// If the user is the one attending, they can always manage their own order
+		if (attendee.userId === actor.userId) {
+			return;
+		}
+
+		// Otherwise, if they have a role that implies management, check ownership
 		if (actor.role === "HOST") {
 			if (!attendee.event.userId || attendee.event.userId !== actor.userId) {
 				throw new ForbiddenError("You can only manage orders for your events");
@@ -59,6 +66,7 @@ export class OrdersService {
 			return;
 		}
 
+		// Default fallback for other users
 		if (!attendee.userId || attendee.userId !== actor.userId) {
 			throw new ForbiddenError("You can only manage your own orders");
 		}

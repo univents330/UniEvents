@@ -6,7 +6,7 @@ import type {
 	UpdatePassInput,
 	ValidatePassInput,
 } from "@unievent/schema";
-import { passesService, type PassListQuery } from "../services/passes.service";
+import { type PassListQuery, passesService } from "../services/passes.service";
 
 const passesKeys = {
 	all: ["passes"] as const,

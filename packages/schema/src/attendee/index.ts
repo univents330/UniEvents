@@ -3,9 +3,7 @@ import { z } from "zod";
 
 export type { Attendee };
 
-const ulidSchema = z
-	.string()
-	.min(10);
+const ulidSchema = z.string().min(10);
 
 export const attendeeSchema = z.object({
 	id: z.string().cuid(),

@@ -8,9 +8,9 @@ import type {
 	UpdateEventTicketTierInput,
 } from "@unievent/schema";
 import {
-	eventsService,
 	type EventListQuery,
 	type EventTicketTierListQuery,
+	eventsService,
 } from "../services/events.service";
 
 const eventsKeys = {
@@ -86,7 +86,8 @@ export function useUpdateEvent(eventId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: UpdateEventInput) => eventsService.update(eventId, input),
+		mutationFn: (input: UpdateEventInput) =>
+			eventsService.update(eventId, input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: eventsKeys.all });
 			queryClient.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
@@ -141,7 +142,8 @@ export function useDeleteEventTicketTier(eventId: string) {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (tierId: string) => eventsService.deleteTicketTier(eventId, tierId),
+		mutationFn: (tierId: string) =>
+			eventsService.deleteTicketTier(eventId, tierId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: eventsKeys.ticketTierList(eventId),

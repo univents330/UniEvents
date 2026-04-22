@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
-	dashboardAnalyticsService,
 	type DashboardAnalyticsQuery,
+	dashboardAnalyticsService,
 } from "../services/dashboard-analytics.service";
 
 const dashboardAnalyticsKeys = {
@@ -19,7 +19,8 @@ const dashboardAnalyticsKeys = {
 export function useEventAnalytics(eventId?: string) {
 	return useQuery({
 		queryKey: dashboardAnalyticsKeys.event(eventId ?? ""),
-		queryFn: () => dashboardAnalyticsService.getEventAnalytics(eventId as string),
+		queryFn: () =>
+			dashboardAnalyticsService.getEventAnalytics(eventId as string),
 		enabled: Boolean(eventId),
 	});
 }

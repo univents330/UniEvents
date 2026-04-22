@@ -4,7 +4,11 @@ import type {
 	EventAnalytics,
 	RevenueAnalytics,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type DashboardAnalyticsQuery = Partial<AnalyticsFilterInput>;
 
@@ -20,25 +24,29 @@ function serializeQuery(
 
 export const dashboardAnalyticsService = {
 	async getEventAnalytics(eventId: string) {
-		const response = await apiClient.get<EventAnalytics>(`/analytics/events/${eventId}`);
+		const response = await apiClient.get<EventAnalytics>(
+			`/analytics/events/${eventId}`,
+		);
 		return response.data;
 	},
 
 	async getRevenueAnalytics(query?: DashboardAnalyticsQuery) {
-		const response = await apiClient.get<RevenueAnalytics>("/analytics/revenue", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
-		});
+		const response = await apiClient.get<RevenueAnalytics>(
+			"/analytics/revenue",
+			{
+				params: serializeQuery(query as Record<string, QueryValue> | undefined),
+			},
+		);
 		return response.data;
 	},
 
 	async getAttendeeAnalytics(query?: DashboardAnalyticsQuery) {
-		const response = await apiClient.get<AttendeeAnalytics>("/analytics/attendees", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
-		});
+		const response = await apiClient.get<AttendeeAnalytics>(
+			"/analytics/attendees",
+			{
+				params: serializeQuery(query as Record<string, QueryValue> | undefined),
+			},
+		);
 		return response.data;
 	},
 };

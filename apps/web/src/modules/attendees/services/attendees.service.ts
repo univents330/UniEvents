@@ -5,7 +5,11 @@ import type {
 	PaginatedResponse,
 	UpdateAttendeeInput,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type AttendeeListQuery = Partial<AttendeeFilterInput>;
 
@@ -31,9 +35,7 @@ export type { AttendeeRecord };
 export const attendeesService = {
 	async list(query?: AttendeeListQuery) {
 		const response = await apiClient.get<AttendeeListResponse>("/attendees", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
+			params: serializeQuery(query as Record<string, QueryValue> | undefined),
 		});
 		return response.data;
 	},

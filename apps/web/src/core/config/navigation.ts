@@ -12,7 +12,11 @@ export const managementNavigation = [
 	{ href: "/check-ins", label: "Check-ins", roles: ["HOST", "ADMIN"] },
 	{ href: "/check-ins/scan", label: "Scan QR", roles: ["HOST", "ADMIN"] },
 	{ href: "/payments", label: "Payments", roles: ["HOST", "ADMIN"] },
-	{ href: "/notifications", label: "Notifications", roles: ["USER", "HOST", "ADMIN"] },
+	{
+		href: "/notifications",
+		label: "Notifications",
+		roles: ["USER", "HOST", "ADMIN"],
+	},
 ] as const;
 
 export const modulePillars = [

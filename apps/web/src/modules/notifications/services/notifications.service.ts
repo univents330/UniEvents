@@ -4,7 +4,11 @@ import type {
 	PaginatedResponse,
 	UpdateNotificationInput,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type NotificationListQuery = Partial<NotificationFilterInput>;
 
@@ -42,9 +46,7 @@ export const notificationsService = {
 		const response = await apiClient.get<NotificationListResponse>(
 			"/notifications",
 			{
-				params: serializeQuery(
-					query as Record<string, QueryValue> | undefined,
-				),
+				params: serializeQuery(query as Record<string, QueryValue> | undefined),
 			},
 		);
 		return response.data;

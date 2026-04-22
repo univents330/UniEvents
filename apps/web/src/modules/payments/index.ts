@@ -1,13 +1,16 @@
-export { PaymentsView } from "./views/payments-view";
 export {
-	usePayments,
-	usePayment,
-	useInitiatePayment,
 	useConfirmFreeOrder,
-	useVerifyPayment,
+	useDeletePayment,
+	useInitiatePayment,
+	usePayment,
+	usePayments,
 	useRefundPayment,
 	useUpdatePayment,
-	useDeletePayment,
+	useVerifyPayment,
 } from "./hooks/use-payments";
+export type {
+	PaymentListQuery,
+	PaymentRecord,
+} from "./services/payments.service";
 export { paymentsService } from "./services/payments.service";
-export type { PaymentListQuery, PaymentRecord } from "./services/payments.service";
+export { PaymentsView } from "./views/payments-view";

@@ -1,10 +1,13 @@
-export { AttendeesView } from "./views/attendees-view";
 export {
-	useAttendees,
 	useAttendee,
+	useAttendees,
 	useCreateAttendee,
-	useUpdateAttendee,
 	useDeleteAttendee,
+	useUpdateAttendee,
 } from "./hooks/use-attendees";
+export type {
+	AttendeeListQuery,
+	AttendeeRecord,
+} from "./services/attendees.service";
 export { attendeesService } from "./services/attendees.service";
-export type { AttendeeListQuery, AttendeeRecord } from "./services/attendees.service";
+export { AttendeesView } from "./views/attendees-view";

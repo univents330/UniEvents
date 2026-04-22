@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEvent, useEventTicketTiers } from "../hooks/use-events";
+import { useState } from "react";
 import { useAuth } from "@/core/providers/auth-provider";
 import { useCreateAttendee } from "@/modules/attendees/hooks/use-attendees";
 import { useCreateOrder } from "@/modules/orders/hooks/use-orders";
-import { useInitiatePayment, useConfirmFreeOrder } from "@/modules/payments/hooks/use-payments";
+import {
+	useConfirmFreeOrder,
+	useInitiatePayment,
+} from "@/modules/payments/hooks/use-payments";
 import { Button } from "@/shared/ui/button";
 import { SectionTitle } from "@/shared/ui/section-title";
+import { useEvent, useEventTicketTiers } from "../hooks/use-events";
 
 export function CheckoutView({ eventId }: { eventId: string }) {
 	const router = useRouter();
@@ -31,7 +34,11 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 
 	const loadRazorpayPaymentGateway = () => {
 		return new Promise((resolve) => {
-			if (document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')) {
+			if (
+				document.querySelector(
+					'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
+				)
+			) {
 				return resolve(true);
 			}
 			const script = document.createElement("script");
@@ -45,11 +52,11 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 	async function handleCheckout(e: React.FormEvent) {
 		e.preventDefault();
 		if (!selectedTierId || !user) return;
-		
+
 		setIsProcessing(true);
-		
+
 		try {
-			let attendeeData;
+			let attendeeData: { id: string } | undefined;
 			try {
 				attendeeData = await createAttendeeEntry.mutateAsync({
 					eventId,
@@ -57,11 +64,21 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 					name: user.name ?? "Attendee",
 					email: user.email,
 				});
-			} catch (err: any) {
+			} catch (err: unknown) {
 				// If 409 Conflict (already exists), we shouldn't fail but ideally reuse it.
 				// Since we don't have the attendeeId, we might fail unless we can find it.
-				if (err?.response?.status === 409) {
-					alert("You are already registered! Please manage tickets from the dashboard.");
+				if (
+					err &&
+					typeof err === "object" &&
+					"response" in err &&
+					typeof err.response === "object" &&
+					err.response !== null &&
+					"status" in err.response &&
+					err.response.status === 409
+				) {
+					alert(
+						"You are already registered! Please manage tickets from the dashboard.",
+					);
 					return;
 				}
 				throw err;
@@ -73,7 +90,7 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 			});
 
 			// If it's a FREE tier, confirm immediately
-			if (selectedTier!.price === 0) {
+			if (selectedTier?.price === 0) {
 				await confirmFreeOrderEntry.mutateAsync({
 					orderId: orderData.id,
 					currency: "INR",
@@ -102,7 +119,11 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 				name: "UniEvents",
 				description: `Passes for ${event?.name}`,
 				order_id: rzrResult.razorpayOrderId,
-				handler: function (response: any) {
+				handler: (response: {
+					razorpay_payment_id?: string;
+					razorpay_order_id?: string;
+					razorpay_signature?: string;
+				}) => {
 					router.push("/orders");
 				},
 				prefill: {
@@ -114,26 +135,49 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 				},
 			};
 
-			const rzp1 = new (window as any).Razorpay(options);
-			rzp1.on("payment.failed", function (response: any) {
-				alert(response.error.description);
+			const rzp1 = new (
+				window as typeof window & {
+					Razorpay: new (
+						options: unknown,
+					) => {
+						open: () => void;
+						on: (
+							event: string,
+							handler: (response: { error?: { description?: string } }) => void,
+						) => void;
+					};
+				}
+			).Razorpay(options);
+			rzp1.on("payment.failed", (response: unknown) => {
+				if (response && typeof response === "object" && "error" in response) {
+					const error = response as { error?: { description?: string } };
+					alert(error.error?.description || "Payment failed");
+				} else {
+					alert("Payment failed");
+				}
 			});
 			rzp1.open();
-
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error(err);
-			alert("Checkout failed: " + (err.message || JSON.stringify(err)));
+			const errorMessage = err instanceof Error ? err.message : "Unknown error";
+			alert(`Checkout failed: ${errorMessage}`);
 		} finally {
 			setIsProcessing(false);
 		}
 	}
 
 	if (eventQuery.isLoading || tiersQuery.isLoading) {
-		return <div className="panel-soft p-6 text-[#5f6984]">Loading checkout...</div>;
+		return (
+			<div className="panel-soft p-6 text-[#5f6984]">Loading checkout...</div>
+		);
 	}
 
 	if (eventQuery.isError || !event) {
-		return <div className="panel-soft p-6 text-[#5f6984]">Unable to load event details.</div>;
+		return (
+			<div className="panel-soft p-6 text-[#5f6984]">
+				Unable to load event details.
+			</div>
+		);
 	}
 
 	return (
@@ -147,9 +191,9 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 			<div className="panel-soft p-6 md:p-8">
 				<form onSubmit={handleCheckout} className="space-y-6">
 					<div className="space-y-3">
-						<label className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
+						<div className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
 							Select ticket tier
-						</label>
+						</div>
 						<div className="grid gap-3 sm:grid-cols-2">
 							{tiers.map((tier) => (
 								<button
@@ -162,9 +206,7 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 											: "border-[#d7e0f8] bg-white hover:border-[#1264db]"
 									}`}
 								>
-									<span className="font-bold text-[#0e1838]">
-										{tier.name}
-									</span>
+									<span className="font-bold text-[#0e1838]">{tier.name}</span>
 									<span className="mt-1 font-semibold text-[#1264db]">
 										{tier.price === 0
 											? "Free"
@@ -172,7 +214,7 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 													style: "currency",
 													currency: "INR",
 													maximumFractionDigits: 0,
-											  }).format(tier.price)}
+												}).format(tier.price)}
 									</span>
 									{tier.maxQuantity && (
 										<span className="mt-2 text-[#5f6984] text-xs">
@@ -182,24 +224,30 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 								</button>
 							))}
 							{tiers.length === 0 && (
-								<p className="text-[#5f6984] text-sm">No ticket tiers currently available.</p>
+								<p className="text-[#5f6984] text-sm">
+									No ticket tiers currently available.
+								</p>
 							)}
 						</div>
 					</div>
 
 					{selectedTier && (
 						<div className="space-y-3">
-							<label className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
+							<label
+								htmlFor="quantity-select"
+								className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide"
+							>
 								Quantity
 							</label>
 							<select
+								id="quantity-select"
 								value={quantity}
 								onChange={(e) => setQuantity(Number(e.target.value))}
-								className="h-11 w-full max-w-[200px] rounded-xl border border-[#d4def8] bg-white px-3 text-sm text-[#19254a] outline-none transition-colors focus:border-[#3a59d6]"
+								className="h-11 w-full max-w-[200px] rounded-xl border border-[#d4def8] bg-white px-3 text-[#19254a] text-sm outline-none transition-colors focus:border-[#3a59d6]"
 							>
 								{Array.from(
 									{ length: selectedTier.maxQuantity || 10 },
-									(_, i) => i + 1
+									(_, i) => i + 1,
 								).map((num) => (
 									<option key={num} value={num}>
 										{num}
@@ -209,21 +257,21 @@ export function CheckoutView({ eventId }: { eventId: string }) {
 						</div>
 					)}
 
-					<div className="my-6 border-t border-[#d7e0f8]" />
+					<div className="my-6 border-[#d7e0f8] border-t" />
 
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="font-semibold text-[#5f6984] text-sm">Total due</p>
-							<p className="display-font text-2xl font-bold text-[#0e1838]">
+							<p className="display-font font-bold text-2xl text-[#0e1838]">
 								{!selectedTier
 									? "—"
 									: selectedTier.price === 0
-									? "Free"
-									: new Intl.NumberFormat("en", {
-											style: "currency",
-											currency: "INR",
-											maximumFractionDigits: 0,
-									  }).format(selectedTier.price * quantity)}
+										? "Free"
+										: new Intl.NumberFormat("en", {
+												style: "currency",
+												currency: "INR",
+												maximumFractionDigits: 0,
+											}).format(selectedTier.price * quantity)}
 							</p>
 						</div>
 

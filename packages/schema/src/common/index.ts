@@ -1,8 +1,6 @@
 import { z } from "zod";
 
-const ulidSchema = z
-	.string()
-	.min(10);
+const ulidSchema = z.string().min(10);
 
 export const idParamSchema = z.object({
 	id: z.string().cuid(),

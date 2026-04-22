@@ -347,9 +347,7 @@ export type RefundPaymentInput = z.infer<typeof refundPaymentSchema>;
 export type InitiatePaymentResponse = z.infer<
 	typeof initiatePaymentResponseSchema
 >;
-export type VerifyPaymentResponse = z.infer<
-	typeof verifyPaymentResponseSchema
->;
+export type VerifyPaymentResponse = z.infer<typeof verifyPaymentResponseSchema>;
 export type CheckoutDraftItem = z.infer<typeof checkoutDraftItemSchema>;
 export type CheckoutDraftTicketHolder = z.infer<
 	typeof checkoutDraftTicketHolderSchema

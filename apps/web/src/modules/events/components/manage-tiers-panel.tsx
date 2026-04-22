@@ -2,10 +2,19 @@
 
 import { useState } from "react";
 import { useAuth } from "@/core/providers/auth-provider";
-import { useEventTicketTiers, useCreateEventTicketTier } from "../hooks/use-events";
 import { Button } from "@/shared/ui/button";
+import {
+	useCreateEventTicketTier,
+	useEventTicketTiers,
+} from "../hooks/use-events";
 
-export function ManageTiersPanel({ eventId, eventUserId }: { eventId: string; eventUserId: string }) {
+export function ManageTiersPanel({
+	eventId,
+	eventUserId,
+}: {
+	eventId: string;
+	eventUserId: string;
+}) {
 	const { user } = useAuth();
 	const tiersQuery = useEventTicketTiers(eventId);
 	const createTierEntry = useCreateEventTicketTier(eventId);
@@ -26,65 +35,134 @@ export function ManageTiersPanel({ eventId, eventUserId }: { eventId: string; ev
 				name,
 				price,
 				maxQuantity,
-				maxQuantityPerOrder: 5,
 			});
 			setIsAdding(false);
 			setName("");
 			setPrice(0);
 			setMaxQuantity(100);
-		} catch (err: any) {
-			alert("Failed to create tier: " + err.message);
+		} catch (err: unknown) {
+			const error = err instanceof Error ? err.message : "Failed to add tier";
+			alert(error);
 		}
 	};
 
 	return (
-		<div className="panel mt-8 p-6 md:p-8 space-y-6 border-t-4 border-indigo-500">
+		<div className="panel mt-8 space-y-6 border-indigo-500 border-t-4 p-6 md:p-8">
 			<div>
-				<h3 className="text-xl font-bold text-[#0e1838]">Host Controls: Manage Tiers</h3>
-				<p className="text-sm text-[#5f6984] mt-1">Configure standard tickets, VIP passes, and pricing bounds.</p>
+				<h3 className="font-bold text-[#0e1838] text-xl">
+					Host Controls: Manage Tiers
+				</h3>
+				<p className="mt-1 text-[#5f6984] text-sm">
+					Configure standard tickets, VIP passes, and pricing bounds.
+				</p>
 			</div>
 
 			{tiersQuery.isLoading ? (
-				<div className="text-sm text-[#5f6984]">Loading tiers...</div>
+				<div className="text-[#5f6984] text-sm">Loading tiers...</div>
 			) : (
 				<div className="space-y-4">
 					{tiersQuery.data?.data.map((tier) => (
-						<div key={tier.id} className="flex justify-between items-center rounded-xl bg-white border p-4 shadow-sm">
+						<div
+							key={tier.id}
+							className="flex items-center justify-between rounded-xl border bg-white p-4 shadow-sm"
+						>
 							<div>
 								<span className="font-bold text-[#0e1838]">{tier.name}</span>
-								<div className="text-sm text-[#5f6984] mt-1">Price: ₹{tier.price} • Capacity: {tier.maxQuantity}</div>
+								<div className="mt-1 text-[#5f6984] text-sm">
+									Price: ₹{tier.price} • Capacity: {tier.maxQuantity}
+								</div>
 							</div>
-							<span className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full font-bold">Active</span>
+							<span className="rounded-full bg-indigo-50 px-3 py-1 font-bold text-indigo-700 text-xs">
+								Active
+							</span>
 						</div>
 					))}
-					
+
 					{tiersQuery.data?.data.length === 0 && (
-						<div className="text-sm italic text-[#5f6984]">No ticket tiers exist yet. Users cannot checkout until you create one!</div>
+						<div className="text-[#5f6984] text-sm italic">
+							No ticket tiers exist yet. Users cannot checkout until you create
+							one!
+						</div>
 					)}
 				</div>
 			)}
 
 			{!isAdding ? (
-				<Button onClick={() => setIsAdding(true)} variant="outline" className="w-full">+ Create Ticket Tier</Button>
+				<Button
+					onClick={() => setIsAdding(true)}
+					variant="ghost"
+					className="w-full"
+				>
+					+ Create Ticket Tier
+				</Button>
 			) : (
-				<form onSubmit={handleAddTier} className="p-4 bg-[#f8fbff] rounded-xl border border-indigo-100 space-y-4">
+				<form
+					onSubmit={handleAddTier}
+					className="space-y-4 rounded-xl border border-indigo-100 bg-[#f8fbff] p-4"
+				>
 					<div>
-						<label className="text-xs font-bold text-[#5f6984] uppercase">Tier Name (e.g. VIP, Standard)</label>
-						<input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full mt-1 h-10 px-3 border rounded-lg outline-none" />
+						<label
+							htmlFor="tier-name"
+							className="font-bold text-[#5f6984] text-xs uppercase"
+						>
+							Tier Name (e.g. VIP, Standard)
+						</label>
+						<input
+							id="tier-name"
+							type="text"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							required
+							className="mt-1 h-10 w-full rounded-lg border px-3 outline-none"
+						/>
 					</div>
 					<div className="grid grid-cols-2 gap-4">
 						<div>
-							<label className="text-xs font-bold text-[#5f6984] uppercase">Price (₹)</label>
-							<input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} min={0} required className="w-full mt-1 h-10 px-3 border rounded-lg outline-none" />
+							<label
+								htmlFor="tier-price"
+								className="font-bold text-[#5f6984] text-xs uppercase"
+							>
+								Price (₹)
+							</label>
+							<input
+								id="tier-price"
+								type="number"
+								value={price}
+								onChange={(e) => setPrice(Number(e.target.value))}
+								min={0}
+								required
+								className="mt-1 h-10 w-full rounded-lg border px-3 outline-none"
+							/>
 						</div>
 						<div>
-							<label className="text-xs font-bold text-[#5f6984] uppercase">Total Capacity</label>
-							<input type="number" value={maxQuantity} onChange={(e) => setMaxQuantity(Number(e.target.value))} min={1} required className="w-full mt-1 h-10 px-3 border rounded-lg outline-none" />
+							<label
+								htmlFor="tier-capacity"
+								className="font-bold text-[#5f6984] text-xs uppercase"
+							>
+								Total Capacity
+							</label>
+							<input
+								id="tier-capacity"
+								type="number"
+								value={maxQuantity}
+								onChange={(e) => setMaxQuantity(Number(e.target.value))}
+								min={1}
+								required
+								className="mt-1 h-10 w-full rounded-lg border px-3 outline-none"
+							/>
 						</div>
 					</div>
 					<div className="flex gap-3">
-						<Button type="submit" disabled={createTierEntry.isPending}>Save Tier</Button>
-						<Button type="button" variant="ghost" onClick={() => setIsAdding(false)}>Cancel</Button>
+						<Button type="submit" disabled={createTierEntry.isPending}>
+							Save Tier
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							onClick={() => setIsAdding(false)}
+						>
+							Cancel
+						</Button>
 					</div>
 				</form>
 			)}

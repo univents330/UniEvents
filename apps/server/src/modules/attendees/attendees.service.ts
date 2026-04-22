@@ -15,6 +15,7 @@ import {
 
 type AttendeeActor = {
 	userId: string;
+	email: string;
 	role: UserRole;
 };
 
@@ -37,26 +38,31 @@ export class AttendeesService {
 		}
 
 		return {
-			userId: actor.userId,
+			OR: [{ userId: actor.userId }, { email: actor.email }],
 		};
 	}
 
 	private ensureCanManageEvent(
 		eventUserId: string | null,
 		actor: AttendeeActor,
+		targetUserId?: string | null,
 	) {
 		if (this.canManageAll(actor)) {
 			return;
 		}
 
-		if (actor.role === "USER") {
+		// If the user is creating/managing a record for themselves, allow it regardless of role
+		if (targetUserId === actor.userId) {
 			return;
 		}
 
-		if (!eventUserId || eventUserId !== actor.userId) {
-			throw new ForbiddenError(
-				"You can only manage attendees for events you host",
-			);
+		// Otherwise, if they have a role that implies management, check ownership
+		if (actor.role === "HOST") {
+			if (!eventUserId || eventUserId !== actor.userId) {
+				throw new ForbiddenError(
+					"You can only manage attendees for events you host",
+				);
+			}
 		}
 	}
 
@@ -137,19 +143,10 @@ export class AttendeesService {
 			throw new NotFoundError("Event not found");
 		}
 
-		this.ensureCanManageEvent(event.userId, actor);
+		this.ensureCanManageEvent(event.userId, actor, input.userId);
 
-		if (
-			actor.role === "USER" &&
-			input.userId !== undefined &&
-			input.userId !== actor.userId
-		) {
-			throw new ForbiddenError(
-				"Users can only create attendee records for themselves",
-			);
-		}
-
-		const userId = actor.role === "USER" ? actor.userId : input.userId;
+		const userId =
+			actor.role === "USER" ? actor.userId : input.userId || actor.userId;
 		await this.ensureUserExists(userId);
 
 		const data: CreateAttendeeInput = { ...input, userId };
@@ -200,7 +197,11 @@ export class AttendeesService {
 				throw new NotFoundError("Event not found");
 			}
 
-			this.ensureCanManageEvent(nextEvent.userId, actor);
+			this.ensureCanManageEvent(
+				nextEvent.userId,
+				actor,
+				input.userId ?? attendee.userId,
+			);
 		}
 
 		if (input.userId !== undefined) {

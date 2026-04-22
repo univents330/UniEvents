@@ -3,8 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UpdateNotificationInput } from "@unievent/schema";
 import {
-	notificationsService,
 	type NotificationListQuery,
+	notificationsService,
 } from "../services/notifications.service";
 
 const notificationsKeys = {
@@ -61,8 +61,7 @@ export function useMarkAllAsRead() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (userId: string) =>
-			notificationsService.markAllAsRead(userId),
+		mutationFn: (userId: string) => notificationsService.markAllAsRead(userId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
 				queryKey: notificationsKeys.all,

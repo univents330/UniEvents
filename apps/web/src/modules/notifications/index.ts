@@ -1,14 +1,14 @@
-export { NotificationsView } from "./views/notifications-view";
 export {
-	useNotifications,
+	useDeleteNotification,
+	useMarkAllAsRead,
 	useNotification,
+	useNotifications,
 	useUnreadCount,
 	useUpdateNotification,
-	useMarkAllAsRead,
-	useDeleteNotification,
 } from "./hooks/use-notifications";
-export { notificationsService } from "./services/notifications.service";
 export type {
 	NotificationListQuery,
 	NotificationRecord,
 } from "./services/notifications.service";
+export { notificationsService } from "./services/notifications.service";
+export { NotificationsView } from "./views/notifications-view";

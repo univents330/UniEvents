@@ -3,8 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateCheckInInput } from "@unievent/schema";
 import {
-	checkInsService,
 	type CheckInListQuery,
+	checkInsService,
 } from "../services/check-ins.service";
 
 const checkInsKeys = {

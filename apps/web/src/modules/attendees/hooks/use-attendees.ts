@@ -1,10 +1,13 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CreateAttendeeInput, UpdateAttendeeInput } from "@unievent/schema";
+import type {
+	CreateAttendeeInput,
+	UpdateAttendeeInput,
+} from "@unievent/schema";
 import {
-	attendeesService,
 	type AttendeeListQuery,
+	attendeesService,
 } from "../services/attendees.service";
 
 const attendeesKeys = {
@@ -35,8 +38,7 @@ export function useCreateAttendee() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: CreateAttendeeInput) =>
-			attendeesService.create(input),
+		mutationFn: (input: CreateAttendeeInput) => attendeesService.create(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: attendeesKeys.all });
 		},

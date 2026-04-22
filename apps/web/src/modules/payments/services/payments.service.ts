@@ -10,7 +10,11 @@ import type {
 	VerifyPaymentInput,
 	VerifyPaymentResponse,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type PaymentListQuery = Partial<PaymentFilterInput>;
 
@@ -37,9 +41,7 @@ export type { PaymentRecord };
 export const paymentsService = {
 	async list(query?: PaymentListQuery) {
 		const response = await apiClient.get<PaymentListResponse>("/payments", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
+			params: serializeQuery(query as Record<string, QueryValue> | undefined),
 		});
 		return response.data;
 	},

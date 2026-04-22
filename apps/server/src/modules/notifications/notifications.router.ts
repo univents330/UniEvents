@@ -1,10 +1,9 @@
-import { Router } from "express";
-
 import {
 	markAllAsReadSchema,
 	notificationFilterSchema,
 	notificationIdParamSchema,
 } from "@unievent/schema";
+import { Router } from "express";
 
 import { requireAuth } from "@/common/middlewares/auth.middleware";
 import { validatePipe } from "@/common/pipes/validate.pipe";
@@ -25,7 +24,9 @@ export function createNotificationsRouter(): Router {
 	router.get(
 		"/unread-count",
 		requireAuth,
-		asyncHandler((req, res) => notificationsController.getUnreadCount(req, res)),
+		asyncHandler((req, res) =>
+			notificationsController.getUnreadCount(req, res),
+		),
 	);
 
 	router.get(

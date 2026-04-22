@@ -1,11 +1,12 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
-import { usePasses } from "../hooks/use-passes";
-import { SectionTitle } from "@/shared/ui/section-title";
-import { Select } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
 import { DataTable } from "@/shared/ui/data-table";
+import { SectionTitle } from "@/shared/ui/section-title";
+import { Select } from "@/shared/ui/select";
+import { usePasses } from "../hooks/use-passes";
 import type { PassRecord } from "../services/passes.service";
 
 function formatDate(value: string) {
@@ -15,13 +16,19 @@ function formatDate(value: string) {
 	}).format(new Date(value));
 }
 
-const statusVariant: Record<string, "default" | "success" | "warning" | "destructive"> = {
+const statusVariant: Record<
+	string,
+	"default" | "success" | "warning" | "destructive"
+> = {
 	ACTIVE: "success",
 	USED: "default",
 	CANCELLED: "destructive",
 };
 
-const typeVariant: Record<string, "default" | "success" | "warning" | "destructive"> = {
+const typeVariant: Record<
+	string,
+	"default" | "success" | "warning" | "destructive"
+> = {
 	GENERAL: "default",
 	VIP: "warning",
 	BACKSTAGE: "destructive",
@@ -38,56 +45,77 @@ export function PassesView() {
 	const passesQuery = usePasses({
 		page,
 		limit: 20,
-		status: (status || undefined) as "ACTIVE" | "USED" | "CANCELLED" | undefined,
-		type: (type || undefined) as "GENERAL" | "VIP" | "BACKSTAGE" | "SPEAKER" | undefined,
+		status: (status || undefined) as
+			| "ACTIVE"
+			| "USED"
+			| "CANCELLED"
+			| undefined,
+		type: (type || undefined) as
+			| "GENERAL"
+			| "VIP"
+			| "BACKSTAGE"
+			| "SPEAKER"
+			| undefined,
 		sortBy: "createdAt",
 		sortOrder: "desc",
 	});
 
-	const columns = [
+	const columns: ColumnDef<PassRecord>[] = [
 		{
+			accessorKey: "code",
 			header: "Entry QR Code",
-			cell: (row: PassRecord) => (
+			cell: ({ row }) => (
 				<div className="flex items-center gap-4">
-					<div className="rounded-md border p-1 bg-white">
-						<QRCodeSVG value={row.code} size={48} level="M" />
+					<div className="rounded-md border bg-white p-1">
+						<QRCodeSVG value={row.original.code} size={48} level="M" />
 					</div>
-					<span className="font-mono font-semibold text-sm">{row.code}</span>
+					<span className="font-mono font-semibold text-sm">
+						{row.original.code}
+					</span>
 				</div>
 			),
 		},
 		{
+			accessorKey: "type",
 			header: "Type",
-			cell: (row: PassRecord) => (
-				<Badge variant={typeVariant[row.type] ?? "default"}>
-					{row.type}
+			cell: ({ row }) => (
+				<Badge variant={typeVariant[row.original.type] ?? "default"}>
+					{row.original.type}
 				</Badge>
 			),
 		},
 		{
+			accessorKey: "status",
 			header: "Status",
-			cell: (row: PassRecord) => (
-				<Badge variant={statusVariant[row.status] ?? "default"}>
-					{row.status}
+			cell: ({ row }) => (
+				<Badge variant={statusVariant[row.original.status] ?? "default"}>
+					{row.original.status}
 				</Badge>
 			),
 		},
 		{
+			accessorKey: "eventId",
 			header: "Event",
-			cell: (row: PassRecord) => (
-				<Badge variant="outline">{row.eventId.slice(0, 8)}...</Badge>
+			cell: ({ row }) => (
+				<Badge variant="outline">{row.original.eventId.slice(0, 8)}...</Badge>
 			),
 		},
 		{
+			accessorKey: "attendeeId",
 			header: "Attendee",
-			cell: (row: PassRecord) => (
-				<span className="text-[#5f6984]">{row.attendeeId.slice(0, 10)}...</span>
+			cell: ({ row }) => (
+				<span className="text-[#5f6984]">
+					{row.original.attendeeId.slice(0, 10)}...
+				</span>
 			),
 		},
 		{
+			accessorKey: "createdAt",
 			header: "Issued",
-			cell: (row: PassRecord) => (
-				<span className="text-[#5f6984] text-sm">{formatDate(row.createdAt)}</span>
+			cell: ({ row }) => (
+				<span className="text-[#5f6984] text-sm">
+					{formatDate(row.original.createdAt)}
+				</span>
 			),
 		},
 	];
@@ -115,11 +143,12 @@ export function PassesView() {
 			/>
 
 			<section className="panel-soft grid gap-4 p-4 md:grid-cols-2 md:items-end md:p-5">
-				<label className="space-y-2">
+				<label htmlFor="status-filter" className="space-y-2">
 					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
 						Status
 					</span>
 					<Select
+						id="status-filter"
 						value={status}
 						onChange={(e) => {
 							setStatus(e.target.value);
@@ -133,11 +162,12 @@ export function PassesView() {
 					</Select>
 				</label>
 
-				<label className="space-y-2">
+				<label htmlFor="type-filter" className="space-y-2">
 					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
 						Type
 					</span>
 					<Select
+						id="type-filter"
 						value={type}
 						onChange={(e) => {
 							setType(e.target.value);
@@ -158,7 +188,6 @@ export function PassesView() {
 				data={passesQuery.data?.data ?? []}
 				meta={passesQuery.data?.meta}
 				onPageChange={setPage}
-				keyExtractor={(row) => row.id}
 			/>
 		</div>
 	);

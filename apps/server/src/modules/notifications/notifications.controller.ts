@@ -1,5 +1,3 @@
-import type { Request, Response } from "express";
-
 import {
 	createNotificationSchema,
 	markAllAsReadSchema,
@@ -7,6 +5,7 @@ import {
 	notificationIdParamSchema,
 	updateNotificationSchema,
 } from "@unievent/schema";
+import type { Request, Response } from "express";
 
 import type { AuthenticatedRequest } from "@/common/types/auth-request";
 
@@ -29,7 +28,10 @@ export class NotificationsController {
 
 	async getById(req: Request, res: Response) {
 		const params = notificationIdParamSchema.parse(req.params);
-		const result = await notificationsService.getById(params.id, this.getActor(req));
+		const result = await notificationsService.getById(
+			params.id,
+			this.getActor(req),
+		);
 		res.status(200).json(result);
 	}
 
@@ -42,7 +44,11 @@ export class NotificationsController {
 	async update(req: Request, res: Response) {
 		const params = notificationIdParamSchema.parse(req.params);
 		const body = updateNotificationSchema.parse(req.body);
-		const result = await notificationsService.update(params.id, body, this.getActor(req));
+		const result = await notificationsService.update(
+			params.id,
+			body,
+			this.getActor(req),
+		);
 		res.status(200).json(result);
 	}
 
@@ -60,7 +66,10 @@ export class NotificationsController {
 
 	async getUnreadCount(req: Request, res: Response) {
 		const actor = this.getActor(req);
-		const result = await notificationsService.getUnreadCount(actor.userId, actor);
+		const result = await notificationsService.getUnreadCount(
+			actor.userId,
+			actor,
+		);
 		res.status(200).json(result);
 	}
 }

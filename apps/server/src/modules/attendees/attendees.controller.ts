@@ -15,6 +15,7 @@ export class AttendeesController {
 		const authReq = req as AuthenticatedRequest;
 		return {
 			userId: authReq.auth.userId,
+			email: authReq.auth.email,
 			role: authReq.auth.role,
 		};
 	}

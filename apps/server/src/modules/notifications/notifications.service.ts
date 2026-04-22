@@ -1,7 +1,7 @@
-import { Prisma, prisma, type UserRole } from "@unievent/db";
+import { type Prisma, prisma, type UserRole } from "@unievent/db";
 import {
-	createPaginationMeta,
 	type CreateNotificationInput,
+	createPaginationMeta,
 	type NotificationFilterInput,
 	type UpdateNotificationInput,
 } from "@unievent/schema";
@@ -14,7 +14,9 @@ type NotificationActor = {
 };
 
 export class NotificationsService {
-	private buildAccessWhere(actor: NotificationActor): Prisma.NotificationWhereInput {
+	private buildAccessWhere(
+		actor: NotificationActor,
+	): Prisma.NotificationWhereInput {
 		if (actor.role === "ADMIN") {
 			return {};
 		}
@@ -67,8 +69,14 @@ export class NotificationsService {
 	}
 
 	async create(input: CreateNotificationInput, actor: NotificationActor) {
-		if (input.userId && input.userId !== actor.userId && actor.role !== "ADMIN") {
-			throw new ForbiddenError("You can only create notifications for yourself");
+		if (
+			input.userId &&
+			input.userId !== actor.userId &&
+			actor.role !== "ADMIN"
+		) {
+			throw new ForbiddenError(
+				"You can only create notifications for yourself",
+			);
 		}
 
 		const { metadata, ...dataWithoutMetadata } = input;
@@ -83,7 +91,11 @@ export class NotificationsService {
 		});
 	}
 
-	async update(id: string, input: UpdateNotificationInput, actor: NotificationActor) {
+	async update(
+		id: string,
+		input: UpdateNotificationInput,
+		actor: NotificationActor,
+	) {
 		const notification = await prisma.notification.findUnique({
 			where: { id },
 		});
@@ -125,7 +137,9 @@ export class NotificationsService {
 
 	async markAllAsRead(userId: string, actor: NotificationActor) {
 		if (userId !== actor.userId && actor.role !== "ADMIN") {
-			throw new ForbiddenError("You can only mark your own notifications as read");
+			throw new ForbiddenError(
+				"You can only mark your own notifications as read",
+			);
 		}
 
 		await prisma.notification.updateMany({
@@ -164,7 +178,11 @@ export class NotificationsService {
 		});
 	}
 
-	async createOrderNotification(orderId: string, title: string, message: string) {
+	async createOrderNotification(
+		orderId: string,
+		title: string,
+		message: string,
+	) {
 		const order = await prisma.order.findUnique({
 			where: { id: orderId },
 			select: { attendeeId: true },
@@ -180,7 +198,13 @@ export class NotificationsService {
 		if (!attendee?.userId) return null;
 
 		return await prisma.notification.create({
-			data: { type: "ORDER_CONFIRMED", title, message, userId: attendee.userId, orderId },
+			data: {
+				type: "ORDER_CONFIRMED",
+				title,
+				message,
+				userId: attendee.userId,
+				orderId,
+			},
 		});
 	}
 
@@ -209,7 +233,12 @@ export class NotificationsService {
 		});
 	}
 
-	async createCheckInNotification(attendeeId: string, eventId: string, title: string, message: string) {
+	async createCheckInNotification(
+		attendeeId: string,
+		eventId: string,
+		title: string,
+		message: string,
+	) {
 		const attendee = await prisma.attendee.findUnique({
 			where: { id: attendeeId },
 			select: { userId: true },
@@ -218,7 +247,13 @@ export class NotificationsService {
 		if (!attendee?.userId) return null;
 
 		return await prisma.notification.create({
-			data: { type: "CHECK_IN_CONFIRMED", title, message, userId: attendee.userId, eventId },
+			data: {
+				type: "CHECK_IN_CONFIRMED",
+				title,
+				message,
+				userId: attendee.userId,
+				eventId,
+			},
 		});
 	}
 }

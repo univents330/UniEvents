@@ -1,5 +1,6 @@
 "use client";
 
+import type { RevenueAnalytics } from "@unievent/schema";
 import { useMemo } from "react";
 import {
 	Area,
@@ -12,11 +13,12 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import type { RevenueAnalytics } from "@unievent/schema";
 
 export function RevenueChart({
 	data,
-}: { data: RevenueAnalytics["revenueByDate"] }) {
+}: {
+	data: RevenueAnalytics["revenueByDate"];
+}) {
 	const chartData = useMemo(() => {
 		return data.map((d) => ({
 			date: new Intl.DateTimeFormat("en", {
@@ -39,14 +41,21 @@ export function RevenueChart({
 	return (
 		<div className="h-[300px] w-full">
 			<ResponsiveContainer width="100%" height="100%">
-				<AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+				<AreaChart
+					data={chartData}
+					margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
+				>
 					<defs>
 						<linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
 							<stop offset="5%" stopColor="#1264db" stopOpacity={0.3} />
 							<stop offset="95%" stopColor="#1264db" stopOpacity={0} />
 						</linearGradient>
 					</defs>
-					<CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+					<CartesianGrid
+						strokeDasharray="3 3"
+						vertical={false}
+						stroke="#e2e8f0"
+					/>
 					<XAxis
 						dataKey="date"
 						axisLine={false}
@@ -68,7 +77,10 @@ export function RevenueChart({
 							fontWeight: 600,
 							color: "#0e1838",
 						}}
-						formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, "Revenue"]}
+						formatter={(value) => [
+							`₹${Number(Array.isArray(value) ? value[0] : value).toLocaleString()}`,
+							"Revenue",
+						]}
 					/>
 					<Area
 						type="monotone"
@@ -86,7 +98,9 @@ export function RevenueChart({
 
 export function AttendanceChart({
 	data,
-}: { data: { date: string; attendees: number }[] }) {
+}: {
+	data: { date: string; attendees: number }[];
+}) {
 	const chartData = useMemo(() => {
 		return data.map((d) => ({
 			date: new Intl.DateTimeFormat("en", {
@@ -108,8 +122,15 @@ export function AttendanceChart({
 	return (
 		<div className="h-[300px] w-full">
 			<ResponsiveContainer width="100%" height="100%">
-				<BarChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-					<CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+				<BarChart
+					data={chartData}
+					margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
+				>
+					<CartesianGrid
+						strokeDasharray="3 3"
+						vertical={false}
+						stroke="#e2e8f0"
+					/>
 					<XAxis
 						dataKey="date"
 						axisLine={false}
@@ -131,9 +152,14 @@ export function AttendanceChart({
 							fontWeight: 600,
 							color: "#0e1838",
 						}}
-						formatter={(value: any) => [value, "Attendees"]}
+						formatter={(value) => [value, "Attendees"]}
 					/>
-					<Bar dataKey="attendees" fill="#0d8a58" radius={[4, 4, 0, 0]} maxBarSize={60} />
+					<Bar
+						dataKey="attendees"
+						fill="#0d8a58"
+						radius={[4, 4, 0, 0]}
+						maxBarSize={60}
+					/>
 				</BarChart>
 			</ResponsiveContainer>
 		</div>

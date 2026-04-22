@@ -20,7 +20,9 @@ export async function sendEmailViaBrevo({
 	textContent,
 }: BrevoEmailOptions) {
 	if (!env.BREVO_API_KEY || !env.BREVO_MAIL_FROM) {
-		logger.warn("Brevo email not configured. Set BREVO_API_KEY and BREVO_MAIL_FROM.");
+		logger.warn(
+			"Brevo email not configured. Set BREVO_API_KEY and BREVO_MAIL_FROM.",
+		);
 		return;
 	}
 
@@ -59,7 +61,9 @@ export async function sendEmailViaBrevo({
 		}
 
 		const data = (await response.json()) as BrevoSendResponse;
-		logger.info("Email sent successfully via Brevo", { messageId: data.messageId });
+		logger.info("Email sent successfully via Brevo", {
+			messageId: data.messageId,
+		});
 		return data;
 	} catch (error) {
 		logger.error("Error sending email via Brevo", error);

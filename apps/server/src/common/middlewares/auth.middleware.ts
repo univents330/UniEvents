@@ -28,7 +28,10 @@ function getBearerToken(authorizationHeader?: string) {
 	return token;
 }
 
-async function attachBearerSessionContext(authReq: RequestWithAuth, token: string) {
+async function attachBearerSessionContext(
+	authReq: RequestWithAuth,
+	token: string,
+) {
 	const session = await prisma.session.findUnique({
 		where: { token },
 		include: { user: true },

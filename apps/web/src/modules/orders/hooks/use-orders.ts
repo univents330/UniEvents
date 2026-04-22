@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { CreateOrderInput, UpdateOrderInput } from "@unievent/schema";
-import { ordersService, type OrderListQuery } from "../services/orders.service";
+import { type OrderListQuery, ordersService } from "../services/orders.service";
 
 const ordersKeys = {
 	all: ["orders"] as const,

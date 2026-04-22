@@ -1,9 +1,5 @@
+import { analyticsFilterSchema, idParamSchema } from "@unievent/schema";
 import { Router } from "express";
-
-import {
-	analyticsFilterSchema,
-	idParamSchema,
-} from "@unievent/schema";
 
 import { requireAuth } from "@/common/middlewares/auth.middleware";
 import { validatePipe } from "@/common/pipes/validate.pipe";
@@ -25,14 +21,18 @@ export function createAnalyticsRouter(): Router {
 		"/revenue",
 		requireAuth,
 		validatePipe({ query: analyticsFilterSchema }),
-		asyncHandler((req, res) => analyticsController.getRevenueAnalytics(req, res)),
+		asyncHandler((req, res) =>
+			analyticsController.getRevenueAnalytics(req, res),
+		),
 	);
 
 	router.get(
 		"/attendees",
 		requireAuth,
 		validatePipe({ query: analyticsFilterSchema }),
-		asyncHandler((req, res) => analyticsController.getAttendeeAnalytics(req, res)),
+		asyncHandler((req, res) =>
+			analyticsController.getAttendeeAnalytics(req, res),
+		),
 	);
 
 	return router;

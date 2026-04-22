@@ -20,8 +20,8 @@ import {
 	ForbiddenError,
 	NotFoundError,
 } from "@/common/exceptions/app-error";
-import { logger } from "@/common/utils/logger";
 import { sendEmailViaBrevo } from "@/common/utils/brevo";
+import { logger } from "@/common/utils/logger";
 import {
 	createRazorpayOrder,
 	createRazorpayRefund,
@@ -818,7 +818,9 @@ export class PaymentsService {
 				existingPayment.status === "PENDING" &&
 				typeof existingOrderId === "string"
 			) {
-				const existingMeta = this.normalizeGatewayMeta(existingPayment.gatewayMeta);
+				const existingMeta = this.normalizeGatewayMeta(
+					existingPayment.gatewayMeta,
+				);
 				const checkoutItems = this.normalizeCheckoutItems(
 					Array.isArray(existingMeta.checkoutItems)
 						? existingMeta.checkoutItems

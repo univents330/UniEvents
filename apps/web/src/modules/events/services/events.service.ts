@@ -9,10 +9,15 @@ import type {
 	UpdateEventInput,
 	UpdateEventTicketTierInput,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type EventListQuery = Partial<EventFilterInput>;
 export type EventTicketTierListQuery = Partial<TicketTierFilterInput>;
+export type { EventRecord };
 
 type EventListResponse = PaginatedResponse<EventRecord>;
 type TicketTierListResponse = PaginatedResponse<TicketTierRecord>;
@@ -30,9 +35,7 @@ function serializeQuery(
 export const eventsService = {
 	async list(query?: EventListQuery) {
 		const response = await apiClient.get<EventListResponse>("/events", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
+			params: serializeQuery(query as Record<string, QueryValue> | undefined),
 		});
 		return response.data;
 	},
@@ -53,7 +56,10 @@ export const eventsService = {
 	},
 
 	async update(eventId: string, input: UpdateEventInput) {
-		const response = await apiClient.patch<EventRecord>(`/events/${eventId}`, input);
+		const response = await apiClient.patch<EventRecord>(
+			`/events/${eventId}`,
+			input,
+		);
 		return response.data;
 	},
 
@@ -65,9 +71,7 @@ export const eventsService = {
 		const response = await apiClient.get<TicketTierListResponse>(
 			`/events/${eventId}/ticket-tiers`,
 			{
-				params: serializeQuery(
-					query as Record<string, QueryValue> | undefined,
-				),
+				params: serializeQuery(query as Record<string, QueryValue> | undefined),
 			},
 		);
 		return response.data;

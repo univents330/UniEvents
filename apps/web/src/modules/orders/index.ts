@@ -1,10 +1,11 @@
-export { OrdersView } from "./views/orders-view";
 export {
-	useOrders,
-	useOrder,
 	useCreateOrder,
-	useUpdateOrder,
 	useDeleteOrder,
+	useOrder,
+	useOrders,
+	useUpdateOrder,
 } from "./hooks/use-orders";
-export { ordersService } from "./services/orders.service";
 export type { OrderListQuery, OrderRecord } from "./services/orders.service";
+export { ordersService } from "./services/orders.service";
+export { HostOrdersView } from "./views/host-orders-view";
+export { OrdersView } from "./views/orders-view";

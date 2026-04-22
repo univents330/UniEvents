@@ -9,8 +9,8 @@ import type {
 	VerifyPaymentInput,
 } from "@unievent/schema";
 import {
-	paymentsService,
 	type PaymentListQuery,
+	paymentsService,
 } from "../services/payments.service";
 
 const paymentsKeys = {
@@ -65,8 +65,7 @@ export function useVerifyPayment() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: VerifyPaymentInput) =>
-			paymentsService.verify(input),
+		mutationFn: (input: VerifyPaymentInput) => paymentsService.verify(input),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: paymentsKeys.all });
 		},

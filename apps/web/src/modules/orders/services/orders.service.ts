@@ -5,7 +5,11 @@ import type {
 	PaginatedResponse,
 	UpdateOrderInput,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type OrderListQuery = Partial<OrderFilterInput>;
 
@@ -32,9 +36,7 @@ export type { OrderRecord };
 export const ordersService = {
 	async list(query?: OrderListQuery) {
 		const response = await apiClient.get<OrderListResponse>("/orders", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
+			params: serializeQuery(query as Record<string, QueryValue> | undefined),
 		});
 		return response.data;
 	},
@@ -50,10 +52,7 @@ export const ordersService = {
 	},
 
 	async update(id: string, input: UpdateOrderInput) {
-		const response = await apiClient.patch<OrderRecord>(
-			`/orders/${id}`,
-			input,
-		);
+		const response = await apiClient.patch<OrderRecord>(`/orders/${id}`, input);
 		return response.data;
 	},
 

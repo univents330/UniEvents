@@ -23,8 +23,9 @@ export class AuthController {
 			return;
 		}
 
-		const getSetCookie = (headers as Headers & { getSetCookie?: () => string[] })
-			.getSetCookie;
+		const getSetCookie = (
+			headers as Headers & { getSetCookie?: () => string[] }
+		).getSetCookie;
 		const setCookies =
 			typeof getSetCookie === "function"
 				? getSetCookie.call(headers)
@@ -38,7 +39,10 @@ export class AuthController {
 	}
 
 	async register(req: Request, res: Response) {
-		const result = await authService.register(req.body, this.toAuthHeaders(req));
+		const result = await authService.register(
+			req.body,
+			this.toAuthHeaders(req),
+		);
 		this.applySetCookieHeaders(res, result.headers);
 		res.status(201).json(result.data);
 	}
@@ -128,10 +132,7 @@ export class AuthController {
 
 	async verifyEmail(req: Request, res: Response) {
 		const body = verifyEmailSchema.parse(req.body);
-		const result = await authService.verifyEmail(
-			body,
-			this.toAuthHeaders(req),
-		);
+		const result = await authService.verifyEmail(body, this.toAuthHeaders(req));
 		res.status(200).json(result);
 	}
 }

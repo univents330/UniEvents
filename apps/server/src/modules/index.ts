@@ -1,7 +1,6 @@
 import type { Express } from "express";
-
-import { registerAttendeesModule } from "./attendees";
 import { registerAnalyticsModule } from "./analytics";
+import { registerAttendeesModule } from "./attendees";
 import { registerAuthModule } from "./auth";
 import { registerCheckInsModule } from "./check-ins";
 import { registerEventsModule } from "./events";

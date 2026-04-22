@@ -1,217 +1,278 @@
 "use client";
 
+import type { EventRecord } from "@unievent/schema";
+import { format } from "date-fns";
+import {
+	Download,
+	MapPin,
+	Printer,
+	Search,
+	Ticket as TicketIcon,
+	X,
+} from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import type { TicketRecord } from "@unievent/schema";
+import { useMemo, useState } from "react";
 import { useEvents } from "@/modules/events";
-import { useTickets } from "../hooks/use-tickets";
 import { Button } from "@/shared/ui/button";
-import { SectionTitle } from "@/shared/ui/section-title";
 import { MobileTicketPreview } from "../components/mobile-ticket-preview";
-
-function formatDateTime(value: string) {
-	return new Intl.DateTimeFormat("en", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	}).format(new Date(value));
-}
+import { useTickets } from "../hooks/use-tickets";
 
 export function TicketsView() {
 	const eventsQuery = useEvents({ limit: 100 });
 	const ticketsQuery = useTickets({ limit: 100 });
 	const [eventFilter, setEventFilter] = useState("ALL");
+	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedTicketId, setSelectedTicketId] = useState("");
+	const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
 	const tickets = ticketsQuery.data?.data ?? [];
 	const events = eventsQuery.data?.data ?? [];
 
+	const eventMap = useMemo(() => {
+		const map = new Map<string, EventRecord>();
+		for (const event of events) {
+			map.set(event.id, event);
+		}
+		return map;
+	}, [events]);
+
 	const filteredTickets = useMemo(() => {
-		if (eventFilter === "ALL") {
-			return tickets;
-		}
+		return tickets.filter((ticket) => {
+			const matchesEvent =
+				eventFilter === "ALL" || ticket.eventId === eventFilter;
+			const eventName = eventMap.get(ticket.eventId)?.name.toLowerCase() || "";
+			const matchesSearch =
+				searchQuery === "" ||
+				ticket.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				eventName.includes(searchQuery.toLowerCase());
+			return matchesEvent && matchesSearch;
+		});
+	}, [tickets, eventFilter, searchQuery, eventMap]);
 
-		return tickets.filter((ticket) => ticket.eventId === eventFilter);
-	}, [tickets, eventFilter]);
-
-	const selectedTicket =
-		filteredTickets.find((ticket) => ticket.id === selectedTicketId) ??
-		filteredTickets[0] ??
-		null;
-
-	useEffect(() => {
-		if (filteredTickets.length === 0) {
-			return;
-		}
-
-		const selectedExists = filteredTickets.some((ticket) => ticket.id === selectedTicketId);
-		if (!selectedExists) {
-			setSelectedTicketId(filteredTickets[0].id);
-		}
-	}, [filteredTickets, selectedTicketId]);
-
-	const ticketStats = useMemo(() => {
-		const totalRevenue = tickets.reduce((sum, ticket) => sum + ticket.pricePaid, 0);
-		const uniqueEvents = new Set(tickets.map((ticket) => ticket.eventId)).size;
-
-		return {
-			total: tickets.length,
-			totalRevenue,
-			uniqueEvents,
-		};
-	}, [tickets]);
-
-	if (ticketsQuery.isLoading || eventsQuery.isLoading) {
-		return <div className="panel-soft p-6 text-[#5f6984]">Loading tickets...</div>;
-	}
-
-	if (ticketsQuery.isError || eventsQuery.isError) {
-		return (
-			<div className="panel-soft p-6 text-[#5f6984]">
-				Unable to load tickets right now.
-			</div>
-		);
-	}
+	const selectedTicket = useMemo(
+		() => tickets.find((t) => t.id === selectedTicketId) || null,
+		[tickets, selectedTicketId],
+	);
 
 	return (
-		<div className="grid items-start gap-6 lg:grid-cols-[1fr_440px]">
-			<section className="panel space-y-6 p-6 md:p-8">
-				<SectionTitle
-					eyebrow="Tickets"
-					title="Manage every pass from one ticket hub"
-					description="Filter by event, switch between issued tickets, and preview each mobile-ready pass before entry day."
-				/>
+		<div className="space-y-6">
+			{/* Header */}
+			<div className="rounded-2xl border border-[#dbe7ff] bg-white p-4 md:p-6">
+				<div className="flex flex-col gap-4">
+					<div>
+						<h1 className="font-bold text-2xl text-slate-900 md:text-3xl">
+							My Tickets
+						</h1>
+						<p className="mt-1 text-slate-600 text-sm">
+							View and manage your event tickets
+						</p>
+					</div>
 
-				<div className="grid gap-4 sm:grid-cols-4">
-					<Fact label="Total passes" value={String(ticketStats.total)} />
-					<Fact label="Events" value={String(ticketStats.uniqueEvents)} />
-					<Fact label="Revenue" value={new Intl.NumberFormat("en", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(ticketStats.totalRevenue)} />
-					<Fact label="Latest issue" value={filteredTickets[0] ? formatDateTime(filteredTickets[0].createdAt) : "-"} />
-				</div>
+					<div className="flex flex-col gap-3 sm:flex-row">
+						<div className="relative flex-1 sm:max-w-xs">
+							<Search
+								className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
+								size={16}
+							/>
+							<input
+								type="text"
+								placeholder="Search tickets..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="w-full rounded-lg border border-slate-200 py-2 pr-4 pl-10 focus:outline-none focus:ring-2 focus:ring-[#030370]"
+							/>
+						</div>
 
-				<div className="flex flex-wrap items-end gap-4">
-					<label className="min-w-[220px] flex-1 space-y-2">
-						<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
-							Filter by event
-						</span>
 						<select
 							value={eventFilter}
-							onChange={(event) => setEventFilter(event.target.value)}
-							className="h-11 w-full rounded-xl border border-[#d4def8] bg-white px-3 text-sm text-[#19254a] outline-none transition-colors focus:border-[#3a59d6]"
+							onChange={(e) => setEventFilter(e.target.value)}
+							className="rounded-lg border border-slate-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#030370]"
 						>
-								<option value="ALL">All events</option>
-							{events.map((event) => (
-								<option key={event.id} value={event.id}>
-									{event.name}
+							<option value="ALL">All Events</option>
+							{events.map((e) => (
+								<option key={e.id} value={e.id}>
+									{e.name}
 								</option>
 							))}
 						</select>
-					</label>
-
-					<Button
-						type="button"
-						variant="ghost"
-						onClick={() => setEventFilter("ALL")}
-					>
-						Show all
-					</Button>
+					</div>
 				</div>
+			</div>
 
-				<div className="space-y-3">
-					<p className="font-semibold text-[#253056] text-sm">
-						{filteredTickets.length} {filteredTickets.length === 1 ? "ticket" : "tickets"} shown
-					</p>
-
-					{filteredTickets.length === 0 ? (
-						<div className="rounded-xl border border-[#d7e0f8] bg-[#f7faff] p-4 text-[#5f6984] text-sm">
-							No tickets found for this event. Switch filters to continue.
-						</div>
-					) : (
-						<div className="grid gap-3">
-							{filteredTickets.map((ticket) => (
-								<TicketRow
-									key={ticket.id}
-									ticket={ticket}
-									active={selectedTicket?.id === ticket.id}
-									onSelect={setSelectedTicketId}
+			{/* Main Content */}
+			<div className="flex flex-col gap-6 lg:flex-row">
+				{/* Tickets List */}
+				<div className="flex-1">
+					{ticketsQuery.isLoading || eventsQuery.isLoading ? (
+						<div className="space-y-3">
+							{[1, 2, 3].map((i) => (
+								<div
+									key={i}
+									className="animate-pulse rounded-xl border border-slate-200 bg-white p-4"
 								/>
 							))}
+						</div>
+					) : filteredTickets.length === 0 ? (
+						<div className="rounded-xl border border-slate-200 border-dashed bg-white p-8 text-center">
+							<TicketIcon className="mx-auto mb-4 h-12 w-12 text-slate-300" />
+							<p className="font-medium text-slate-600">No tickets found</p>
+							<p className="mt-1 text-slate-400 text-sm">
+								Try adjusting your filters
+							</p>
+						</div>
+					) : (
+						<div className="space-y-3">
+							{filteredTickets.map((ticket) => {
+								const event = eventMap.get(ticket.eventId);
+								const isSelected = selectedTicketId === ticket.id;
+								return (
+									<button
+										type="button"
+										key={ticket.id}
+										onClick={() => {
+											setSelectedTicketId(ticket.id);
+											setShowMobileSidebar(true);
+										}}
+										className={`cursor-pointer rounded-xl border p-4 text-left transition ${
+											isSelected
+												? "border-[#030370] bg-[#030370]/5"
+												: "border-slate-200 bg-white hover:border-[#030370]"
+										}`}
+									>
+										<div className="flex items-start justify-between gap-4">
+											<div className="min-w-0 flex-1">
+												<div className="flex items-center gap-3">
+													<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+														{event?.thumbnail ? (
+															<Image
+																src={event.thumbnail}
+																alt=""
+																width={48}
+																height={48}
+																className="h-full w-full rounded-lg object-cover"
+															/>
+														) : (
+															<TicketIcon
+																className="text-slate-400"
+																size={20}
+															/>
+														)}
+													</div>
+													<div className="min-w-0">
+														<h3 className="truncate font-semibold text-slate-900">
+															{event?.name || "Unknown Event"}
+														</h3>
+														<div className="mt-1 flex items-center gap-1 text-slate-500 text-sm">
+															<MapPin size={14} />
+															<span className="truncate">
+																{event?.venueName || "TBA"}
+															</span>
+														</div>
+													</div>
+												</div>
+											</div>
+											<div className="shrink-0 text-right">
+												<p className="font-bold text-slate-900">
+													₹{ticket.pricePaid.toLocaleString("en-IN")}
+												</p>
+												<p className="mt-1 text-slate-500 text-xs">
+													{format(new Date(ticket.createdAt), "MMM dd, yyyy")}
+												</p>
+											</div>
+										</div>
+									</button>
+								);
+							})}
 						</div>
 					)}
 				</div>
 
-				<div className="panel-soft flex items-center gap-4 p-4">
-					<Image
-						src="/assets/logoo.svg"
-						alt="Ticket operations icon"
-						width={56}
-						height={56}
-					/>
-					<p className="text-[#4f5a78] text-sm leading-relaxed">
-						Each pass card is optimized for quick check-in. Use the active list
-						to verify attendee status before event entry opens.
-					</p>
-				</div>
-			</section>
+				{/* Sidebar - Desktop */}
+				<div className="hidden w-96 shrink-0 lg:block">
+					{selectedTicket ? (
+						<div className="sticky top-24 space-y-4">
+							<div className="rounded-2xl border border-[#dbe7ff] bg-white p-6 shadow-lg">
+								<MobileTicketPreview
+									ticket={selectedTicket}
+									event={eventMap.get(selectedTicket.eventId)}
+								/>
+							</div>
 
-			{selectedTicket ? (
-				<div className="space-y-4">
-					<MobileTicketPreview ticket={selectedTicket} />
-					<div className="panel-soft flex flex-wrap gap-2 p-3">
-						<Button type="button" size="sm">Download pass</Button>
-						<Button type="button" variant="ghost" size="sm">
-							Share pass link
-						</Button>
-					</div>
+							<div className="grid grid-cols-2 gap-3">
+								<Button className="gap-2 bg-[#030370] text-white hover:bg-slate-900">
+									<Printer size={16} />
+									Print
+								</Button>
+								<Button
+									variant="ghost"
+									className="gap-2 border-[#dbe7ff] hover:bg-slate-50"
+								>
+									<Download size={16} />
+									Save PDF
+								</Button>
+							</div>
+
+							<div className="rounded-xl border border-[#dbe7ff] bg-white p-4 text-center">
+								<p className="text-slate-400 text-xs uppercase tracking-wider">
+									Ref: {selectedTicket.id}
+								</p>
+							</div>
+						</div>
+					) : (
+						<div className="sticky top-24 rounded-2xl border border-[#dbe7ff] border-dashed bg-white p-8 text-center">
+							<TicketIcon className="mx-auto mb-4 h-12 w-12 text-slate-200" />
+							<p className="font-medium text-slate-400">Select a ticket</p>
+							<p className="mt-1 text-slate-300 text-sm">to view details</p>
+						</div>
+					)}
 				</div>
-			) : (
-				<div className="panel-soft p-6 text-center text-[#5f6984] text-sm">
-					Choose a ticket from the list to open the mobile preview.
+			</div>
+
+			{/* Mobile Modal */}
+			{showMobileSidebar && selectedTicket && (
+				<div className="fixed inset-0 z-50 lg:hidden">
+					<button
+						type="button"
+						className="absolute inset-0 bg-black/50"
+						onClick={() => setShowMobileSidebar(false)}
+						onKeyDown={(e) => {
+							if (e.key === "Escape") setShowMobileSidebar(false);
+						}}
+						aria-label="Close ticket details"
+					/>
+					<div className="slide-in-from-bottom absolute right-0 bottom-0 left-0 max-h-[90vh] animate-in overflow-y-auto rounded-t-3xl bg-white p-6 duration-300">
+						<div className="mb-6 flex items-center justify-between">
+							<h3 className="font-bold text-lg text-slate-900">
+								Ticket Details
+							</h3>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setShowMobileSidebar(false)}
+							>
+								<X size={24} />
+							</Button>
+						</div>
+						<MobileTicketPreview
+							ticket={selectedTicket}
+							event={eventMap.get(selectedTicket.eventId)}
+						/>
+						<div className="mt-6 grid grid-cols-2 gap-3">
+							<Button className="gap-2 bg-[#030370] text-white hover:bg-slate-900">
+								<Printer size={16} />
+								Print
+							</Button>
+							<Button
+								variant="ghost"
+								className="gap-2 border-[#dbe7ff] hover:bg-slate-50"
+							>
+								<Download size={16} />
+								Save PDF
+							</Button>
+						</div>
+					</div>
 				</div>
 			)}
 		</div>
-	);
-}
-
-function Fact({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="rounded-xl border border-[#d7e0f8] bg-white px-4 py-3">
-			<p className="font-semibold text-[#7a86a8] text-xs uppercase tracking-wide">
-				{label}
-			</p>
-			<p className="mt-1 font-semibold text-[#1e2a4d] text-sm">{value}</p>
-		</div>
-	);
-}
-
-function TicketRow({
-	ticket,
-	active,
-	onSelect,
-}: {
-	ticket: TicketRecord;
-	active: boolean;
-	onSelect: (ticketId: string) => void;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={() => onSelect(ticket.id)}
-			className={`w-full rounded-xl border p-4 text-left transition-colors ${
-				active
-					? "border-[#2b4ccc] bg-[#eaf0ff]"
-					: "border-[#d7e0f8] bg-white hover:bg-[#f8faff]"
-			}`}
-		>
-			<div className="flex flex-wrap items-center justify-between gap-2">
-				<p className="font-semibold text-[#1e2a4d] text-sm">{ticket.id}</p>
-				<span className="rounded-full bg-[#edf2ff] px-2.5 py-1 font-semibold text-[#2b4ccc] text-xs">
-					{ticket.tierId}
-				</span>
-			</div>
-			<p className="mt-1 text-[#5f6984] text-sm">
-				Created {formatDateTime(ticket.createdAt)}
-			</p>
-			<p className="mt-1 text-[#5f6984] text-xs">Order: {ticket.orderId}</p>
-		</button>
 	);
 }

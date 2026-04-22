@@ -1,8 +1,8 @@
 import { prisma } from "@unievent/db";
 import { env } from "@unievent/env/server";
 import type {
-	AuthTokens,
 	AuthSession,
+	AuthTokens,
 	ChangePasswordInput,
 	ForgotPasswordInput,
 	LoginInput,
@@ -88,14 +88,18 @@ export class AuthService {
 			image: user.image ?? null,
 			role: typeof user.role === "string" ? user.role : "USER",
 			skills: Array.isArray(user.skills)
-				? user.skills.filter((skill): skill is string => typeof skill === "string")
+				? user.skills.filter(
+						(skill): skill is string => typeof skill === "string",
+					)
 				: [],
 			createdAt: user.createdAt,
 			updatedAt: user.updatedAt,
 		});
 	}
 
-	private toAuthTokens(session: Pick<BetterAuthSession, "token" | "expiresAt">): AuthTokens {
+	private toAuthTokens(
+		session: Pick<BetterAuthSession, "token" | "expiresAt">,
+	): AuthTokens {
 		const expiresAt = session.expiresAt.toISOString();
 		return {
 			accessToken: session.token,
@@ -176,7 +180,9 @@ export class AuthService {
 		return session;
 	}
 
-	private async buildAuthPayloadFromToken(token: string): Promise<AuthResponsePayload> {
+	private async buildAuthPayloadFromToken(
+		token: string,
+	): Promise<AuthResponsePayload> {
 		const session = await this.resolveSessionByToken(token);
 
 		return {
@@ -478,7 +484,9 @@ export class AuthService {
 		);
 
 		if (!result.response.token) {
-			throw new UnauthorizedError("Session token missing after password change");
+			throw new UnauthorizedError(
+				"Session token missing after password change",
+			);
 		}
 
 		return {
@@ -505,7 +513,9 @@ export class AuthService {
 		const targetEmail = this.normalizeEmail(email ?? user.email);
 
 		if (targetEmail !== user.email) {
-			const existingUser = await prisma.user.findUnique({ where: { email: targetEmail } });
+			const existingUser = await prisma.user.findUnique({
+				where: { email: targetEmail },
+			});
 			if (existingUser) {
 				throw new ConflictError("Email is already in use");
 			}
@@ -533,7 +543,7 @@ export class AuthService {
 						token: input.token,
 					},
 					headers,
-				}) as Promise<void | { status: boolean }>,
+				}) as Promise<undefined | { status: boolean }>,
 		);
 
 		return { message: "Email verified successfully" };

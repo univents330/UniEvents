@@ -1,7 +1,7 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/core/providers/auth-provider";
 
 export function ProtectedRoute({

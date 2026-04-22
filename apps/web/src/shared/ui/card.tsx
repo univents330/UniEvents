@@ -12,7 +12,12 @@ export function CardTitle({
 	className,
 	...props
 }: React.HTMLAttributes<HTMLHeadingElement>) {
-	return <h3 className={cn("display-font font-bold text-xl", className)} {...props} />;
+	return (
+		<h3
+			className={cn("display-font font-bold text-xl", className)}
+			{...props}
+		/>
+	);
 }
 
 export function CardText({

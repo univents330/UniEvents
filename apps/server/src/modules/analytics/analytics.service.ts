@@ -1,9 +1,9 @@
-import { Prisma, prisma, type UserRole } from "@unievent/db";
-import {
-	type AnalyticsFilterInput,
-	type EventAnalytics,
-	type RevenueAnalytics,
-	type AttendeeAnalytics,
+import { type Prisma, prisma, type UserRole } from "@unievent/db";
+import type {
+	AnalyticsFilterInput,
+	AttendeeAnalytics,
+	EventAnalytics,
+	RevenueAnalytics,
 } from "@unievent/schema";
 
 import { ForbiddenError, NotFoundError } from "@/common/exceptions/app-error";
@@ -14,7 +14,10 @@ type AnalyticsActor = {
 };
 
 export class AnalyticsService {
-	private ensureCanViewAnalytics(actor: AnalyticsActor, eventUserId?: string | null) {
+	private ensureCanViewAnalytics(
+		actor: AnalyticsActor,
+		eventUserId?: string | null,
+	) {
 		if (actor.role === "ADMIN") {
 			return;
 		}
@@ -26,7 +29,10 @@ export class AnalyticsService {
 		throw new ForbiddenError("You don't have permission to view analytics");
 	}
 
-	async getEventAnalytics(eventId: string, actor: AnalyticsActor): Promise<EventAnalytics> {
+	async getEventAnalytics(
+		eventId: string,
+		actor: AnalyticsActor,
+	): Promise<EventAnalytics> {
 		const event = await prisma.event.findUnique({
 			where: { id: eventId },
 			select: { userId: true },
@@ -38,7 +44,13 @@ export class AnalyticsService {
 
 		this.ensureCanViewAnalytics(actor, event.userId);
 
-		const [totalAttendees, totalTicketsSold, totalRevenue, totalCheckIns, ticketTierBreakdown] = await Promise.all([
+		const [
+			totalAttendees,
+			totalTicketsSold,
+			totalRevenue,
+			totalCheckIns,
+			ticketTierBreakdown,
+		] = await Promise.all([
 			prisma.attendee.count({ where: { eventId } }),
 			prisma.ticket.count({ where: { eventId } }),
 			prisma.payment.aggregate({
@@ -57,7 +69,8 @@ export class AnalyticsService {
 		]);
 
 		const revenue = totalRevenue._sum?.amount ?? 0;
-		const checkInRate = totalTicketsSold > 0 ? totalCheckIns / totalTicketsSold : 0;
+		const checkInRate =
+			totalTicketsSold > 0 ? totalCheckIns / totalTicketsSold : 0;
 
 		return {
 			eventId,
@@ -74,7 +87,10 @@ export class AnalyticsService {
 		};
 	}
 
-	async getRevenueAnalytics(input: AnalyticsFilterInput, actor: AnalyticsActor): Promise<RevenueAnalytics> {
+	async getRevenueAnalytics(
+		input: AnalyticsFilterInput,
+		actor: AnalyticsActor,
+	): Promise<RevenueAnalytics> {
 		const where: Prisma.PaymentWhereInput = {
 			status: "SUCCESS",
 			deletedAt: null,
@@ -121,23 +137,36 @@ export class AnalyticsService {
 		const totalRevenue = totalRevenueResult._sum?.amount ?? 0;
 		const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-		const revenueByDateMap = new Map<string, { revenue: number; orders: number }>();
+		const revenueByDateMap = new Map<
+			string,
+			{ revenue: number; orders: number }
+		>();
 		for (const payment of payments) {
 			const dateKey = this.getDateKey(payment.createdAt, input.groupBy);
-			const existing = revenueByDateMap.get(dateKey) ?? { revenue: 0, orders: 0 };
+			const existing = revenueByDateMap.get(dateKey) ?? {
+				revenue: 0,
+				orders: 0,
+			};
 			existing.revenue += payment.amount;
 			existing.orders += 1;
 			revenueByDateMap.set(dateKey, existing);
 		}
 
 		const revenueByDate = Array.from(revenueByDateMap.entries())
-			.map(([date, data]) => ({ date, revenue: data.revenue, orders: data.orders }))
+			.map(([date, data]) => ({
+				date,
+				revenue: data.revenue,
+				orders: data.orders,
+			}))
 			.slice(0, 30);
 
 		return { totalRevenue, totalOrders, averageOrderValue, revenueByDate };
 	}
 
-	async getAttendeeAnalytics(input: AnalyticsFilterInput, actor: AnalyticsActor): Promise<AttendeeAnalytics> {
+	async getAttendeeAnalytics(
+		input: AnalyticsFilterInput,
+		actor: AnalyticsActor,
+	): Promise<AttendeeAnalytics> {
 		const where: Prisma.AttendeeWhereInput = {};
 
 		if (input.eventId) {
@@ -164,22 +193,25 @@ export class AnalyticsService {
 			if (input.endDate) where.createdAt.lte = input.endDate;
 		}
 
-		const [totalAttendees, uniqueAttendees, totalCheckIns, attendees] = await Promise.all([
-			prisma.attendee.count({ where }),
-			prisma.attendee.groupBy({
-				by: ["email"],
-				where,
-			}).then((groups) => groups.length),
-			prisma.checkIn.count({
-				where: input.eventId ? { eventId: input.eventId } : {},
-			}),
-			prisma.attendee.findMany({
-				where,
-				select: { createdAt: true },
-				orderBy: { createdAt: "desc" },
-				take: 100,
-			}),
-		]);
+		const [totalAttendees, uniqueAttendees, totalCheckIns, attendees] =
+			await Promise.all([
+				prisma.attendee.count({ where }),
+				prisma.attendee
+					.groupBy({
+						by: ["email"],
+						where,
+					})
+					.then((groups) => groups.length),
+				prisma.checkIn.count({
+					where: input.eventId ? { eventId: input.eventId } : {},
+				}),
+				prisma.attendee.findMany({
+					where,
+					select: { createdAt: true },
+					orderBy: { createdAt: "desc" },
+					take: 100,
+				}),
+			]);
 
 		const checkInRate = totalAttendees > 0 ? totalCheckIns / totalAttendees : 0;
 

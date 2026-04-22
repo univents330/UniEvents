@@ -3,9 +3,7 @@ import { z } from "zod";
 
 export type { Event, TicketTier };
 
-const ulidSchema = z
-	.string()
-	.min(10);
+const ulidSchema = z.string().min(10);
 
 function validateDateRange(
 	startDate: Date | null | undefined,

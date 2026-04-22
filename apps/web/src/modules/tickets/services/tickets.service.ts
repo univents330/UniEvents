@@ -5,7 +5,11 @@ import type {
 	TicketRecord,
 	UpdateTicketInput,
 } from "@unievent/schema";
-import { apiClient, toQueryParams, type QueryValue } from "@/core/lib/api-client";
+import {
+	apiClient,
+	type QueryValue,
+	toQueryParams,
+} from "@/core/lib/api-client";
 
 export type TicketListQuery = Partial<TicketFilterInput>;
 
@@ -24,9 +28,7 @@ function serializeQuery(
 export const ticketsService = {
 	async list(query?: TicketListQuery) {
 		const response = await apiClient.get<TicketListResponse>("/tickets", {
-			params: serializeQuery(
-				query as Record<string, QueryValue> | undefined,
-			),
+			params: serializeQuery(query as Record<string, QueryValue> | undefined),
 		});
 		return response.data;
 	},

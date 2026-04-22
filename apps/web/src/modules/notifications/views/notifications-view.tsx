@@ -1,11 +1,12 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
-import { useNotifications } from "../hooks/use-notifications";
-import { SectionTitle } from "@/shared/ui/section-title";
-import { Select } from "@/shared/ui/select";
 import { Badge } from "@/shared/ui/badge";
 import { DataTable } from "@/shared/ui/data-table";
+import { SectionTitle } from "@/shared/ui/section-title";
+import { Select } from "@/shared/ui/select";
+import { useNotifications } from "../hooks/use-notifications";
 import type { NotificationRecord } from "../services/notifications.service";
 
 function formatDate(value: string) {
@@ -42,44 +43,58 @@ export function NotificationsView() {
 		page,
 		limit: 20,
 		status: (status || undefined) as "UNREAD" | "READ" | "ARCHIVED" | undefined,
-		type: (type || undefined) as "EVENT_CREATED" | "EVENT_UPDATED" | "EVENT_CANCELLED" | "EVENT_REMINDER" | "ORDER_CONFIRMED" | "PAYMENT_SUCCESS" | "PAYMENT_FAILED" | "CHECK_IN_CONFIRMED" | "PASS_ISSUED" | undefined,
+		type: (type || undefined) as
+			| "EVENT_CREATED"
+			| "EVENT_UPDATED"
+			| "EVENT_CANCELLED"
+			| "EVENT_REMINDER"
+			| "ORDER_CONFIRMED"
+			| "PAYMENT_SUCCESS"
+			| "PAYMENT_FAILED"
+			| "CHECK_IN_CONFIRMED"
+			| "PASS_ISSUED"
+			| undefined,
 		sortBy: "createdAt",
 		sortOrder: "desc",
 	});
 
-	const columns = [
+	const columns: ColumnDef<NotificationRecord>[] = [
 		{
+			accessorKey: "title",
 			header: "Title",
-			cell: (row: NotificationRecord) => (
+			cell: ({ row }) => (
 				<div>
-					<p className="font-semibold text-[#1e2a4d]">{row.title}</p>
+					<p className="font-semibold text-[#1e2a4d]">{row.original.title}</p>
 					<p className="mt-0.5 line-clamp-1 text-[#5f6984] text-xs">
-						{row.message}
+						{row.original.message}
 					</p>
 				</div>
 			),
 		},
 		{
+			accessorKey: "type",
 			header: "Type",
-			cell: (row: NotificationRecord) => (
+			cell: ({ row }) => (
 				<Badge variant="outline">
-					{typeLabels[row.type] ?? row.type}
+					{typeLabels[row.original.type] ?? row.original.type}
 				</Badge>
 			),
 		},
 		{
+			accessorKey: "status",
 			header: "Status",
-			cell: (row: NotificationRecord) => (
-				<Badge variant={statusVariant[row.status] ?? "default"}>
-					{row.status}
+			cell: ({ row }) => (
+				<Badge variant={statusVariant[row.original.status] ?? "default"}>
+					{row.original.status}
 				</Badge>
 			),
 		},
 		{
+			accessorKey: "createdAt",
 			header: "Date",
-			cell: (row: NotificationRecord) => (
+			cell: ({ row }) => (
 				<span className="text-[#5f6984] text-sm">
-					{formatDate(row.createdAt)}
+					{formatDate(row.original.createdAt)}
 				</span>
 			),
 		},
@@ -110,11 +125,12 @@ export function NotificationsView() {
 			/>
 
 			<section className="panel-soft grid gap-4 p-4 md:grid-cols-2 md:items-end md:p-5">
-				<label className="space-y-2">
+				<label htmlFor="status-filter" className="space-y-2">
 					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
 						Status
 					</span>
 					<Select
+						id="status-filter"
 						value={status}
 						onChange={(e) => {
 							setStatus(e.target.value);
@@ -128,11 +144,12 @@ export function NotificationsView() {
 					</Select>
 				</label>
 
-				<label className="space-y-2">
+				<label htmlFor="type-filter" className="space-y-2">
 					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
 						Type
 					</span>
 					<Select
+						id="type-filter"
 						value={type}
 						onChange={(e) => {
 							setType(e.target.value);
@@ -158,7 +175,6 @@ export function NotificationsView() {
 				data={notificationsQuery.data?.data ?? []}
 				meta={notificationsQuery.data?.meta}
 				onPageChange={setPage}
-				keyExtractor={(row) => row.id}
 			/>
 		</div>
 	);
