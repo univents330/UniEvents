@@ -16,7 +16,6 @@ export type {
 	EventTicketTierListQuery,
 } from "./services/events.service";
 export { eventsService } from "./services/events.service";
-export { CheckoutView } from "./views/checkout-view";
 export { CreateEventView } from "./views/create-event-view";
 export { EditEventView } from "./views/edit-event-view";
 export { EventDetailView } from "./views/event-detail-view";

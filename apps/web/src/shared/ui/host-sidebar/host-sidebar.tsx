@@ -7,7 +7,7 @@ import {
 	Users,
 	Zap,
 } from "lucide-react";
-import { AppSidebar, type SidebarSection } from "@/shared/ui/app-sidebar";
+import { AppSidebar, type SidebarSection } from "@/core/components/app-sidebar";
 
 export const navSections: SidebarSection[] = [
 	{
