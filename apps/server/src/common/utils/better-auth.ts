@@ -58,7 +58,7 @@ export const auth = betterAuth({
 			}
 		: undefined,
 	emailAndPassword: {
-		enabled: false,
+		enabled: true,
 		sendResetPassword: async (data: BetterAuthEmailHookPayload) => {
 			const resetLink = data.url;
 			await sendEmailViaBrevo({

@@ -52,6 +52,14 @@ export function GoogleOAuthSection({
 
 	return (
 		<div className="space-y-4">
+			<div className="flex items-center gap-3 text-[#8a93ad]">
+				<span className="h-px flex-1 bg-[#dbe4fa]" />
+				<span className="whitespace-nowrap font-semibold text-[11px] uppercase tracking-[0.24em]">
+					{dividerLabel}
+				</span>
+				<span className="h-px flex-1 bg-[#dbe4fa]" />
+			</div>
+
 			<Button
 				type="button"
 				variant="ghost"
@@ -81,14 +89,6 @@ export function GoogleOAuthSection({
 				</span>
 				<span>{isSubmitting ? "Connecting..." : actionLabel}</span>
 			</Button>
-
-			<div className="flex items-center gap-3 text-[#8a93ad]">
-				<span className="h-px flex-1 bg-[#dbe4fa]" />
-				<span className="whitespace-nowrap font-semibold text-[11px] uppercase tracking-[0.24em]">
-					{dividerLabel}
-				</span>
-				<span className="h-px flex-1 bg-[#dbe4fa]" />
-			</div>
 		</div>
 	);
 }
