@@ -15,13 +15,20 @@ const FILTERS = [
 	{ id: "paid", label: "Paid" },
 ];
 
+const MOCK_EVENT_START_DATES = {
+	evt1: "2026-04-26T15:45:00.000Z",
+	evt2: "2026-04-29T18:30:00.000Z",
+	evt3: "2026-05-04T10:00:00.000Z",
+	evt4: "2026-05-09T13:00:00.000Z",
+} as const;
+
 const MOCK_EVENTS = [
 	{
 		id: "evt_1",
 		name: "Web3 Developers Meetup",
 		description:
 			"A community gathering for web3 developers, designers, and enthusiasts to discuss the latest trends in decentralized tech.",
-		startDate: new Date(Date.now() + 86400000 * 2).toISOString(),
+		startDate: MOCK_EVENT_START_DATES.evt1,
 		venueName: "Innovation Hub, Block C",
 		mode: "OFFLINE",
 		type: "FREE",
@@ -36,7 +43,7 @@ const MOCK_EVENTS = [
 		name: "React Advanced Masterclass",
 		description:
 			"Deep dive into React Server Components, Actions, and the future of the frontend ecosystem with hands-on labs.",
-		startDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+		startDate: MOCK_EVENT_START_DATES.evt2,
 		venueName: "Online (Zoom)",
 		mode: "ONLINE",
 		type: "PAID",
@@ -51,7 +58,7 @@ const MOCK_EVENTS = [
 		name: "University Startup Pitch",
 		description:
 			"Watch the top 10 university startups pitch their ideas to leading angel investors and venture capitalists.",
-		startDate: new Date(Date.now() + 86400000 * 10).toISOString(),
+		startDate: MOCK_EVENT_START_DATES.evt3,
 		venueName: "Main Auditorium",
 		mode: "OFFLINE",
 		type: "FREE",
@@ -66,7 +73,7 @@ const MOCK_EVENTS = [
 		name: "Design Systems Workshop",
 		description:
 			"Learn how to build and scale design systems using Tailwind CSS and Radix UI in this intensive workshop.",
-		startDate: new Date(Date.now() + 86400000 * 15).toISOString(),
+		startDate: MOCK_EVENT_START_DATES.evt4,
 		venueName: "Design Studio 4",
 		mode: "OFFLINE",
 		type: "PAID",

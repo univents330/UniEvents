@@ -24,7 +24,10 @@ export function NotificationDrawer({
 	onClose,
 }: NotificationDrawerProps) {
 	const { user } = useAuth();
-	const { data: notificationsResponse, isLoading } = useNotifications({});
+	const { data: notificationsResponse, isLoading } = useNotifications(
+		{},
+		{ enabled: Boolean(user) },
+	);
 	const markAllAsRead = useMarkAllAsRead();
 	const deleteNotification = useDeleteNotification();
 

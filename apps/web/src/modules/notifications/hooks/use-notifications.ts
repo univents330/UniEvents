@@ -17,10 +17,16 @@ const notificationsKeys = {
 	unreadCount: () => [...notificationsKeys.all, "unread-count"] as const,
 };
 
-export function useNotifications(query?: NotificationListQuery) {
+export function useNotifications(
+	query?: NotificationListQuery,
+	options?: { enabled?: boolean },
+) {
+	const enabled = options?.enabled ?? true;
+
 	return useQuery({
 		queryKey: notificationsKeys.list(query),
 		queryFn: () => notificationsService.list(query),
+		enabled,
 	});
 }
 
