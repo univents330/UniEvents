@@ -191,6 +191,7 @@ model Event {
   mode        EventMode       @default(OFFLINE)
   visibility  EventVisibility @default(PUBLIC)
   status      EventStatus     @default(DRAFT)
+  isApproved  Boolean         @default(false)
 
   description String
 

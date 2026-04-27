@@ -1,16 +1,18 @@
 import { ProtectedRoute } from "@/core/components/protected-route";
-import { EditEventView } from "@/modules/events";
+import { EventManagementView } from "@/modules/events";
 
-type EditEventPageProps = {
+type EventManagementPageProps = {
 	params: Promise<{ id: string }>;
 };
 
-export default async function EditEventPage({ params }: EditEventPageProps) {
+export default async function EventManagementPage({
+	params,
+}: EventManagementPageProps) {
 	const { id } = await params;
 
 	return (
 		<ProtectedRoute allowedRoles={["ADMIN", "USER"]}>
-			<EditEventView eventId={id} />
+			<EventManagementView eventId={id} />
 		</ProtectedRoute>
 	);
 }

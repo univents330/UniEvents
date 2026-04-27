@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { getApiErrorMessage } from "@/core/lib/api-error";
 import { authClient } from "@/core/lib/auth-client";
+import { useAuth } from "@/core/providers/auth-provider";
 
 type AuthMode = "login" | "signup" | "register";
 
@@ -136,7 +137,7 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 	const isSignup = mode === "signup" || mode === "register";
 	const searchParams = useSearchParams();
 	const redirectParam = searchParams.get("redirect")?.trim();
-	const redirectTo = redirectParam || "/";
+	const redirectTo = redirectParam || "/dashboard";
 	const authRedirectQuery = redirectParam
 		? { redirect: redirectTo }
 		: undefined;
@@ -147,21 +148,30 @@ export function AuthScreen({ mode }: { mode: AuthMode }) {
 		? { pathname: "/auth/sign-in", query: authRedirectQuery }
 		: "/auth/sign-in";
 
+	const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [name, setName] = useState("");
+
+	const passwordRuleStates = PASSWORD_RULES.map((rule) => ({
+		label: rule.label,
+		isMet: rule.check(password),
+	}));
+	const isPasswordValid = passwordRuleStates.every((rule) => rule.isMet);
+
+	useEffect(() => {
+		if (!isAuthLoading && isAuthenticated) {
+			window.location.href = redirectTo;
+		}
+	}, [isAuthLoading, isAuthenticated, redirectTo]);
+
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 	const [formError, setFormError] = useState<string | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 	const oauthError = mode === "login" ? getOAuthLoginError(searchParams) : null;
-	const passwordRuleStates = PASSWORD_RULES.map((rule) => ({
-		label: rule.label,
-		isMet: rule.check(password),
-	}));
-	const isPasswordValid = passwordRuleStates.every((rule) => rule.isMet);
 
 	function clearFieldError(field: FieldName) {
 		setFieldErrors((current) => {

@@ -27,9 +27,18 @@ export function AppSidebar({ sections }: AppSidebarProps) {
 	const pathname = usePathname();
 	const { signOut } = useAuth();
 
+	const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href));
+
 	const isActive = (href: string) => {
 		if (pathname === href) return true;
-		return pathname.startsWith(`${href}/`);
+		if (!pathname.startsWith(`${href}/`)) return false;
+
+		// If it's a prefix match, ensure there isn't a more specific (longer) match available in the sidebar
+		const hasBetterMatch = allHrefs.some(
+			(h) => h !== href && pathname.startsWith(h) && h.length > href.length,
+		);
+
+		return !hasBetterMatch;
 	};
 
 	return (

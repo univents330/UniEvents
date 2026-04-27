@@ -1,4 +1,5 @@
 import {
+	approveEventSchema,
 	createEventSchema,
 	createEventTicketTierSchema,
 	eventFilterSchema,
@@ -25,6 +26,7 @@ export class EventsController {
 		return {
 			userId: authReq.auth.userId,
 			role: authReq.auth.role,
+			isHost: authReq.auth.isHost,
 		};
 	}
 
@@ -38,6 +40,7 @@ export class EventsController {
 		return {
 			userId: authReq.auth.userId,
 			role: authReq.auth.role,
+			isHost: authReq.auth.isHost,
 		};
 	}
 
@@ -140,6 +143,17 @@ export class EventsController {
 			this.getActor(req),
 		);
 		res.status(204).send();
+	}
+
+	async approve(req: Request, res: Response) {
+		const params = idParamSchema.parse(req.params);
+		const body = approveEventSchema.parse(req.body);
+		const event = await eventsService.approve(
+			params.id,
+			body.isApproved,
+			this.getActor(req),
+		);
+		res.status(200).json(event);
 	}
 }
 

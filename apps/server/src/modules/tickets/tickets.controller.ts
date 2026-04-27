@@ -16,6 +16,7 @@ export class TicketsController {
 		return {
 			userId: authReq.auth.userId,
 			role: authReq.auth.role,
+			isHost: authReq.auth.isHost,
 		};
 	}
 

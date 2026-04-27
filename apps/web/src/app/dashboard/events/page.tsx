@@ -3,7 +3,7 @@ import { HostEventsView } from "@/modules/events";
 
 export default function HostEventsPage() {
 	return (
-		<ProtectedRoute allowedRoles={["HOST", "ADMIN"]}>
+		<ProtectedRoute allowedRoles={["ADMIN", "USER"]}>
 			<HostEventsView />
 		</ProtectedRoute>
 	);

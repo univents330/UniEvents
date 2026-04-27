@@ -3,7 +3,7 @@ import { CreateEventView } from "@/modules/events";
 
 export default function CreateEventPage() {
 	return (
-		<ProtectedRoute allowedRoles={["HOST", "ADMIN"]}>
+		<ProtectedRoute allowedRoles={["ADMIN", "USER"]}>
 			<CreateEventView />
 		</ProtectedRoute>
 	);
