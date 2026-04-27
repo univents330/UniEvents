@@ -1,7 +1,5 @@
 import { env } from "@unievent/env/web";
 
-const API_PREFIX = "/api";
-
 function splitCsvUrls(value?: string): string[] {
 	if (!value) {
 		return [];
@@ -36,11 +34,7 @@ function normalizeServerUrl(value: string): string | null {
 
 	const normalized = stripTrailingSlash(trimmed);
 
-	if (normalized.endsWith(API_PREFIX)) {
-		return normalized;
-	}
-
-	return `${normalized}${API_PREFIX}`;
+	return normalized;
 }
 
 function unique(values: string[]): string[] {
@@ -83,5 +77,5 @@ export function getApiBaseUrl(): string {
 	}
 
 	const [firstCandidate] = candidates;
-	return firstCandidate ?? API_PREFIX;
+	return firstCandidate ?? "";
 }

@@ -566,7 +566,7 @@ export class PaymentsService {
 			amount: formattedAmount,
 			eventDate: `${formattedEventDate} (${eventTimezone})`,
 			tickets: ticketsData,
-			dashboardUrl: `${(env.BETTER_AUTH_URL ?? env.WEB_APP_URL ?? "http://localhost:3000").replace("/api/auth", "")}/tickets`,
+			dashboardUrl: `${(env.BETTER_AUTH_URL ?? env.WEB_APP_URL ?? "http://localhost:3000").replace("/auth", "")}/tickets`,
 		});
 
 		const textContent = [
