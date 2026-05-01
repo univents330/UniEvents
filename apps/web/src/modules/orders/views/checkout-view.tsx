@@ -7,7 +7,9 @@ import {
 	Loader2,
 	Mail,
 	MapPin,
+	Minus,
 	Phone,
+	Plus,
 	User as UserIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -47,7 +49,35 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 	const searchParams = useSearchParams();
 	const tierId = searchParams.get("tierId");
 	const quantityParam = searchParams.get("quantity");
-	const quantity = quantityParam ? Number.parseInt(quantityParam, 10) : 1;
+	const initialQuantity = quantityParam
+		? Number.parseInt(quantityParam, 10)
+		: 1;
+	const [quantity, setQuantity] = useState(initialQuantity);
+	const [ticketHolders, setTicketHolders] = useState<
+		{ name: string; email: string; phone: string }[]
+	>(
+		Array.from({ length: initialQuantity }).map(() => ({
+			name: "",
+			email: "",
+			phone: "",
+		})),
+	);
+
+	const updateQuantity = (delta: number) => {
+		setQuantity((prev) => {
+			const next = Math.max(1, prev + delta);
+			if (next > prev) {
+				setTicketHolders((curr) => [
+					...curr,
+					{ name: "", email: "", phone: "" },
+				]);
+			} else if (next < prev) {
+				setTicketHolders((curr) => curr.slice(0, next));
+			}
+			return next;
+		});
+	};
+
 	const [timeLeft, setTimeLeft] = useState<string>("15:00");
 	const [isProcessing, setIsProcessing] = useState(false);
 
@@ -225,6 +255,12 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 						quantity: quantity,
 					},
 				],
+				ticketHolders: ticketHolders.map((holder) => ({
+					tierId: selectedTier.id,
+					name: holder.name || formData.fullName,
+					email: holder.email || formData.email,
+					phone: holder.phone || undefined,
+				})),
 			});
 
 			toast.dismiss(loadingToast);
@@ -243,6 +279,12 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 					quantity: quantity,
 				},
 			],
+			ticketHolders: ticketHolders.map((holder) => ({
+				tierId: selectedTier.id,
+				name: holder.name || formData.fullName,
+				email: holder.email || formData.email,
+				phone: holder.phone || undefined,
+			})),
 		});
 
 		toast.dismiss(loadingToast);
@@ -273,6 +315,12 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 			purchaserName: formData.fullName,
 			purchaserEmail: formData.email,
 			purchaserPhone: formData.phone || undefined,
+			ticketHolders: ticketHolders.map((holder) => ({
+				tierId: selectedTier.id,
+				name: holder.name || formData.fullName,
+				email: holder.email || formData.email,
+				phone: holder.phone || undefined,
+			})),
 		});
 
 		// Handle FREE orders
@@ -640,11 +688,98 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 										</div>
 									</section>
 
-									{/* Gateway Branding */}
+									{/* Attendee Details */}
 									<section className="space-y-8">
 										<div className="flex items-center gap-3">
 											<div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 font-black text-[10px] text-white">
 												03
+											</div>
+											<h2 className="font-bold text-xl">Attendee Details</h2>
+										</div>
+
+										<div className="space-y-6">
+											{ticketHolders.map((holder, index) => (
+												<div
+													key={index}
+													className="relative space-y-6 rounded-3xl border border-slate-100 bg-white p-8 shadow-sm"
+												>
+													<div className="absolute top-0 right-0 rounded-tr-3xl rounded-bl-3xl bg-blue-50 px-4 py-2 font-black text-[10px] text-blue-600 uppercase tracking-[0.2em]">
+														Ticket {index + 1}
+													</div>
+													<div className="space-y-2">
+														<label
+															htmlFor={`attendee-name-${index}`}
+															className="flex items-center gap-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]"
+														>
+															<UserIcon size={12} /> Full Name
+														</label>
+														<input
+															id={`attendee-name-${index}`}
+															type="text"
+															required
+															value={holder.name}
+															onChange={(e) => {
+																const newHolders = [...ticketHolders];
+																newHolders[index].name = e.target.value;
+																setTicketHolders(newHolders);
+															}}
+															placeholder="Jane Doe"
+															className="h-12 w-full rounded-xl border border-slate-200 px-4 font-medium text-sm outline-none transition-all focus:border-blue-600"
+														/>
+													</div>
+													<div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+														<div className="space-y-2">
+															<label
+																htmlFor={`attendee-email-${index}`}
+																className="flex items-center gap-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]"
+															>
+																<Mail size={12} /> Email Address
+															</label>
+															<input
+																id={`attendee-email-${index}`}
+																type="email"
+																required
+																value={holder.email}
+																onChange={(e) => {
+																	const newHolders = [...ticketHolders];
+																	newHolders[index].email = e.target.value;
+																	setTicketHolders(newHolders);
+																}}
+																placeholder="jane@university.edu"
+																className="h-12 w-full rounded-xl border border-slate-200 px-4 font-medium text-sm outline-none transition-all focus:border-blue-600"
+															/>
+														</div>
+														<div className="space-y-2">
+															<label
+																htmlFor={`attendee-phone-${index}`}
+																className="flex items-center gap-2 font-black text-[10px] text-slate-400 uppercase tracking-[0.2em]"
+															>
+																<Phone size={12} /> Phone Number
+															</label>
+															<input
+																id={`attendee-phone-${index}`}
+																type="tel"
+																value={holder.phone}
+																onChange={(e) => {
+																	const newHolders = [...ticketHolders];
+																	newHolders[index].phone = e.target.value;
+																	setTicketHolders(newHolders);
+																}}
+																placeholder="+91 00000 00000"
+																className="h-12 w-full rounded-xl border border-slate-200 px-4 font-medium text-sm outline-none transition-all focus:border-blue-600"
+															/>
+														</div>
+													</div>
+												</div>
+											))}
+										</div>
+									</section>
+
+									{/* Gateway Branding */}
+									<section className="space-y-8">
+										<div className="flex items-center gap-3">
+											<div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 font-black text-[10px] text-white">
+												04
 											</div>
 											<h2 className="font-bold text-xl">Secure Gateway</h2>
 										</div>
@@ -715,9 +850,30 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 												<h4 className="truncate font-black text-[10px] text-slate-900 uppercase tracking-tight">
 													{event?.name}
 												</h4>
-												<p className="mt-1 font-bold text-[9px] text-slate-400 uppercase tracking-widest">
-													{selectedTier.name} × {quantity}
-												</p>
+												<div className="mt-2 flex items-center gap-3">
+													<p className="font-bold text-[9px] text-slate-400 uppercase tracking-widest">
+														{selectedTier.name}
+													</p>
+													<div className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white p-1 shadow-sm">
+														<button
+															type="button"
+															onClick={() => updateQuantity(-1)}
+															className="flex h-6 w-6 items-center justify-center text-slate-300 transition-colors hover:text-[#000031]"
+														>
+															<Minus size={12} />
+														</button>
+														<span className="w-4 text-center font-black text-[#000031] text-[10px]">
+															{quantity}
+														</span>
+														<button
+															type="button"
+															onClick={() => updateQuantity(1)}
+															className="flex h-6 w-6 items-center justify-center text-slate-300 transition-colors hover:text-[#000031]"
+														>
+															<Plus size={12} />
+														</button>
+													</div>
+												</div>
 											</div>
 											<p className="font-black text-slate-900 text-xs">
 												₹
