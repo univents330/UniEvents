@@ -159,7 +159,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 			params.set("location", location);
 		}
 
-		router.push(`/discover?${params.toString()}`);
+		router.push(`/events?${params.toString()}`);
 		closeLocationMenu();
 	};
 
@@ -182,7 +182,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 
 		params.set("location", "online");
 		params.set("mode", "ONLINE");
-		router.push(`/discover?${params.toString()}`);
+		router.push(`/events?${params.toString()}`);
 		closeLocationMenu();
 	};
 
@@ -266,7 +266,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 				: [
 						{
 							section: "Discover",
-							items: [{ label: "Browse Events", href: "/discover" }],
+							items: [{ label: "Browse Events", href: "/events" }],
 						},
 					]),
 		];
@@ -298,6 +298,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 							width={50}
 							height={40}
 							priority
+							style={{ width: "auto", height: "auto" }}
 						/>
 						<span className="hidden font-black text-2xl text-[#070190] leading-none tracking-tight md:inline md:text-[29px]">
 							UniEvent
@@ -412,7 +413,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 				{!minimal && !isManagementRoute && (
 					<nav className="hidden items-center gap-3 md:flex lg:gap-4">
 						<Link
-							href="/discover"
+							href="/events"
 							className="rounded-full border border-transparent px-4 py-2 font-semibold text-slate-700 text-sm transition-all hover:border-[#dfe3f6] hover:bg-[#f4f6ff] hover:text-[#030370]"
 						>
 							Discover
@@ -599,7 +600,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 						{isSearchVisible && (
 							<Button
 								type="button"
-								onClick={() => window.location.assign("/discover")}
+								onClick={() => window.location.assign("/events")}
 								className="h-9 w-9 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
 								aria-label="Open events search"
 							>
@@ -721,7 +722,7 @@ export function Navbar({ minimal = false }: NavbarProps) {
 						{isSearchVisible && (
 							<Button
 								type="button"
-								onClick={() => window.location.assign("/discover")}
+								onClick={() => window.location.assign("/events")}
 								className="h-9 w-9 rounded-full bg-[#030370] p-0 text-white shadow-none hover:bg-[#030370]/90"
 								aria-label="Open events search"
 							>

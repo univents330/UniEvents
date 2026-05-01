@@ -37,7 +37,7 @@ export function GroupBooking() {
 							asChild
 							className="h-16 rounded-full bg-white px-10 font-bold text-[#030370] text-lg shadow-lg transition-all hover:bg-slate-100 active:scale-95"
 						>
-							<Link href="/discover">
+							<Link href="/events">
 								Book Now <ArrowRight size={20} className="ml-2" />
 							</Link>
 						</Button>

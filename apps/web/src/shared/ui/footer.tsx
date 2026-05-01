@@ -19,31 +19,31 @@ export function Footer() {
 						<h3 className="mb-6 font-bold text-xl">Discover</h3>
 						<div className="flex flex-col gap-4">
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Browse All Events
 							</Link>
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Tech Events
 							</Link>
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Music & Concerts
 							</Link>
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								College Fests
 							</Link>
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Free Events
@@ -91,7 +91,7 @@ export function Footer() {
 						<h3 className="mb-6 font-bold text-xl">Help</h3>
 						<div className="flex flex-col gap-4">
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Help Centre
@@ -118,13 +118,13 @@ export function Footer() {
 								Terms of Service
 							</Link>
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Contact Us
 							</Link>
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Sponsor Request
@@ -136,7 +136,7 @@ export function Footer() {
 								About UniEvent
 							</Link>
 							<Link
-								href="/discover"
+								href="/events"
 								className="font-medium text-blue-200 transition-colors hover:text-white"
 							>
 								Host an Event

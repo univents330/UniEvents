@@ -272,7 +272,7 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 			],
 			purchaserName: formData.fullName,
 			purchaserEmail: formData.email,
-			purchaserPhone: formData.phone,
+			purchaserPhone: formData.phone || undefined,
 		});
 
 		// Handle FREE orders
@@ -706,6 +706,7 @@ export function CheckoutView({ eventId }: { eventId?: string }) {
 														src={event.coverUrl}
 														alt={event.name}
 														fill
+														sizes="64px"
 														className="object-cover"
 													/>
 												)}

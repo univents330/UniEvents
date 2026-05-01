@@ -17,7 +17,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/core/lib/cn";
-import { useCart } from "@/core/providers/cart-provider";
+
 import { useHostProfile } from "../../auth/hooks/use-users";
 import { useEvent, useEventTicketTiers } from "../hooks/use-events";
 
@@ -30,10 +30,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 	const hostQuery = useHostProfile(event?.userId as string);
 	const host = hostQuery.data;
 
-	const { addItem } = useCart();
 	const [quantities, setQuantities] = useState<Record<string, number>>({});
-	const [isAdding, setIsAdding] = useState(false);
-	const [added, setAdded] = useState(false);
 
 	const totalPrice = useMemo(() => {
 		return Object.entries(quantities).reduce((total, [tierId, qty]) => {
@@ -51,45 +48,22 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 			const current = prev[tierId] ?? 0;
 			const next = Math.max(0, current + delta);
 			if (next === 0) {
-				const { [tierId]: _, ...rest } = prev;
-				return rest;
+				return {};
 			}
-			return { ...prev, [tierId]: next };
+			return { [tierId]: next };
 		});
-		setAdded(false);
 	};
 
-	const handleAddToCart = () => {
+	const handleCheckout = () => {
 		if (totalTickets === 0 || !event) return;
 
-		setIsAdding(true);
-
-		// Add each selected tier to the global cart
-		Object.entries(quantities).forEach(([tierId, qty]) => {
-			const tier = tiers.find((t) => t.id === tierId);
-			if (tier && qty > 0) {
-				addItem({
-					id: `${eventId}-${tierId}`,
-					eventId: event.id,
-					eventName: event.name,
-					tierId: tier.id,
-					tierName: tier.name,
-					price: tier.price,
-					quantity: qty,
-					image: event.coverUrl,
-				});
-			}
-		});
-
-		setTimeout(() => {
-			setIsAdding(false);
-			setAdded(true);
-			toast.success("Added to cart", {
-				description: `${totalTickets} passes for ${event.name} have been added.`,
-			});
-			// Optionally clear local quantities
-			setQuantities({});
-		}, 600);
+		const selectedTierEntry = Object.entries(quantities).find(
+			([_, qty]) => qty > 0,
+		);
+		if (selectedTierEntry) {
+			const [tierId, qty] = selectedTierEntry;
+			window.location.href = `/events/${event.id}/checkout?tierId=${tierId}&quantity=${qty}`;
+		}
 	};
 
 	if (eventQuery.isLoading) {
@@ -117,7 +91,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 					{/* Actions Header */}
 					<div className="mb-24 flex items-center justify-between border-slate-100 border-b pb-8">
 						<Link
-							href="/discover"
+							href="/events"
 							className="inline-flex items-center gap-2 font-black text-[#000031]/40 text-[10px] uppercase tracking-[0.2em] transition-colors hover:text-[#000031]"
 						>
 							<ChevronLeft size={14} /> Back to Discover
@@ -163,6 +137,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 										src={event.coverUrl || "/assets/welcome.png"}
 										alt={event.name}
 										fill
+										sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 										className="object-cover"
 										priority
 									/>
@@ -425,8 +400,8 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 									<div className="space-y-4">
 										<button
 											type="button"
-											onClick={handleAddToCart}
-											disabled={totalTickets === 0 || isAdding}
+											onClick={handleCheckout}
+											disabled={totalTickets === 0}
 											className={cn(
 												"flex h-16 w-full items-center justify-center gap-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] transition-all",
 												totalTickets > 0
@@ -434,27 +409,8 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 													: "cursor-not-allowed bg-slate-50 text-slate-200",
 											)}
 										>
-											{isAdding ? (
-												<div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-											) : added ? (
-												<>
-													<Check size={16} /> Added to Cart
-												</>
-											) : (
-												<>
-													<ShoppingCart size={16} /> Add to Cart
-												</>
-											)}
+											<ArrowRight size={16} /> Proceed to Checkout
 										</button>
-
-										{added && (
-											<Link
-												href="/cart"
-												className="group hover:!text-white flex h-16 w-full items-center justify-center gap-2 rounded-xl border border-[#000031] font-black text-[#000031] text-[10px] uppercase tracking-widest transition-all duration-300 hover:bg-[#000031]"
-											>
-												View Cart & Checkout <ArrowRight size={14} />
-											</Link>
-										)}
 									</div>
 								</div>
 							</div>

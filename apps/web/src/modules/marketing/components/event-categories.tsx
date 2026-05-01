@@ -90,7 +90,7 @@ export function EventCategories() {
 					{CATEGORIES.map((category, index) => (
 						<Link
 							key={category.id}
-							href={`/discover?category=${category.id}`}
+							href={`/events?category=${category.id}`}
 							className="group flex aspect-square w-full flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-xl"
 						>
 							<div

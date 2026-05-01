@@ -235,7 +235,7 @@ function CheckoutSuccessContent() {
 						View My Tickets
 					</Link>
 					<Link
-						href="/discover"
+						href="/events"
 						className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-4 font-medium text-slate-900 transition-colors hover:bg-slate-50"
 					>
 						Explore More Events

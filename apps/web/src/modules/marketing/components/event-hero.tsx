@@ -36,7 +36,7 @@ export function EventHero() {
 		if (searchQuery) params.append("search", searchQuery);
 		if (location) params.append("location", location);
 
-		router.push(`/discover?${params.toString()}`);
+		router.push(`/events?${params.toString()}`);
 		setIsLocationMenuOpen(false);
 		setShowSearchSuggestions(false);
 	};
@@ -59,7 +59,7 @@ export function EventHero() {
 		params.set("location", "online");
 		params.set("mode", "ONLINE");
 
-		router.push(`/discover?${params.toString()}`);
+		router.push(`/events?${params.toString()}`);
 		setIsLocationMenuOpen(false);
 	};
 
@@ -84,7 +84,7 @@ export function EventHero() {
 	}, []);
 
 	const handleDiscoverEvents = () => {
-		router.push("/discover");
+		router.push("/events");
 	};
 
 	return (

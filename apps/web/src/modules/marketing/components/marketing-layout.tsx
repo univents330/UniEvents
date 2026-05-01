@@ -20,7 +20,6 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/core/lib/cn";
 import { useAuth } from "@/core/providers/auth-provider";
 import { useUnreadCount } from "@/modules/notifications";
-import { CartWidget } from "@/modules/orders/components/cart-widget";
 import { Footer } from "./footer";
 import { NotificationDrawer } from "./notification-drawer";
 
@@ -202,7 +201,7 @@ export function MarketingLayout({
 							<div className="flex shrink-0 items-center gap-4">
 								<nav className="mr-4 hidden items-center gap-8 lg:flex">
 									<Link
-										href="/discover"
+										href="/events"
 										className="font-black text-slate-900 text-sm uppercase tracking-widest transition-colors hover:text-blue-600"
 									>
 										Discover
@@ -237,8 +236,6 @@ export function MarketingLayout({
 												</span>
 											)}
 										</button>
-
-										<CartWidget />
 
 										{/* Unified User & Nav Dropdown (Desktop Hover / Mobile Click) */}
 										<div className="relative" ref={profileMenuRef}>
@@ -319,7 +316,7 @@ export function MarketingLayout({
 															</p>
 															<div className="space-y-2 sm:space-y-0">
 																<DropdownItem
-																	href="/discover"
+																	href="/events"
 																	label="Browse Events"
 																	onClick={() => setIsProfileOpen(false)}
 																/>
@@ -400,7 +397,7 @@ export function MarketingLayout({
 						<div className="slide-in-from-top animate-in space-y-6 border-slate-100 border-t bg-white p-6 duration-300 lg:hidden">
 							<nav className="flex flex-col gap-6">
 								<Link
-									href="/discover"
+									href="/events"
 									className="font-black text-2xl text-slate-900"
 								>
 									Discover

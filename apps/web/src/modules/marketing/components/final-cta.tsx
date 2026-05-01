@@ -23,7 +23,7 @@ export function FinalCTA() {
 						size="lg"
 						className="h-16 rounded-full bg-[#030370] px-12 font-bold text-white text-xl shadow-xl transition-all hover:bg-[#030370]/90 active:scale-95"
 					>
-						<Link href="/discover">Browse Events</Link>
+						<Link href="/events">Browse Events</Link>
 					</Button>
 					<Button
 						asChild

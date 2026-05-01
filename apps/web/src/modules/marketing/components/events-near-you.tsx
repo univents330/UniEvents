@@ -99,7 +99,7 @@ export function EventsNearYou() {
 									asChild
 									className="rounded-full bg-[#030370] px-8 font-bold text-white hover:bg-[#030370]/90"
 								>
-									<Link href="/discover">
+									<Link href="/events">
 										Explore More Events
 										<ArrowRight size={16} className="ml-2" />
 									</Link>
