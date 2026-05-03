@@ -13,6 +13,7 @@ WORKDIR /app
 
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/bun.lock ./bun.lock
+ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
 RUN bun install --frozen-lockfile
 
 # --- Builder Stage ---

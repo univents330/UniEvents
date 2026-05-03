@@ -14,6 +14,7 @@ WORKDIR /app
 # First copy json files to install dependencies
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/bun.lock ./bun.lock
+ENV PRISMA_SKIP_POSTINSTALL_GENERATE=1
 RUN bun install --frozen-lockfile
 
 # --- Builder Stage ---
@@ -28,6 +29,7 @@ ARG NEXT_PUBLIC_SERVER_URLS
 ARG NEXT_PUBLIC_RAZORPAY_KEY_ID
 ARG DATABASE_URL
 
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_API_URLS=${NEXT_PUBLIC_API_URLS}
@@ -49,6 +51,7 @@ FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3001
 
 # Don't run production as root
@@ -63,4 +66,4 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 EXPOSE 3001
 
 # The standalone build uses a server.js file
-CMD ["bun", "run", "apps/web/server.js"]
+CMD ["bun", "server.js"]
