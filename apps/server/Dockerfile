@@ -24,10 +24,10 @@ COPY turbo.json turbo.json
 
 # Generate Prisma Client
 ENV PATH="/app/node_modules/.bin:${PATH}"
-RUN bun run db:generate
+RUN bun x turbo run db:generate --filter=@unievent/db
 
 # Build the server
-RUN bun run build --filter=@unievent/server
+RUN bun x turbo build --filter=@unievent/server
 
 # Runner phase
 FROM base AS runner

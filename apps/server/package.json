@@ -5,7 +5,7 @@
 	"type": "module",
 	"main": "src/index.ts",
 	"scripts": {
-		"build": "bun tsdown",
+		"build": "bun x tsdown",
 		"lint": "biome check .",
 		"check-types": "tsc -b",
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",

@@ -34,7 +34,7 @@ ENV NEXT_PUBLIC_RAZORPAY_KEY_ID=$NEXT_PUBLIC_RAZORPAY_KEY_ID
 
 # Build the web app
 ENV PATH="/app/node_modules/.bin:${PATH}"
-RUN bun run build --filter=@unievent/web
+RUN bun x turbo build --filter=@unievent/web
 
 # Runner phase
 FROM node:20-slim AS runner

@@ -15,7 +15,7 @@
 		"lint": "biome check .",
 		"check-types": "tsc --noEmit",
 		"db:push": "prisma db push",
-		"db:generate": "bun prisma generate",
+		"db:generate": "bun x prisma generate",
 		"db:migrate": "prisma migrate dev",
 		"db:deploy": "prisma migrate deploy",
 		"db:seed": "prisma db seed",
