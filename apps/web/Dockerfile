@@ -3,8 +3,9 @@ FROM oven/bun:1.1-slim AS base
 WORKDIR /app
 
 # Prune phase
-FROM base AS pruner
-RUN bun add -g turbo
+FROM node:20-slim AS pruner
+WORKDIR /app
+RUN npm install -g turbo
 COPY . .
 RUN turbo prune @unievent/web --docker
 
