@@ -20,7 +20,7 @@ export function ProtectedRoute({
 		if (isLoading) return;
 
 		if (!sessionUser) {
-			router.replace(`/auth?redirect=${encodeURIComponent(pathname)}`);
+			router.replace(`/auth/sign-in?redirect=${encodeURIComponent(pathname)}`);
 			return;
 		}
 

@@ -121,7 +121,9 @@ export const optionalAuth: RequestHandler = async (req, _res, next) => {
 	next();
 };
 
-export function requireRoles(...roles: AuthUserRole[]): RequestHandler {
+type AuthGuardRole = AuthUserRole | "HOST";
+
+export function requireRoles(...roles: AuthGuardRole[]): RequestHandler {
 	return (req, _res, next) => {
 		const authReq = req as RequestWithAuth;
 
@@ -129,7 +131,15 @@ export function requireRoles(...roles: AuthUserRole[]): RequestHandler {
 			return next(new UnauthorizedError("Authentication required"));
 		}
 
-		if (!roles.includes(authReq.user.role)) {
+		const hasRequiredRole = roles.some((role) => {
+			if (role === "HOST") {
+				return authReq.auth?.isHost === true;
+			}
+
+			return role === authReq.user?.role;
+		});
+
+		if (!hasRequiredRole) {
 			return next(
 				new ForbiddenError("You do not have access to this resource"),
 			);

@@ -63,7 +63,7 @@ export function NotificationDrawer({
 			{/* Side Drawer "Experience" - Glassmorphic & Integrated */}
 			<div
 				className={cn(
-					"cubic-bezier(0.4, 0, 0.2, 1) fixed top-20 right-0 z-[101] h-[calc(100vh-5rem)] w-full max-w-[420px] border-white/20 border-l bg-white/80 shadow-[-40px_0_80px_-20px_rgba(0,0,0,0.08)] backdrop-blur-2xl transition-all duration-700",
+					"cubic-bezier(0.4, 0, 0.2, 1) fixed top-20 right-0 z-[101] h-[calc(100vh-5rem)] w-full max-w-[420px] border-slate-200 border-l bg-white shadow-[-40px_0_80px_-20px_rgba(0,0,0,0.08)] transition-all duration-700",
 					isOpen ? "translate-x-0" : "translate-x-full",
 				)}
 			>

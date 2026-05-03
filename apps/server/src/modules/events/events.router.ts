@@ -1,4 +1,5 @@
 import {
+	approveEventSchema,
 	createEventSchema,
 	createEventTicketTierSchema,
 	eventFilterSchema,
@@ -98,6 +99,12 @@ export function createEventsRouter(): Router {
 		requireAuth,
 		validatePipe({ params: eventTicketTierIdParamsSchema }),
 		asyncHandler((req, res) => eventsController.deleteTicketTier(req, res)),
+	);
+	router.post(
+		"/:id/approve",
+		requireAuth,
+		validatePipe({ params: idParamSchema, body: approveEventSchema }),
+		asyncHandler((req, res) => eventsController.approve(req, res)),
 	);
 
 	return router;

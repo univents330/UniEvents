@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueries } from "@tanstack/react-query";
 import {
 	GraduationCap,
 	Laptop,
@@ -9,90 +10,101 @@ import {
 	Users,
 } from "lucide-react";
 import Link from "next/link";
+import { eventsService } from "@/modules/events";
 
 const CATEGORIES = [
 	{
 		id: "tech-dev",
 		title: "Tech & Dev",
+		search: "tech",
 		Icon: Laptop,
-		bg: "bg-slate-50",
+		bg: "bg-slate-100",
 		color: "text-slate-900",
-		count: 2,
 	},
 	{
 		id: "music",
 		title: "Music",
+		search: "music",
 		Icon: Music,
-		bg: "bg-blue-50",
-		color: "text-blue-600",
-		count: 0,
+		bg: "bg-white",
+		color: "text-slate-900",
 	},
 	{
 		id: "college-fests",
 		title: "College Fests",
+		search: "fest",
 		Icon: GraduationCap,
 		bg: "bg-orange-50",
 		color: "text-orange-500",
-		count: 0,
 	},
 	{
 		id: "workshops",
 		title: "Workshops",
+		search: "workshop",
 		Icon: Users,
-		bg: "bg-indigo-50",
-		color: "text-indigo-600",
-		count: 1,
+		bg: "bg-gray-100",
+		color: "text-gray-600",
 	},
 	{
 		id: "art-culture",
 		title: "Art & Culture",
+		search: "comedy",
 		Icon: Palette,
 		bg: "bg-pink-50",
 		color: "text-pink-500",
-		count: 0,
 	},
 	{
 		id: "meetups",
 		title: "Meetups",
+		search: "meetup",
 		Icon: UserPlus,
-		bg: "bg-emerald-50",
-		color: "text-emerald-600",
-		count: 1,
+		bg: "bg-yellow-50",
+		color: "text-yellow-600",
 	},
 ];
 
 export function EventCategories() {
+	const categoryCountQueries = useQueries({
+		queries: CATEGORIES.map((category) => ({
+			queryKey: ["events", "category-count", category.id],
+			queryFn: () =>
+				eventsService.list({
+					page: 1,
+					limit: 1,
+					sortBy: "startDate",
+					sortOrder: "asc",
+					search: category.search,
+				}),
+			staleTime: 1000 * 60 * 5,
+		})),
+	});
+
 	return (
-		<section className="w-full bg-transparent py-24">
-			<div className="mx-auto max-w-[1440px] px-6">
-				<div className="mb-12 text-center md:text-left">
-					<h2 className="mb-4 font-black text-4xl text-slate-900 tracking-tighter md:text-6xl">
-						What are you <span className="text-blue-700">into?</span>
-					</h2>
-					<p className="font-bold text-slate-400 md:text-xl">
-						Discover events by interest.
-					</p>
-				</div>
+		<section className="w-full bg-[#EBF3FF] py-20">
+			<div className={"mx-auto max-w-7xl px-6"}>
+				<h2 className="mb-10 text-center font-extrabold text-3xl text-black tracking-tight md:text-left md:text-5xl">
+					What are you into?
+				</h2>
 
 				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-					{CATEGORIES.map((category) => (
+					{CATEGORIES.map((category, index) => (
 						<Link
 							key={category.id}
 							href={`/events?category=${category.id}`}
-							className="group flex aspect-square w-full flex-col items-center justify-center rounded-[40px] border border-white/40 bg-white/60 p-6 text-center backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:border-blue-200 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)]"
+							className="group flex aspect-square w-full flex-col items-center justify-center rounded-3xl border border-gray-100 bg-white p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-xl"
 						>
 							<div
-								className={`mb-6 rounded-3xl p-5 transition-transform duration-500 group-hover:scale-110 ${category.bg}`}
+								className={`mb-4 rounded-2xl p-4 transition-transform duration-300 group-hover:scale-110 ${category.bg}`}
 							>
 								<category.Icon
-									className={`h-10 w-10 stroke-[1.5] ${category.color}`}
+									className={`h-8 w-8 stroke-[1.5] sm:h-10 sm:w-10 ${category.color}`}
 								/>
 							</div>
-							<h3 className="mb-1.5 font-black text-base text-slate-900">
+							<h3 className="mb-1 font-bold text-[15px] text-black sm:text-base">
 								{category.title}
 							</h3>
-							<span className="font-bold text-slate-400 text-xs uppercase tracking-widest">
-								{category.count} events
+							<span className="font-semibold text-gray-400 text-xs sm:text-sm">
+								{categoryCountQueries[index]?.data?.meta?.total ?? 0} events
 							</span>
 						</Link>
 					))}

@@ -3,21 +3,14 @@
 import dayjs from "dayjs";
 import {
 	ArrowRight,
-	Check,
 	ChevronLeft,
 	Heart,
-	Minus,
-	Plus,
 	Share2,
 	ShieldCheck,
-	ShoppingCart,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { cn } from "@/core/lib/cn";
-import { useCart } from "@/core/providers/cart-provider";
+
 import { useHostProfile } from "../../auth/hooks/use-users";
 import { useEvent, useEventTicketTiers } from "../hooks/use-events";
 
@@ -30,67 +23,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 	const hostQuery = useHostProfile(event?.userId as string);
 	const host = hostQuery.data;
 
-	const { addItem } = useCart();
-	const [quantities, setQuantities] = useState<Record<string, number>>({});
-	const [isAdding, setIsAdding] = useState(false);
-	const [added, setAdded] = useState(false);
-
-	const totalPrice = useMemo(() => {
-		return Object.entries(quantities).reduce((total, [tierId, qty]) => {
-			const tier = tiers.find((t) => t.id === tierId);
-			return total + (tier?.price ?? 0) * qty;
-		}, 0);
-	}, [quantities, tiers]);
-
-	const totalTickets = useMemo(() => {
-		return Object.values(quantities).reduce((sum, qty) => sum + qty, 0);
-	}, [quantities]);
-
-	const updateQuantity = (tierId: string, delta: number) => {
-		setQuantities((prev) => {
-			const current = prev[tierId] ?? 0;
-			const next = Math.max(0, current + delta);
-			if (next === 0) {
-				const { [tierId]: _, ...rest } = prev;
-				return rest;
-			}
-			return { ...prev, [tierId]: next };
-		});
-		setAdded(false);
-	};
-
-	const handleAddToCart = () => {
-		if (totalTickets === 0 || !event) return;
-
-		setIsAdding(true);
-
-		// Add each selected tier to the global cart
-		Object.entries(quantities).forEach(([tierId, qty]) => {
-			const tier = tiers.find((t) => t.id === tierId);
-			if (tier && qty > 0) {
-				addItem({
-					id: `${eventId}-${tierId}`,
-					eventId: event.id,
-					eventName: event.name,
-					tierId: tier.id,
-					tierName: tier.name,
-					price: tier.price,
-					quantity: qty,
-					image: event.coverUrl,
-				});
-			}
-		});
-
-		setTimeout(() => {
-			setIsAdding(false);
-			setAdded(true);
-			toast.success("Added to cart", {
-				description: `${totalTickets} passes for ${event.name} have been added.`,
-			});
-			// Optionally clear local quantities
-			setQuantities({});
-		}, 600);
-	};
+	// State for quantity is now managed on the checkout page
 
 	if (eventQuery.isLoading) {
 		return (
@@ -117,7 +50,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 					{/* Actions Header */}
 					<div className="mb-24 flex items-center justify-between border-slate-100 border-b pb-8">
 						<Link
-							href="/discover"
+							href="/events"
 							className="inline-flex items-center gap-2 font-black text-[#000031]/40 text-[10px] uppercase tracking-[0.2em] transition-colors hover:text-[#000031]"
 						>
 							<ChevronLeft size={14} /> Back to Discover
@@ -163,6 +96,7 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 										src={event.coverUrl || "/assets/welcome.png"}
 										alt={event.name}
 										fill
+										sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 										className="object-cover"
 										priority
 									/>
@@ -268,7 +202,9 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 													Physical Node
 												</span>
 												<p className="font-bold text-lg text-slate-500 leading-tight">
-													{event.address.split(",").slice(0, 3).join(",")}
+													{event.address
+														? event.address.split(",").slice(0, 3).join(",")
+														: "No address provided"}
 												</p>
 											</div>
 
@@ -345,53 +281,30 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 
 								<div className="space-y-6">
 									{tiers.map((tier) => {
-										const qty = quantities[tier.id] ?? 0;
-										const isSelected = qty > 0;
 										const priceInRupee = tier.price / 100;
 
 										return (
 											<div
 												key={tier.id}
-												className={cn(
-													"group rounded-xl border p-6 transition-all duration-500",
-													isSelected
-														? "border-blue-600 bg-blue-50/20 shadow-[0_20px_40px_-15px_rgba(37,99,235,0.1)]"
-														: "border-slate-100 bg-white hover:border-slate-200",
-												)}
+												className="group rounded-xl border border-slate-100 bg-white p-6 transition-all duration-500 hover:border-blue-200 hover:shadow-[0_20px_40px_-15px_rgba(37,99,235,0.1)]"
 											>
-												<div className="mb-6 flex items-center justify-between gap-6">
+												<div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 													<div className="space-y-1">
-														<p
-															className={cn(
-																"font-black text-xs uppercase tracking-tight transition-colors",
-																isSelected ? "text-blue-700" : "text-[#000031]",
-															)}
-														>
+														<p className="font-black text-[#000031] text-xs uppercase tracking-tight">
 															{tier.name}
 														</p>
 														<p className="font-black text-2xl text-[#000031]">
-															₹{priceInRupee.toLocaleString()}
+															{priceInRupee === 0
+																? "FREE"
+																: `₹${priceInRupee.toLocaleString()}`}
 														</p>
 													</div>
-													<div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white p-1 shadow-sm">
-														<button
-															type="button"
-															onClick={() => updateQuantity(tier.id, -1)}
-															className="flex h-8 w-8 items-center justify-center text-slate-300 transition-colors hover:text-[#000031]"
-														>
-															<Minus size={14} />
-														</button>
-														<span className="w-4 text-center font-black text-[#000031] text-xs">
-															{qty}
-														</span>
-														<button
-															type="button"
-															onClick={() => updateQuantity(tier.id, 1)}
-															className="flex h-8 w-8 items-center justify-center text-slate-300 transition-colors hover:text-[#000031]"
-														>
-															<Plus size={14} />
-														</button>
-													</div>
+													<Link
+														href={`/events/${event.id}/checkout?tierId=${tier.id}&quantity=1`}
+														className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#000031] px-6 font-black text-[10px] text-white uppercase tracking-[0.2em] shadow-lg transition-all hover:bg-blue-700 sm:w-auto"
+													>
+														Get Ticket <ArrowRight size={14} />
+													</Link>
 												</div>
 												{tier.description && (
 													<div className="border-slate-50 border-t pt-4">
@@ -403,59 +316,6 @@ export function EventDetailView({ eventId }: { eventId: string }) {
 											</div>
 										);
 									})}
-								</div>
-
-								<div className="space-y-10 border-slate-100 border-t pt-12">
-									<div className="flex items-end justify-between">
-										<div className="space-y-1">
-											<span className="font-black text-[10px] text-slate-300 uppercase tracking-widest">
-												Net Accumulation
-											</span>
-											<p className="font-black text-4xl text-[#000031]">
-												₹{(totalPrice / 100).toLocaleString()}
-											</p>
-										</div>
-										<div className="text-right">
-											<span className="font-black text-[10px] text-blue-600 uppercase tracking-widest">
-												{totalTickets} Passes
-											</span>
-										</div>
-									</div>
-
-									<div className="space-y-4">
-										<button
-											type="button"
-											onClick={handleAddToCart}
-											disabled={totalTickets === 0 || isAdding}
-											className={cn(
-												"flex h-16 w-full items-center justify-center gap-4 rounded-xl font-black text-[10px] uppercase tracking-[0.3em] transition-all",
-												totalTickets > 0
-													? "bg-[#000031] text-white shadow-2xl shadow-[#000031]/10"
-													: "cursor-not-allowed bg-slate-50 text-slate-200",
-											)}
-										>
-											{isAdding ? (
-												<div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-											) : added ? (
-												<>
-													<Check size={16} /> Added to Cart
-												</>
-											) : (
-												<>
-													<ShoppingCart size={16} /> Add to Cart
-												</>
-											)}
-										</button>
-
-										{added && (
-											<Link
-												href="/cart"
-												className="group hover:!text-white flex h-16 w-full items-center justify-center gap-2 rounded-xl border border-[#000031] font-black text-[#000031] text-[10px] uppercase tracking-widest transition-all duration-300 hover:bg-[#000031]"
-											>
-												View Cart & Checkout <ArrowRight size={14} />
-											</Link>
-										)}
-									</div>
 								</div>
 							</div>
 						</aside>

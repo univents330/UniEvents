@@ -1,47 +1,54 @@
-version: "3.8"
-
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: unievent-postgres
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: unievent
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   server:
     build:
       context: .
       dockerfile: apps/server/Dockerfile
-      args:
-        DATABASE_URL: postgresql://postgres:postgres@postgres:5432/unievent?sslmode=disable
-    container_name: unievent-server
-    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/unievent?sslmode=disable
-      BETTER_AUTH_URL: http://localhost:3000/api/auth
-      CORS_ORIGIN: http://localhost:3001
-      WEB_APP_URL: http://localhost:3001
-      RAZORPAY_KEY_ID: rzp_test_development_key_id
-      RAZORPAY_KEY_SECRET: development-razorpay-key-secret-12345
-      RAZORPAY_WEBHOOK_SECRET: development-razorpay-webhook-secret-change-me-12345
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - AUTH_COOKIE_DOMAIN=${AUTH_COOKIE_DOMAIN}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - BREVO_MAIL_FROM=${BREVO_MAIL_FROM}
+      - NODE_ENV=production
+    restart: always
+    networks:
+      - unievent-network
 
-volumes:
-  postgres-data:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+        - NEXT_PUBLIC_RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID}
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - NEXT_PUBLIC_RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID}
+      - DATABASE_URL=${DATABASE_URL}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL}
+      - NODE_ENV=production
+    restart: always
+    depends_on:
+      - server
+    networks:
+      - unievent-network
+
+networks:
+  unievent-network:
+    driver: bridge

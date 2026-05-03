@@ -1,82 +1,116 @@
 @import "tailwindcss";
 
-:root {
-	--bg: #f4f7ff;
-	--bg-accent: #dbe6ff;
-	--surface: #ffffff;
-	--surface-soft: #eef3ff;
-	--ink: #11162b;
-	--ink-soft: #5f6984;
-	--line: #d6def4;
-	--brand: #0f3dd9;
-	--brand-soft: #dce6ff;
-	--success: #0f9f67;
+@theme {
+	--font-sans: var(--font-poppins), system-ui, sans-serif;
+	--font-mono:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+		"Courier New", monospace;
+
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+
+	--radius-lg: var(--radius);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-sm: calc(var(--radius) - 4px);
+
+	--animate-accordion-down: accordion-down 0.2s ease-out;
+	--animate-accordion-up: accordion-up 0.2s ease-out;
+
+	@keyframes accordion-down {
+		from {
+			height: 0;
+		}
+		to {
+			height: var(--radix-accordion-content-height);
+		}
+	}
+	@keyframes accordion-up {
+		from {
+			height: var(--radix-accordion-content-height);
+		}
+		to {
+			height: 0;
+		}
+	}
 }
 
-* {
-	box-sizing: border-box;
+@layer base {
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 222.2 84% 4.9%;
+		--card: 0 0% 100%;
+		--card-foreground: 222.2 84% 4.9%;
+		--popover: 0 0% 100%;
+		--popover-foreground: 222.2 84% 4.9%;
+		--primary: 262 83% 58%; /* Violet to match Mantine */
+		--primary-foreground: 210 40% 98%;
+		--secondary: 210 40% 96.1%;
+		--secondary-foreground: 222.2 47.4% 11.2%;
+		--muted: 210 40% 96.1%;
+		--muted-foreground: 215.4 16.3% 46.9%;
+		--accent: 210 40% 96.1%;
+		--accent-foreground: 222.2 47.4% 11.2%;
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 210 40% 98%;
+		--border: 214.3 31.8% 91.4%;
+		--input: 214.3 31.8% 91.4%;
+		--ring: 262 83% 58%;
+		--radius: 0.5rem;
+	}
+
+	.dark {
+		--background: 222.2 84% 4.9%;
+		--foreground: 210 40% 98%;
+		--card: 222.2 84% 4.9%;
+		--card-foreground: 210 40% 98%;
+		--popover: 222.2 84% 4.9%;
+		--popover-foreground: 210 40% 98%;
+		--primary: 262 83% 58%;
+		--primary-foreground: 222.2 47.4% 11.2%;
+		--secondary: 217.2 32.6% 17.5%;
+		--secondary-foreground: 210 40% 98%;
+		--muted: 217.2 32.6% 17.5%;
+		--muted-foreground: 215 20.2% 65.1%;
+		--accent: 217.2 32.6% 17.5%;
+		--accent-foreground: 210 40% 98%;
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 210 40% 98%;
+		--border: 217.2 32.6% 17.5%;
+		--input: 217.2 32.6% 17.5%;
+		--ring: 262 83% 58%;
+	}
 }
 
-html,
-body {
-	min-height: 100%;
-}
-
-body {
-	margin: 0;
-	background:
-		radial-gradient(circle at 0% 0%, #ffffff 0%, transparent 46%),
-		radial-gradient(circle at 100% 12%, var(--bg-accent) 0%, transparent 42%),
-		var(--bg);
-	color: var(--ink);
-	font-family: var(--font-jakarta), "Segoe UI", sans-serif;
-}
-
-a {
-	color: currentColor;
-	text-decoration: none;
-}
-
-::selection {
-	background: #244ce033;
-}
-
-.display-font {
-	font-family: var(--font-display), "Trebuchet MS", sans-serif;
-	letter-spacing: -0.02em;
-}
-
-.grid-fabric {
-	background-image:
-		linear-gradient(rgba(15, 61, 217, 0.06) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(15, 61, 217, 0.06) 1px, transparent 1px);
-	background-size: 24px 24px;
-	mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
-}
-
-.panel {
-	border: 1px solid var(--line);
-	background: var(--surface);
-	border-radius: 1rem;
-	box-shadow: 0 16px 35px rgba(11, 25, 78, 0.08);
-}
-
-.panel-soft {
-	border: 1px solid var(--line);
-	background: linear-gradient(180deg, #ffffff, var(--surface-soft));
-	border-radius: 1rem;
-}
-
-.chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-	padding: 0.4rem 0.75rem;
-	border-radius: 999px;
-	background: var(--brand-soft);
-	color: #1234a5;
-	font-weight: 600;
-	font-size: 0.75rem;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+		font-family: var(--font-poppins), sans-serif;
+	}
 }

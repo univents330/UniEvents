@@ -1,13 +1,8 @@
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
-import { Badge } from "@/shared/ui/badge";
-import { DataTable } from "@/shared/ui/data-table";
-import { SectionTitle } from "@/shared/ui/section-title";
-import { Select } from "@/shared/ui/select";
+import { Button } from "@/shared/ui/button";
 import { useNotifications } from "../hooks/use-notifications";
-import type { NotificationRecord } from "../services/notifications.service";
 
 function formatDate(value: string) {
 	return new Intl.DateTimeFormat("en", {
@@ -28,12 +23,6 @@ const typeLabels: Record<string, string> = {
 	PASS_ISSUED: "Pass Issued",
 };
 
-const statusVariant: Record<string, "default" | "success" | "warning"> = {
-	UNREAD: "warning",
-	READ: "default",
-	ARCHIVED: "success",
-};
-
 export function NotificationsView() {
 	const [page, setPage] = useState(1);
 	const [status, setStatus] = useState<string>("");
@@ -42,7 +31,7 @@ export function NotificationsView() {
 	const notificationsQuery = useNotifications({
 		page,
 		limit: 20,
-		status: (status || undefined) as "UNREAD" | "READ" | "ARCHIVED" | undefined,
+		status: (status || undefined) as "UNREAD" | "READ" | undefined,
 		type: (type || undefined) as
 			| "EVENT_CREATED"
 			| "EVENT_UPDATED"
@@ -58,51 +47,9 @@ export function NotificationsView() {
 		sortOrder: "desc",
 	});
 
-	const columns: ColumnDef<NotificationRecord>[] = [
-		{
-			accessorKey: "title",
-			header: "Title",
-			cell: ({ row }) => (
-				<div>
-					<p className="font-semibold text-[#1e2a4d]">{row.original.title}</p>
-					<p className="mt-0.5 line-clamp-1 text-[#5f6984] text-xs">
-						{row.original.message}
-					</p>
-				</div>
-			),
-		},
-		{
-			accessorKey: "type",
-			header: "Type",
-			cell: ({ row }) => (
-				<Badge variant="outline">
-					{typeLabels[row.original.type] ?? row.original.type}
-				</Badge>
-			),
-		},
-		{
-			accessorKey: "status",
-			header: "Status",
-			cell: ({ row }) => (
-				<Badge variant={statusVariant[row.original.status] ?? "default"}>
-					{row.original.status}
-				</Badge>
-			),
-		},
-		{
-			accessorKey: "createdAt",
-			header: "Date",
-			cell: ({ row }) => (
-				<span className="text-[#5f6984] text-sm">
-					{formatDate(row.original.createdAt)}
-				</span>
-			),
-		},
-	];
-
 	if (notificationsQuery.isLoading) {
 		return (
-			<div className="panel-soft p-6 text-[#5f6984]">
+			<div className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
 				Loading notifications...
 			</div>
 		);
@@ -110,53 +57,34 @@ export function NotificationsView() {
 
 	if (notificationsQuery.isError) {
 		return (
-			<div className="panel-soft p-6 text-[#5f6984]">
-				Unable to load notifications right now.
+			<div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-600">
+				Failed to load notifications. Please try again.
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6 md:space-y-8">
-			<SectionTitle
-				eyebrow="Notifications"
-				title="Stay informed about everything"
-				description="Browse event updates, payment confirmations, check-in alerts, and system notifications."
-			/>
-
-			<section className="panel-soft grid gap-4 p-4 md:grid-cols-2 md:items-end md:p-5">
-				<label htmlFor="status-filter" className="space-y-2">
-					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
-						Status
-					</span>
-					<Select
-						id="status-filter"
+		<div className="space-y-6">
+			<div className="flex items-center justify-between">
+				<h1 className="font-extrabold text-3xl text-black tracking-tight">
+					Notifications
+				</h1>
+				<div className="flex items-center gap-3">
+					<select
 						value={status}
-						onChange={(e) => {
-							setStatus(e.target.value);
-							setPage(1);
-						}}
+						onChange={(e) => setStatus(e.target.value)}
+						className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
 					>
-						<option value="">All</option>
+						<option value="">All Statuses</option>
 						<option value="UNREAD">Unread</option>
 						<option value="READ">Read</option>
-						<option value="ARCHIVED">Archived</option>
-					</Select>
-				</label>
-
-				<label htmlFor="type-filter" className="space-y-2">
-					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
-						Type
-					</span>
-					<Select
-						id="type-filter"
+					</select>
+					<select
 						value={type}
-						onChange={(e) => {
-							setType(e.target.value);
-							setPage(1);
-						}}
+						onChange={(e) => setType(e.target.value)}
+						className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
 					>
-						<option value="">All types</option>
+						<option value="">All Types</option>
 						<option value="EVENT_CREATED">Event Created</option>
 						<option value="EVENT_UPDATED">Event Updated</option>
 						<option value="EVENT_CANCELLED">Event Cancelled</option>
@@ -166,16 +94,85 @@ export function NotificationsView() {
 						<option value="PAYMENT_FAILED">Payment Failed</option>
 						<option value="CHECK_IN_CONFIRMED">Check-in</option>
 						<option value="PASS_ISSUED">Pass Issued</option>
-					</Select>
-				</label>
-			</section>
+					</select>
+				</div>
+			</div>
 
-			<DataTable
-				columns={columns}
-				data={notificationsQuery.data?.data ?? []}
-				meta={notificationsQuery.data?.meta}
-				onPageChange={setPage}
-			/>
+			<div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+				{notificationsQuery.data?.data &&
+				notificationsQuery.data.data.length > 0 ? (
+					<div className="divide-y divide-slate-100">
+						{notificationsQuery.data.data.map((notification) => (
+							<div
+								key={notification.id}
+								className="flex items-start gap-4 p-6 transition-colors hover:bg-slate-50"
+							>
+								<div className="flex-1">
+									<div className="flex items-start justify-between gap-4">
+										<div>
+											<h3 className="font-bold text-slate-900">
+												{notification.title}
+											</h3>
+											<p className="mt-1 text-slate-600 text-sm">
+												{notification.message}
+											</p>
+										</div>
+										<span
+											className={`rounded-full px-3 py-1 font-semibold text-xs ${
+												notification.status === "UNREAD"
+													? "bg-blue-100 text-blue-700"
+													: notification.status === "READ"
+														? "bg-slate-100 text-slate-700"
+														: "bg-green-100 text-green-700"
+											}`}
+										>
+											{notification.status}
+										</span>
+									</div>
+									<div className="mt-3 flex items-center gap-4 text-slate-500 text-xs">
+										<span className="font-semibold">
+											{typeLabels[notification.type] ?? notification.type}
+										</span>
+										<span>•</span>
+										<span>{formatDate(notification.createdAt)}</span>
+									</div>
+								</div>
+							</div>
+						))}
+					</div>
+				) : (
+					<div className="p-12 text-center text-slate-500">
+						No notifications found.
+					</div>
+				)}
+			</div>
+
+			{notificationsQuery.data?.meta &&
+				notificationsQuery.data.meta.totalPages > 1 && (
+					<div className="flex items-center justify-center gap-2">
+						<Button
+							variant="outline"
+							onClick={() => setPage((p) => Math.max(1, p - 1))}
+							disabled={page === 1}
+						>
+							Previous
+						</Button>
+						<span className="text-slate-600 text-sm">
+							Page {page} of {notificationsQuery.data.meta.totalPages}
+						</span>
+						<Button
+							variant="outline"
+							onClick={() =>
+								setPage((p) =>
+									Math.min(notificationsQuery.data.meta.totalPages, p + 1),
+								)
+							}
+							disabled={page === notificationsQuery.data.meta.totalPages}
+						>
+							Next
+						</Button>
+					</div>
+				)}
 		</div>
 	);
 }

@@ -80,7 +80,7 @@ export function EditEventView({ eventId }: { eventId: string }) {
 			for (const tier of tiers) {
 				next[tier.id] = {
 					name: current[tier.id]?.name ?? tier.name,
-					price: current[tier.id]?.price ?? String(tier.price),
+					price: current[tier.id]?.price ?? String(tier.price / 100),
 					quantity: current[tier.id]?.quantity ?? String(tier.quantity),
 				};
 			}
@@ -135,7 +135,7 @@ export function EditEventView({ eventId }: { eventId: string }) {
 			thumbnail: form.thumbnail.trim() || "https://picsum.photos/600/338",
 		});
 
-		router.push("/events");
+		router.push(`/dashboard/events/${eventId}`);
 	};
 
 	const invalidateTierData = async () => {
@@ -152,7 +152,7 @@ export function EditEventView({ eventId }: { eventId: string }) {
 			await eventsService.createTicketTier(eventId, {
 				name: newTier.name.trim(),
 				description: "Updated by host",
-				price: Number(newTier.price || 0),
+				price: Math.round(Number(newTier.price || 0) * 100),
 				quantity: Number(newTier.quantity),
 			});
 
@@ -177,7 +177,7 @@ export function EditEventView({ eventId }: { eventId: string }) {
 		try {
 			await eventsService.updateTicketTier(eventId, tierId, {
 				name: draft.name.trim(),
-				price: Number(draft.price || 0),
+				price: Math.round(Number(draft.price || 0) * 100),
 				quantity: Number(draft.quantity),
 			});
 			await invalidateTierData();
@@ -223,7 +223,7 @@ export function EditEventView({ eventId }: { eventId: string }) {
 		<div className="mx-auto max-w-4xl space-y-6">
 			<div className="flex items-center gap-4">
 				<Link
-					href="/events"
+					href={`/dashboard/events/${eventId}`}
 					className="rounded-lg p-2 transition-colors hover:bg-slate-100"
 				>
 					<ArrowLeft className="h-5 w-5 text-slate-600" />
@@ -383,7 +383,7 @@ export function EditEventView({ eventId }: { eventId: string }) {
 
 					<div className="flex gap-3 pt-2">
 						<Link
-							href="/events"
+							href={`/dashboard/events/${eventId}`}
 							className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-5 py-2.5 text-center font-semibold text-slate-700 hover:bg-slate-100"
 						>
 							Cancel

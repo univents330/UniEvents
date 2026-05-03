@@ -3,5 +3,5 @@ import type { Express } from "express";
 import { createPaymentsRouter } from "./payments.router";
 
 export function registerPaymentsModule(app: Express) {
-	app.use("/api/payments", createPaymentsRouter());
+	app.use("/payments", createPaymentsRouter());
 }

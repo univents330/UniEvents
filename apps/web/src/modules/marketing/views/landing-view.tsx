@@ -1,21 +1,25 @@
 "use client";
 
-import { CTA } from "../components/cta";
 import { EventCategories } from "../components/event-categories";
+import { EventHero } from "../components/event-hero";
 import { EventsNearYou } from "../components/events-near-you";
-import { FeaturesBento } from "../components/features-bento";
-import { Hero } from "../components/hero";
+import { FinalCTA } from "../components/final-cta";
+import { GroupBooking } from "../components/group-booking";
 import { HowItWorks } from "../components/how-it-works";
+import { TicketDelivery } from "../components/ticket-delivery";
 
 export function LandingView() {
 	return (
-		<div className="w-full space-y-4">
-			<Hero />
-			<EventCategories />
-			<EventsNearYou />
-			<HowItWorks />
-			<FeaturesBento />
-			<CTA />
+		<div>
+			<EventHero />
+			<main>
+				<EventCategories />
+				<EventsNearYou />
+				<HowItWorks />
+				<TicketDelivery />
+				<GroupBooking />
+				<FinalCTA />
+			</main>
 		</div>
 	);
 }

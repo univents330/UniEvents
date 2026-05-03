@@ -1,10 +1,12 @@
 {
-	"name": "web",
+	"name": "@unievent/web",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
 		"dev": "next dev --webpack --port 3001",
 		"build": "next build",
+		"lint": "biome check .",
+		"check-types": "tsc --noEmit",
 		"start": "next start"
 	},
 	"dependencies": {

@@ -1,5 +1,7 @@
 {
 	"name": "@unievent/db",
+	"version": "0.0.0",
+	"private": true,
 	"type": "module",
 	"exports": {
 		".": {
@@ -10,9 +12,12 @@
 		}
 	},
 	"scripts": {
+		"lint": "biome check .",
+		"check-types": "tsc --noEmit",
 		"db:push": "prisma db push",
 		"db:generate": "prisma generate",
 		"db:migrate": "prisma migrate dev",
+		"db:deploy": "prisma migrate deploy",
 		"db:seed": "prisma db seed",
 		"postinstall": "prisma generate",
 		"db:studio": "prisma studio"

@@ -3,7 +3,7 @@
 import { CheckCircle2, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { getApiErrorMessage } from "@/core/lib/api-error";
 import { authClient } from "@/core/lib/auth-client";
@@ -13,6 +13,8 @@ import { GoogleOAuthSection } from "../components/google-oauth-section";
 
 export function SignInView() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const redirectTo = searchParams.get("redirect")?.trim() || "/dashboard";
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,7 +29,7 @@ export function SignInView() {
 			const response = await authClient.signIn.email({
 				email: email.trim().toLowerCase(),
 				password,
-				callbackURL: "/dashboard",
+				callbackURL: redirectTo,
 			});
 
 			if (response.error) {
@@ -35,7 +37,7 @@ export function SignInView() {
 				return;
 			}
 
-			router.push("/dashboard");
+			router.push(redirectTo);
 			router.refresh();
 		} catch (submitError) {
 			setError(
@@ -192,9 +194,7 @@ export function SignInView() {
 
 							<Button
 								type="submit"
-								size="md"
-								className="h-11 w-full"
-								disabled={isSubmitting}
+								className="w-full bg-[#030370] font-semibold text-white hover:bg-[#030370]/90"
 							>
 								{isSubmitting ? "Signing in..." : "Sign in with Email"}
 							</Button>
@@ -204,13 +204,14 @@ export function SignInView() {
 							onError={setError}
 							actionLabel="Continue with Google"
 							dividerLabel="or use Google"
+							callbackURL={redirectTo}
 						/>
 
 						<div className="space-y-6">
 							<p className="text-center font-bold text-slate-400 text-sm">
 								New to the community?{" "}
 								<Link
-									href="/auth/sign-up"
+									href={`/auth/sign-up?redirect=${encodeURIComponent(redirectTo)}`}
 									className="border-blue-600/10 border-b-2 text-blue-600 transition-colors hover:border-blue-600 hover:text-blue-700"
 								>
 									Create an account

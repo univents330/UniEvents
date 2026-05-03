@@ -354,6 +354,61 @@ export type CheckoutDraftTicketHolder = z.infer<
 >;
 export type CheckoutDraft = z.infer<typeof checkoutDraftSchema>;
 
+// ─────────────────────────────────────────────
+// GUEST CHECKOUT (Public ticket purchase without auth)
+// ─────────────────────────────────────────────
+
+export const guestCheckoutSchema = z.object({
+	eventId: z.string().cuid(),
+	eventSlug: z.string().trim().min(1),
+	items: z.array(initiatePaymentItemSchema).min(1),
+	purchaserName: z.string().trim().min(1).max(100),
+	purchaserEmail: z.string().email(),
+	purchaserPhone: z
+		.string()
+		.regex(/^\+?[1-9]\d{1,14}$/)
+		.optional(),
+	ticketHolders: z.array(ticketHolderSchema).optional(),
+});
+
+export const guestCheckoutResponseSchema = z.object({
+	attendeeId: z.string().cuid(),
+	orderId: z.string().cuid(),
+	paymentId: z.string().cuid().optional(),
+	razorpayOrderId: z.string().optional(),
+	razorpayKeyId: z.string().optional(),
+	amount: z.number().int(),
+	currency: z.string(),
+	isFree: z.boolean(),
+	prefill: z
+		.object({
+			name: z.string().optional(),
+			email: z.string().email().optional(),
+			contact: z.string().optional(),
+		})
+		.optional(),
+	notes: z.record(z.string(), z.string()).optional(),
+});
+
+export const guestVerifyPaymentSchema = verifyPaymentSchema;
+
+export const guestVerifyPaymentResponseSchema = z.object({
+	payment: paymentSchema,
+	orderId: z.string().cuid(),
+	alreadyVerified: z.boolean(),
+});
+
+export type GuestCheckoutInput = z.infer<typeof guestCheckoutSchema>;
+export type GuestCheckoutResponse = z.infer<typeof guestCheckoutResponseSchema>;
+export type GuestVerifyPaymentInput = z.infer<typeof guestVerifyPaymentSchema>;
+export type GuestVerifyPaymentResponse = z.infer<
+	typeof guestVerifyPaymentResponseSchema
+>;
+
+// ─────────────────────────────────────────────
+// RAZORPAY CHECKOUT TYPES
+// ─────────────────────────────────────────────
+
 export type RazorpayCheckoutOptions = {
 	key: string;
 	amount: number;

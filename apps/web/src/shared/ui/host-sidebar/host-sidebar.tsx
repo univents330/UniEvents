@@ -15,17 +15,17 @@ export const navSections: SidebarSection[] = [
 		items: [
 			{
 				label: "Dashboard",
-				href: "/host/dashboard",
+				href: "/dashboard/events",
 				icon: <Home className="h-5 w-5" />,
 			},
 			{
 				label: "Create Event",
-				href: "/host/events/new",
+				href: "/dashboard/events/create",
 				icon: <PlusCircle className="h-5 w-5" />,
 			},
 			{
 				label: "Manage Events",
-				href: "/host/events",
+				href: "/dashboard/events",
 				icon: <Zap className="h-5 w-5" />,
 			},
 		],
@@ -35,7 +35,7 @@ export const navSections: SidebarSection[] = [
 		items: [
 			{
 				label: "My Requests",
-				href: "/host/requests",
+				href: "/dashboard/orders",
 				icon: <BellRing className="h-5 w-5" />,
 			},
 		],
@@ -45,17 +45,17 @@ export const navSections: SidebarSection[] = [
 		items: [
 			{
 				label: "Orders",
-				href: "/host/orders",
+				href: "/dashboard/orders",
 				icon: <ClipboardList className="h-5 w-5" />,
 			},
 			{
 				label: "Attendees",
-				href: "/host/attendees",
+				href: "/dashboard/attendees",
 				icon: <Users className="h-5 w-5" />,
 			},
 			{
 				label: "Check-ins",
-				href: "/host/check-ins",
+				href: "/dashboard/check-ins",
 				icon: <Users className="h-5 w-5" />,
 			},
 		],
@@ -65,7 +65,7 @@ export const navSections: SidebarSection[] = [
 		items: [
 			{
 				label: "Analytics",
-				href: "/host/analytics",
+				href: "/dashboard/events",
 				icon: <Users className="h-5 w-5" />,
 			},
 		],
@@ -75,7 +75,7 @@ export const navSections: SidebarSection[] = [
 		items: [
 			{
 				label: "Settings",
-				href: "/host/settings",
+				href: "/dashboard/profile",
 				icon: <Settings className="h-5 w-5" />,
 			},
 		],

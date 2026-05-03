@@ -1,39 +1,54 @@
-FROM oven/bun:1.3.6 AS deps
+# Base image
+FROM oven/bun:1.3-slim AS base
 WORKDIR /app
 
-ARG NEXT_PUBLIC_APP_URL
+# Prune phase
+FROM node:20-slim AS pruner
+WORKDIR /app
+RUN npm install -g turbo
+COPY . .
+RUN turbo prune @unievent/web --docker
+
+# Installer phase
+FROM base AS installer
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/bun.lock ./bun.lock
+RUN bun install --frozen-lockfile --ignore-scripts
+
+# Build phase
+FROM base AS builder
+WORKDIR /app
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=pruner /app/out/full/ .
+COPY turbo.json turbo.json
+
+# Build arguments for public env vars
 ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_API_URLS
-ARG NEXT_PUBLIC_SERVER_URL
-ARG NEXT_PUBLIC_SERVER_URLS
+ARG NEXT_PUBLIC_APP_URL
 ARG NEXT_PUBLIC_RAZORPAY_KEY_ID
-ARG DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/postgres
 
-ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_API_URLS=${NEXT_PUBLIC_API_URLS}
-ENV NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL}
-ENV NEXT_PUBLIC_SERVER_URLS=${NEXT_PUBLIC_SERVER_URLS}
-ENV NEXT_PUBLIC_RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID}
-ENV DATABASE_URL=${DATABASE_URL}
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_RAZORPAY_KEY_ID=$NEXT_PUBLIC_RAZORPAY_KEY_ID
 
-COPY package.json bun.lock turbo.json tsconfig.json ./
-COPY apps ./apps
-COPY packages ./packages
+# Build the web app
+RUN bun run build --filter=@unievent/web
 
-RUN bun install --frozen-lockfile
-
-WORKDIR /app/apps/web
-RUN bun run build
-
-FROM oven/bun:1.3.6 AS runtime
+# Runner phase
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV HOSTNAME="0.0.0.0"
 
-COPY --from=deps /app /app
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
-WORKDIR /app/apps/web
 EXPOSE 3001
-CMD ["bun", "run", "start"]
+
+# The standalone output includes its own node_modules, so we just run the server
+CMD ["node", "apps/web/server.js"]

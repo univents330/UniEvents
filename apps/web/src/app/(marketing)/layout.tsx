@@ -1,19 +1,18 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { MarketingLayout } from "@/modules/marketing/components/marketing-layout";
+import { Footer } from "@/shared/ui/footer";
+import { Navbar } from "@/shared/ui/navbar/navbar";
 
 export default function MarketingGroupLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
-	const pathname = usePathname();
-	const isCheckout = pathname.startsWith("/checkout");
-
 	return (
-		<MarketingLayout hideHeader={isCheckout} hideFooter={isCheckout}>
+		<div className="min-h-screen bg-[#f8fbff]">
+			<Navbar />
 			{children}
-		</MarketingLayout>
+			<Footer />
+		</div>
 	);
 }

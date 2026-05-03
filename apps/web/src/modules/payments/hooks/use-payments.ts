@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
 	ConfirmFreeOrderInput,
+	GuestCheckoutInput,
+	GuestVerifyPaymentInput,
 	InitiatePaymentInput,
 	RefundPaymentInput,
 	UpdatePaymentInput,
@@ -106,5 +108,28 @@ export function useDeletePayment() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: paymentsKeys.all });
 		},
+	});
+}
+
+// Guest checkout hooks (no auth required)
+export function useGuestCheckout() {
+	return useMutation({
+		mutationFn: (input: GuestCheckoutInput) =>
+			paymentsService.guestCheckout(input),
+	});
+}
+
+export function useGuestVerifyPayment() {
+	return useMutation({
+		mutationFn: (input: GuestVerifyPaymentInput) =>
+			paymentsService.guestVerifyPayment(input),
+	});
+}
+
+export function useGuestPayment(id?: string) {
+	return useQuery({
+		queryKey: [...paymentsKeys.detail(id ?? ""), "guest"],
+		queryFn: () => paymentsService.guestGetPayment(id as string),
+		enabled: Boolean(id),
 	});
 }

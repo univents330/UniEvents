@@ -9,7 +9,6 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./auth-provider";
-import { CartProvider } from "./cart-provider";
 
 const queryConfig: QueryClientConfig = {
 	defaultOptions: {
@@ -27,18 +26,16 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 	return (
 		<QueryClientProvider client={queryClient}>
 			<AuthProvider>
-				<CartProvider>
-					{children}
-					<Toaster
-						position="bottom-right"
-						richColors
-						toastOptions={{
-							style: {
-								fontFamily: "var(--font-jakarta), 'Segoe UI', sans-serif",
-							},
-						}}
-					/>
-				</CartProvider>
+				{children}
+				<Toaster
+					position="bottom-right"
+					richColors
+					toastOptions={{
+						style: {
+							fontFamily: "var(--font-jakarta), 'Segoe UI', sans-serif",
+						},
+					}}
+				/>
 			</AuthProvider>
 			<ReactQueryDevtools initialIsOpen={false} />
 		</QueryClientProvider>

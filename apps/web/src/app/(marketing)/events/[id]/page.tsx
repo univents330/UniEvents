@@ -1,10 +1,10 @@
-import { EventDetailView } from "@/modules/events";
+import { EventDetailView } from "@/modules/events/views/event-detail-view";
 
-interface PageProps {
+export default async function EventPage({
+	params,
+}: {
 	params: Promise<{ id: string }>;
-}
-
-export default async function EventPage({ params }: PageProps) {
+}) {
 	const { id } = await params;
 	return <EventDetailView eventId={id} />;
 }

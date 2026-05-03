@@ -151,7 +151,7 @@ export function HostDashboard() {
 						</p>
 					</div>
 					<Link
-						href="/events/create"
+						href="/dashboard/events/create"
 						className="flex h-12 w-full items-center justify-center gap-3 bg-[#030370] px-8 font-black text-[10px] text-white! uppercase tracking-[0.2em] shadow-xl transition-all hover:bg-slate-900 active:scale-95 sm:h-14 md:w-auto"
 					>
 						<Plus className="h-4 w-4" />

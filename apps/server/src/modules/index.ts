@@ -4,6 +4,7 @@ import { registerAttendeesModule } from "./attendees";
 import { registerAuthModule } from "./auth";
 import { registerCheckInsModule } from "./check-ins";
 import { registerEventsModule } from "./events";
+import { registerGuestCheckoutModule } from "./guest-checkout";
 import { registerNotificationsModule } from "./notifications";
 import { registerOrdersModule } from "./orders";
 import { registerPassesModule } from "./passes";
@@ -21,6 +22,7 @@ export function registerModules(app: Express) {
 	registerPassesModule(app);
 	registerCheckInsModule(app);
 	registerPaymentsModule(app);
+	registerGuestCheckoutModule(app);
 	registerAnalyticsModule(app);
 	registerNotificationsModule(app);
 }

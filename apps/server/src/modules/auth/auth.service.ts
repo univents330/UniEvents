@@ -244,6 +244,23 @@ export class AuthService {
 			);
 		}
 
+		// Link guest attendees to the new user
+		// This allows guests who purchased tickets to see them after signing up
+		try {
+			await prisma.attendee.updateMany({
+				where: {
+					email: email,
+					userId: null, // Only update guest attendees
+				},
+				data: {
+					userId: result.response.user.id,
+				},
+			});
+		} catch (error) {
+			// Log but don't fail registration if linking fails
+			console.error("Failed to link guest attendees:", error);
+		}
+
 		return {
 			data: await this.buildAuthPayloadFromToken(result.response.token),
 			headers: result.headers,
@@ -272,6 +289,23 @@ export class AuthService {
 					}>
 				>,
 		);
+
+		// Link any guest attendees with matching email to this user
+		// This handles cases where user bought tickets before creating account
+		try {
+			await prisma.attendee.updateMany({
+				where: {
+					email: email,
+					userId: null,
+				},
+				data: {
+					userId: result.response.user.id,
+				},
+			});
+		} catch (error) {
+			// Log but don't fail login if linking fails
+			console.error("Failed to link guest attendees:", error);
+		}
 
 		return {
 			data: await this.buildAuthPayloadFromToken(result.response.token),

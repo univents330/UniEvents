@@ -320,7 +320,7 @@ export function EventsView() {
 							extraordinary?
 						</h2>
 						<Link
-							href="/events/create"
+							href="/dashboard/events/create"
 							className="group inline-flex items-center gap-4 rounded-2xl bg-white px-10 py-5 font-black text-[#000031] text-xs uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95"
 						>
 							Create your event

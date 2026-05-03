@@ -23,12 +23,22 @@ type OrderActor = {
 	isHost: boolean;
 };
 
+// Actor for guest access (when user is not logged in but has email from context)
+type GuestOrderActor = {
+	userId?: string;
+	email?: string;
+	role?: UserRole;
+	isHost?: boolean;
+};
+
 export class OrdersService {
-	private canManageAll(actor: OrderActor) {
+	private canManageAll(actor: OrderActor | GuestOrderActor) {
 		return actor.role === "ADMIN";
 	}
 
-	private buildAccessWhere(actor: OrderActor): Prisma.OrderWhereInput {
+	private buildAccessWhere(
+		actor: OrderActor | GuestOrderActor,
+	): Prisma.OrderWhereInput {
 		if (this.canManageAll(actor)) {
 			return {};
 		}
@@ -41,9 +51,18 @@ export class OrdersService {
 			};
 		}
 
+		// Allow access by userId (authenticated) or email (guest/linked)
+		const orConditions: Prisma.AttendeeWhereInput[] = [];
+		if (actor.userId) {
+			orConditions.push({ userId: actor.userId });
+		}
+		if (actor.email) {
+			orConditions.push({ email: actor.email });
+		}
+
 		return {
 			attendee: {
-				OR: [{ userId: actor.userId }, { email: actor.email }],
+				OR: orConditions,
 			},
 		};
 	}

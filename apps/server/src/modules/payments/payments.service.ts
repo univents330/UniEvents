@@ -347,7 +347,7 @@ export class PaymentsService {
 				ticket.tierId,
 				(quantityByTier.get(ticket.tierId) ?? 0) + 1,
 			);
-			totalAmount += ticket.pricePaid * 100;
+			totalAmount += ticket.pricePaid;
 		}
 
 		return {
@@ -401,7 +401,7 @@ export class PaymentsService {
 				);
 			}
 
-			totalAmount += tier.price * item.quantity * 100;
+			totalAmount += tier.price * item.quantity;
 		}
 
 		return { checkoutItems, totalAmount };
@@ -566,7 +566,7 @@ export class PaymentsService {
 			amount: formattedAmount,
 			eventDate: `${formattedEventDate} (${eventTimezone})`,
 			tickets: ticketsData,
-			dashboardUrl: `${(env.BETTER_AUTH_URL ?? env.WEB_APP_URL ?? "http://localhost:3000").replace("/api/auth", "")}/tickets`,
+			dashboardUrl: `${(env.BETTER_AUTH_URL ?? env.WEB_APP_URL ?? "http://localhost:3000").replace("/auth", "")}/tickets`,
 		});
 
 		const textContent = [

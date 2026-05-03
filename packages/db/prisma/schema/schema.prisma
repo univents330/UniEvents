@@ -191,6 +191,7 @@ model Event {
   mode        EventMode       @default(OFFLINE)
   visibility  EventVisibility @default(PUBLIC)
   status      EventStatus     @default(DRAFT)
+  isApproved  Boolean         @default(false)
 
   description String
 
@@ -222,7 +223,7 @@ model TicketTier {
 
   name        String           // e.g. "General Admission", "VIP"
   description String?
-  price       Int              // in rupees. 0 for free tiers
+  price       Int              // in paise. 0 for free tiers
   quantity    Int              // total available
   soldCount   Int      @default(0)
 
@@ -250,7 +251,7 @@ model Ticket {
   tierId       String
   tier         TicketTier @relation(fields: [tierId], references: [id], onDelete: Restrict)
 
-  // Snapshot price in rupees at time of purchase
+  // Snapshot price in paise at time of purchase
   pricePaid    Int
 
   createdAt    DateTime   @default(now())
@@ -305,7 +306,7 @@ model Order {
   event       Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   status      OrderStatus @default(PENDING)
-  totalAmount Int         // total order amount in rupees
+  totalAmount Int         // total order amount in paise
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

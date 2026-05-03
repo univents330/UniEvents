@@ -2,11 +2,10 @@
 
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/core/providers/auth-provider";
-import { HostDashboard } from "../components/host-dashboard";
-import { UserDashboard } from "../components/user-dashboard";
+import { UnifiedDashboard } from "../components/unified-dashboard";
 
 export function DashboardView() {
-	const { user, isLoading: authLoading } = useAuth();
+	const { user: _user, isLoading: authLoading } = useAuth();
 
 	if (authLoading) {
 		return (
@@ -19,9 +18,5 @@ export function DashboardView() {
 		);
 	}
 
-	if (user?.isHost) {
-		return <HostDashboard />;
-	}
-
-	return <UserDashboard />;
+	return <UnifiedDashboard />;
 }

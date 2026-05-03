@@ -12,7 +12,7 @@ export const notificationTypeEnum = z.enum([
 	"PASS_ISSUED",
 ]);
 
-export const notificationStatusEnum = z.enum(["UNREAD", "READ", "ARCHIVED"]);
+export const notificationStatusEnum = z.enum(["UNREAD", "READ"]);
 
 export const createNotificationSchema = z.object({
 	type: notificationTypeEnum,

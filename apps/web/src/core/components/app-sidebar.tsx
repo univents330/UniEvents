@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, LogOut, Zap } from "lucide-react";
+import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -27,24 +27,30 @@ export function AppSidebar({ sections }: AppSidebarProps) {
 	const pathname = usePathname();
 	const { signOut } = useAuth();
 
+	const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href));
+
 	const isActive = (href: string) => {
 		if (pathname === href) return true;
-		return pathname.startsWith(`${href}/`);
+		if (!pathname.startsWith(`${href}/`)) return false;
+
+		// If it's a prefix match, ensure there isn't a more specific (longer) match available in the sidebar
+		const hasBetterMatch = allHrefs.some(
+			(h) => h !== href && pathname.startsWith(h) && h.length > href.length,
+		);
+
+		return !hasBetterMatch;
 	};
 
 	return (
-		<aside className="fixed top-16 bottom-0 left-0 z-40 hidden w-64 flex-col border-[#dbe7ff] border-r bg-white transition-all duration-500 lg:flex">
-			<nav className="scrollbar-none flex-1 overflow-y-auto px-4 py-8">
-				<div className="space-y-10">
+		<aside className="fixed top-16 bottom-0 left-0 z-40 hidden w-64 flex-col border-slate-200 border-r bg-white lg:flex">
+			<nav className="flex-1 overflow-y-auto px-4 py-6">
+				<div className="space-y-6">
 					{sections.map((section) => (
-						<div key={section.title} className="space-y-4">
-							<div className="flex items-center justify-between px-4">
-								<p className="font-black text-[9px] text-slate-400 uppercase tracking-[0.3em]">
-									{section.title}
-								</p>
-								<Database size={10} className="text-slate-200" />
-							</div>
-							<ul className="space-y-0.5">
+						<div key={section.title}>
+							<p className="mb-3 px-2 font-semibold text-slate-400 text-xs uppercase tracking-wider">
+								{section.title}
+							</p>
+							<ul className="space-y-1">
 								{section.items.map((item) => {
 									const active = isActive(item.href);
 									return (
@@ -52,41 +58,27 @@ export function AppSidebar({ sections }: AppSidebarProps) {
 											<Link
 												href={item.href}
 												className={cn(
-													"group relative flex items-center gap-4 border-l-2 px-4 py-3.5 transition-all duration-300",
+													"group flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-sm transition-all",
 													active
-														? "border-[#030370] bg-[#030370]/5 text-[#030370]"
-														: "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+														? "bg-[#030370] text-white"
+														: "text-slate-600 hover:bg-slate-50",
 												)}
 											>
 												<span
 													className={cn(
-														"shrink-0 transition-transform duration-300",
+														"h-5 w-5 shrink-0",
 														active
-															? "scale-110 text-[#030370]"
-															: "text-slate-300 group-hover:text-slate-600",
+															? "text-white"
+															: "text-slate-400 group-hover:text-slate-600",
 													)}
 												>
 													{item.icon}
 												</span>
-												<span
-													className={cn(
-														"flex-1 font-black text-[11px] uppercase tracking-widest",
-														active ? "" : "",
-													)}
-												>
-													{item.label}
-												</span>
-												{item.badge ? (
-													<span className="bg-rose-500 px-2 py-0.5 font-black text-[8px] text-white! uppercase tracking-widest">
+												<span className="flex-1">{item.label}</span>
+												{item.badge && (
+													<span className="rounded-full bg-rose-500 px-2 py-0.5 text-white text-xs">
 														{item.badge}
 													</span>
-												) : (
-													active && (
-														<Zap
-															size={10}
-															className="animate-pulse text-[#030370]"
-														/>
-													)
 												)}
 											</Link>
 										</li>
@@ -98,17 +90,14 @@ export function AppSidebar({ sections }: AppSidebarProps) {
 				</div>
 			</nav>
 
-			{/* Industrial Footer */}
-			<div className="border-[#dbe7ff] border-t bg-slate-50 p-4">
+			<div className="border-slate-200 border-t px-4 py-4">
 				<button
 					type="button"
 					onClick={() => signOut?.()}
-					className="group flex w-full items-center gap-4 px-4 py-4 text-slate-400 transition-all hover:bg-red-50 hover:text-red-600"
+					className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 font-medium text-slate-600 text-sm transition-all hover:bg-slate-50"
 				>
-					<LogOut size={16} className="group-hover:text-red-600" />
-					<span className="font-black text-[10px] uppercase tracking-[0.2em]">
-						Logout
-					</span>
+					<LogOut className="h-5 w-5" />
+					<span>Logout</span>
 				</button>
 			</div>
 		</aside>

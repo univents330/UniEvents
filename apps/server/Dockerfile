@@ -1,26 +1,48 @@
-FROM oven/bun:1.3.6 AS deps
+# Base image
+FROM oven/bun:1.3-slim AS base
 WORKDIR /app
 
-ARG DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/postgres
-ENV DATABASE_URL=${DATABASE_URL}
+# Prune phase
+FROM node:20-slim AS pruner
+WORKDIR /app
+RUN npm install -g turbo
+COPY . .
+RUN turbo prune @unievent/server --docker
 
-COPY package.json bun.lock turbo.json tsconfig.json ./
-COPY apps ./apps
-COPY packages ./packages
+# Installer phase
+FROM base AS installer
+COPY --from=pruner /app/out/json/ .
+COPY --from=pruner /app/out/bun.lock ./bun.lock
+RUN bun install --frozen-lockfile --ignore-scripts
 
-RUN bun install --frozen-lockfile
+# Build phase
+FROM base AS builder
+COPY --from=installer /app/node_modules ./node_modules
+COPY --from=pruner /app/out/full/ .
+COPY turbo.json turbo.json
 
-WORKDIR /app/apps/server
-RUN bun run build
+# Generate Prisma Client
+RUN bun run db:generate
 
-FROM oven/bun:1.3.6 AS runtime
+# Build the server
+RUN bun run build --filter=@unievent/server
+
+# Runner phase
+FROM base AS runner
 WORKDIR /app
 
+# Set environment to production
 ENV NODE_ENV=production
-ENV PORT=3000
 
-COPY --from=deps /app /app
+# Copy necessary files from builder
+COPY --from=builder /app/apps/server/dist ./apps/server/dist
+COPY --from=builder /app/apps/server/package.json ./apps/server/package.json
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
 
-WORKDIR /app/apps/server
+# Expose the port
 EXPOSE 3000
-CMD ["bun", "run", "start"]
+
+# Run the app
+WORKDIR /app/apps/server
+CMD ["bun", "run", "dist/index.mjs"]

@@ -42,6 +42,7 @@ export const eventSchema = z.object({
 	mode: z.enum(["ONLINE", "OFFLINE"]),
 	visibility: z.enum(["PUBLIC", "PRIVATE"]),
 	status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED", "COMPLETED"]),
+	isApproved: z.boolean(),
 	description: z.string(),
 	createdAt: z.date(),
 	updatedAt: z.date(),
@@ -55,6 +56,7 @@ export const eventRecordSchema = eventSchema
 		updatedAt: true,
 	})
 	.extend({
+		isApproved: z.boolean(),
 		startDate: z.string(),
 		endDate: z.string(),
 		createdAt: z.string(),
@@ -69,6 +71,7 @@ const createEventSchemaBase = eventSchema
 		slug: true,
 		userId: true,
 		status: true,
+		isApproved: true,
 	})
 	.extend({
 		name: z.string().min(1).max(200),
@@ -123,6 +126,7 @@ export const eventFilterSchema = z
 		type: z.enum(["FREE", "PAID"]).optional(),
 		mode: z.enum(["ONLINE", "OFFLINE"]).optional(),
 		visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
+		isApproved: z.boolean().optional(),
 		search: z.string().optional(),
 		startDateFrom: z.coerce.date().optional(),
 		startDateTo: z.coerce.date().optional(),
@@ -139,6 +143,10 @@ export const eventFilterSchema = z
 			ctx,
 		);
 	});
+
+export const approveEventSchema = z.object({
+	isApproved: z.boolean(),
+});
 
 export const eventTicketTierParamsSchema = z.object({
 	eventId: z.string().cuid(),

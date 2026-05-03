@@ -17,6 +17,7 @@ export class AttendeesController {
 			userId: authReq.auth.userId,
 			email: authReq.auth.email,
 			role: authReq.auth.role,
+			isHost: authReq.auth.isHost,
 		};
 	}
 

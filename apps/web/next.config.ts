@@ -60,6 +60,7 @@ const allowedDevOrigins = (
 	.filter(Boolean);
 
 const nextConfig: NextConfig = {
+	output: "standalone",
 	typedRoutes: false,
 	allowedDevOrigins,
 	images: {
@@ -75,6 +76,14 @@ const nextConfig: NextConfig = {
 			{
 				protocol: "https",
 				hostname: "picsum.photos",
+			},
+			{
+				protocol: "https",
+				hostname: "api.dicebear.com",
+			},
+			{
+				protocol: "https",
+				hostname: "i.pravatar.cc",
 			},
 		],
 	},

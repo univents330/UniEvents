@@ -31,6 +31,7 @@ export class EventsService {
 			status: {
 				in: ["PUBLISHED", "COMPLETED"],
 			},
+			isApproved: true,
 		};
 
 		if (!actor) {
@@ -50,6 +51,7 @@ export class EventsService {
 		return {
 			OR: [
 				publicPublishedWhere,
+				{ userId: actor.userId }, // Always allow owner to see their own events
 				{
 					attendees: {
 						some: {
@@ -515,6 +517,22 @@ export class EventsService {
 		}
 
 		await prisma.event.delete({ where: { id: event.id } });
+	}
+
+	async approve(id: string, isApproved: boolean, actor: EventActor) {
+		if (actor.role !== "ADMIN") {
+			throw new ForbiddenError("Only administrators can approve events");
+		}
+
+		const event = await prisma.event.findUnique({ where: { id } });
+		if (!event) {
+			throw new NotFoundError("Event not found");
+		}
+
+		return await prisma.event.update({
+			where: { id },
+			data: { isApproved },
+		});
 	}
 }
 

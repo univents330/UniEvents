@@ -24,12 +24,20 @@ export class NotificationsService {
 	}
 
 	async list(input: NotificationFilterInput, actor: NotificationActor) {
-		const { page, limit, sortBy, sortOrder, ...filters } = input;
+		const { page, limit, sortBy, sortOrder, startDate, endDate, ...filters } =
+			input;
 		const skip = (page - 1) * limit;
 
 		const where: Prisma.NotificationWhereInput = {
 			...filters,
 			...this.buildAccessWhere(actor),
+			createdAt:
+				startDate || endDate
+					? {
+							gte: startDate,
+							lte: endDate,
+						}
+					: undefined,
 		};
 
 		const [data, total] = await Promise.all([

@@ -2,22 +2,6 @@ import type { NextFunction, Request, Response } from "express";
 
 import { logger } from "../utils/logger";
 
-const SENSITIVE_HEADERS = new Set(["authorization", "cookie", "set-cookie"]);
-
-function _sanitizeHeaders(
-	headers: Record<string, unknown>,
-): Record<string, unknown> {
-	const sanitized: Record<string, unknown> = {};
-	for (const [key, value] of Object.entries(headers)) {
-		if (SENSITIVE_HEADERS.has(key.toLowerCase())) {
-			sanitized[key] = value ? "[REDACTED]" : undefined;
-		} else {
-			sanitized[key] = value;
-		}
-	}
-	return sanitized;
-}
-
 function truncateBody(body: unknown): unknown {
 	if (!body || typeof body !== "object") return body;
 	const str = JSON.stringify(body);

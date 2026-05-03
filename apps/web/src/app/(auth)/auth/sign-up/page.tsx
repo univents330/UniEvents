@@ -1,5 +1,10 @@
-import { SignUpView } from "@/modules/auth";
+import { Suspense } from "react";
+import { AuthScreen } from "@/modules/auth";
 
 export default function SignUpPage() {
-	return <SignUpView />;
+	return (
+		<Suspense fallback={null}>
+			<AuthScreen mode="signup" />
+		</Suspense>
+	);
 }

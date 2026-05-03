@@ -112,7 +112,7 @@ export function HostEventsView() {
 							{stats.total.toLocaleString("en-IN")} managed
 						</span>
 						<Link
-							href="/events/create"
+							href="/dashboard/events/create"
 							className="!text-white inline-flex items-center gap-2 rounded-xl bg-[#0a4bb8] px-4 py-2 font-semibold hover:bg-[#0a4bb8]/90"
 						>
 							<Plus className="h-5 w-5" />
@@ -182,7 +182,14 @@ export function HostEventsView() {
 										{event.venueName}
 									</p>
 								</div>
-								<StatusBadge status={event.status} />
+								<div className="flex flex-col items-end gap-2">
+									<StatusBadge status={event.status} />
+									{!event.isApproved && (
+										<span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-bold text-[10px] text-amber-700">
+											PENDING APPROVAL
+										</span>
+									)}
+								</div>
 							</div>
 
 							<div className="mt-3 space-y-1.5 text-slate-600 text-sm">
@@ -201,7 +208,13 @@ export function HostEventsView() {
 
 							<div className="mt-4 flex items-center justify-end gap-2 border-slate-100 border-t pt-3">
 								<Link
-									href={`/events/${event.id}/edit`}
+									href={`/dashboard/events/${event.id}`}
+									className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 font-medium text-slate-700 text-sm hover:bg-slate-50"
+								>
+									Manage
+								</Link>
+								<Link
+									href={`/dashboard/events/${event.id}/edit`}
 									className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 font-medium text-slate-700 text-sm hover:bg-slate-50"
 								>
 									<PencilLine className="h-4 w-4" />

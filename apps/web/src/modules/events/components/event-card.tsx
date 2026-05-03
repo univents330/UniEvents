@@ -1,111 +1,121 @@
 "use client";
 
 import type { EventRecord } from "@unievent/schema";
-import dayjs from "dayjs";
-import { ArrowRight, CalendarDays, Heart, MapPin, Share2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { cn } from "@/core/lib/cn";
+import { useState } from "react";
+import { Badge } from "@/shared/ui/badge";
+import { Card, CardContent } from "@/shared/ui/card";
 
-export function EventCard({ event }: { event: EventRecord }) {
-	const isOnline = event.mode === "ONLINE";
-	const isFree = event.type === "FREE";
+export interface EventCardProps {
+	event: EventRecord;
+	className?: string;
+}
+
+export function EventCard({ event, className = "" }: EventCardProps) {
+	const [isCoverLoading, setIsCoverLoading] = useState(true);
+
+	const coverImage =
+		event.coverUrl ||
+		"https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80";
+
+	const formatDate = (date: Date | string) => {
+		const d = new Date(date);
+		return {
+			day: d.getDate(),
+			month: d.toLocaleDateString("en-US", { month: "short" }).toUpperCase(),
+			full: d.toLocaleDateString("en-US", {
+				weekday: "short",
+				hour: "numeric",
+				minute: "2-digit",
+			}),
+		};
+	};
+
+	const date = formatDate(event.startDate);
 
 	return (
-		<Link href={`/events/${event.id}`} className="group block h-full">
-			<article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)]">
-				{/* Image Section with Glass Badges */}
-				<div className="relative aspect-[4/3] w-full overflow-hidden">
+		<Card
+			className={`group relative overflow-hidden rounded-[32px] border border-slate-100 bg-white p-2 shadow-sm transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-slate-200/50 ${className}`}
+		>
+			<Link href={{ pathname: `/events/${event.id}` }} className="block h-full">
+				<div className="relative aspect-[4/3] w-full overflow-hidden rounded-[24px] bg-slate-100">
 					<Image
-						src={event.coverUrl || "/assets/welcome.png"}
+						src={coverImage}
 						alt={event.name}
 						fill
-						className="object-cover transition-transform duration-700 group-hover:scale-110"
+						sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw"
+						className={`object-cover transition-transform duration-700 group-hover:scale-110 ${
+							isCoverLoading ? "opacity-0" : "opacity-100"
+						}`}
+						onLoad={() => setIsCoverLoading(false)}
+						onError={() => setIsCoverLoading(false)}
 					/>
 
-					{/* Gradient Overlay */}
-					<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-
-					{/* Top Badges */}
-					<div className="absolute top-4 left-4 flex flex-wrap gap-2">
-						<div
-							className={cn(
-								"rounded-xl border border-white/10 px-3 py-1.5 shadow-sm backdrop-blur-md",
-								isOnline
-									? "bg-blue-600/80 text-white"
-									: "bg-emerald-600/80 text-white",
-							)}
-						>
-							<span className="font-black text-[10px] uppercase tracking-wider">
-								{event.mode}
-							</span>
-						</div>
+					{/* Date Badge */}
+					<div className="absolute top-4 left-4 flex flex-col items-center rounded-2xl bg-white/90 px-3 py-2 text-[#030370] shadow-xl backdrop-blur-md">
+						<span className="font-black text-[10px] tracking-tighter">
+							{date.month}
+						</span>
+						<span className="font-black text-xl leading-none">{date.day}</span>
 					</div>
 
-					{/* Quick Actions (Floating) */}
-					<div className="absolute top-4 right-4 flex translate-x-12 flex-col gap-2 transition-transform duration-500 group-hover:translate-x-0">
-						<button
-							type="button"
-							className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-slate-600 shadow-lg backdrop-blur-md transition-colors hover:text-red-500"
-						>
-							<Heart size={18} />
-						</button>
-						<button
-							type="button"
-							className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-slate-600 shadow-lg backdrop-blur-md transition-colors hover:text-blue-600"
-						>
-							<Share2 size={18} />
-						</button>
-					</div>
-
-					{/* Price Badge */}
-					<div className="absolute bottom-4 left-4">
-						<div className="rounded-2xl bg-white px-4 py-2 shadow-xl">
-							<span className="font-black text-[#000031] text-sm">
-								{isFree ? "FREE" : "Get Tickets"}
-							</span>
-						</div>
+					{/* Type/Mode Overlays */}
+					<div className="absolute right-4 bottom-4 left-4 flex items-center justify-between">
+						<Badge className="rounded-full border-none bg-[#030370]/80 px-3 py-1 font-black text-[9px] text-white backdrop-blur-md">
+							{event.mode}
+						</Badge>
+						<Badge className="rounded-full border-none bg-white/90 px-3 py-1 font-black text-[#030370] text-[9px] backdrop-blur-md">
+							{event.type === "FREE" ? "FREE ACCESS" : "PAID EVENT"}
+						</Badge>
 					</div>
 				</div>
 
-				{/* Content Body */}
-				<div className="flex flex-1 flex-col p-8">
-					<div className="mb-3 flex items-center gap-2 font-black text-[11px] text-blue-600 uppercase tracking-[0.15em]">
-						<CalendarDays size={14} />
-						<span>{dayjs(event.startDate).format("MMM DD, YYYY • HH:mm")}</span>
+				<CardContent className="flex flex-col px-4 pt-6 pb-4">
+					<div className="mb-4 flex items-center gap-2">
+						<div className="h-1 w-1 rounded-full bg-blue-600" />
+						<span className="font-black text-[9px] text-blue-600 uppercase tracking-[0.2em]">
+							{event.venueName || "Location TBD"}
+						</span>
 					</div>
 
-					<h3 className="mb-3 line-clamp-2 font-black text-[#000031] text-xl leading-tight transition-colors group-hover:text-blue-600">
+					<h3 className="mb-3 line-clamp-2 min-h-[3rem] font-black text-slate-900 text-xl leading-[1.2] tracking-tight transition-colors group-hover:text-blue-600">
 						{event.name}
 					</h3>
 
-					<div className="mb-6 flex items-center gap-2 font-bold text-slate-500 text-sm">
-						<MapPin size={16} className="text-slate-300" />
-						<span className="truncate">{event.venueName}</span>
-					</div>
+					<p className="mb-6 line-clamp-1 font-bold text-slate-400 text-xs">
+						{date.full} • {event.address || "Main Campus Hub"}
+					</p>
 
-					{/* Meta Info */}
-					<div className="mt-auto flex items-center justify-between border-slate-50 border-t pt-6">
-						<div className="flex items-center -space-x-2">
-							{[1, 2, 3].map((i) => (
-								<div
-									key={i}
-									className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-100"
-								>
-									<div className="h-full w-full bg-slate-200" />
-								</div>
-							))}
-							<div className="pl-4 font-bold text-[11px] text-slate-400">
-								+42 attending
+					<div className="flex items-center justify-between border-slate-50 border-t pt-4">
+						<div className="flex items-center gap-2">
+							<div className="flex -space-x-2">
+								{[1, 2, 3].map((i) => (
+									<div
+										key={i}
+										className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-slate-100"
+									>
+										<Image
+											src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + event.id}`}
+											alt="avatar"
+											width={24}
+											height={24}
+										/>
+									</div>
+								))}
 							</div>
+							<span className="font-bold text-[10px] text-slate-400">
+								+12 Going
+							</span>
 						</div>
 
-						<div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-50 text-slate-400 transition-all duration-300 group-hover:bg-blue-600 group-hover:text-white">
-							<ArrowRight size={18} />
+						<div className="rounded-xl bg-slate-50 p-2 text-slate-400 transition-all group-hover:rotate-[-45deg] group-hover:bg-[#030370] group-hover:text-white">
+							<ArrowRight size={16} strokeWidth={3} />
 						</div>
 					</div>
-				</div>
-			</article>
-		</Link>
+				</CardContent>
+			</Link>
+		</Card>
 	);
 }

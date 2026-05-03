@@ -57,6 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		fetchSession();
+
+		// Listen for storage changes (for cross-tab auth sync)
+		const handleStorageChange = () => {
+			fetchSession();
+		};
+
+		window.addEventListener("storage", handleStorageChange);
+		return () => window.removeEventListener("storage", handleStorageChange);
 	}, [fetchSession]);
 
 	const signOut = useCallback(async () => {

@@ -24,10 +24,10 @@ import type { PaymentRecord } from "../services/payments.service";
 
 const statusVariant: Record<
 	string,
-	"default" | "success" | "warning" | "destructive"
+	"default" | "secondary" | "destructive" | "outline"
 > = {
-	PENDING: "warning",
-	SUCCESS: "success",
+	PENDING: "outline",
+	SUCCESS: "secondary",
 	FAILED: "destructive",
 	REFUNDED: "default",
 };

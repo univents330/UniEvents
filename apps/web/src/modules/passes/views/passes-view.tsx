@@ -1,13 +1,9 @@
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
+import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
-import { Badge } from "@/shared/ui/badge";
-import { DataTable } from "@/shared/ui/data-table";
-import { SectionTitle } from "@/shared/ui/section-title";
-import { Select } from "@/shared/ui/select";
+import { Button } from "@/shared/ui/button";
 import { usePasses } from "../hooks/use-passes";
-import type { PassRecord } from "../services/passes.service";
 
 function formatDate(value: string) {
 	return new Intl.DateTimeFormat("en", {
@@ -15,17 +11,6 @@ function formatDate(value: string) {
 		timeStyle: "short",
 	}).format(new Date(value));
 }
-
-const statusVariant: Record<
-	string,
-	"default" | "success" | "warning" | "destructive"
-> = {
-	ACTIVE: "success",
-	USED: "default",
-	CANCELLED: "destructive",
-};
-
-import { QRCodeSVG } from "qrcode.react";
 
 export function PassesView() {
 	const [page, setPage] = useState(1);
@@ -42,106 +27,125 @@ export function PassesView() {
 		sortOrder: "desc",
 	});
 
-	const columns: ColumnDef<PassRecord>[] = [
-		{
-			accessorKey: "code",
-			header: "Entry QR Code",
-			cell: ({ row }) => (
-				<div className="flex items-center gap-4">
-					<div className="rounded-md border bg-white p-1">
-						<QRCodeSVG value={row.original.code} size={48} level="M" />
-					</div>
-					<span className="font-mono font-semibold text-sm">
-						{row.original.code}
-					</span>
-				</div>
-			),
-		},
-		{
-			accessorKey: "status",
-			header: "Status",
-			cell: ({ row }) => (
-				<Badge variant={statusVariant[row.original.status] ?? "default"}>
-					{row.original.status}
-				</Badge>
-			),
-		},
-		{
-			accessorKey: "eventId",
-			header: "Event",
-			cell: ({ row }) => (
-				<Badge variant="outline">{row.original.eventId.slice(0, 8)}...</Badge>
-			),
-		},
-		{
-			accessorKey: "attendeeId",
-			header: "Attendee",
-			cell: ({ row }) => (
-				<span className="text-[#5f6984]">
-					{row.original.attendeeId.slice(0, 10)}...
-				</span>
-			),
-		},
-		{
-			accessorKey: "createdAt",
-			header: "Issued",
-			cell: ({ row }) => (
-				<span className="text-[#5f6984] text-sm">
-					{formatDate(row.original.createdAt)}
-				</span>
-			),
-		},
-	];
-
 	if (passesQuery.isLoading) {
 		return (
-			<div className="panel-soft p-6 text-[#5f6984]">Loading passes...</div>
+			<div className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
+				Loading passes...
+			</div>
 		);
 	}
 
 	if (passesQuery.isError) {
 		return (
-			<div className="panel-soft p-6 text-[#5f6984]">
-				Unable to load passes right now.
+			<div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-600">
+				Failed to load passes. Please try again.
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6 md:space-y-8">
-			<SectionTitle
-				eyebrow="Passes"
-				title="Entry passes for all events"
-				description="View, filter, and manage entry passes. Each pass has a unique code for QR-based check-in."
-			/>
+		<div className="space-y-6">
+			<div className="flex items-center justify-between">
+				<h1 className="font-extrabold text-3xl text-black tracking-tight">
+					My Passes
+				</h1>
+				<select
+					value={status}
+					onChange={(e) => {
+						setStatus(e.target.value);
+						setPage(1);
+					}}
+					className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0a4bb8]"
+				>
+					<option value="">All Statuses</option>
+					<option value="ACTIVE">Active</option>
+					<option value="USED">Used</option>
+					<option value="CANCELLED">Cancelled</option>
+				</select>
+			</div>
 
-			<section className="panel-soft flex items-end p-4 md:p-5">
-				<label htmlFor="status-filter" className="space-y-2">
-					<span className="font-semibold text-[#5f6984] text-xs uppercase tracking-wide">
-						Status
-					</span>
-					<Select
-						id="status-filter"
-						value={status}
-						onChange={(e) => {
-							setStatus(e.target.value);
-							setPage(1);
-						}}
+			<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+				{passesQuery.data?.data && passesQuery.data.data.length > 0 ? (
+					passesQuery.data.data.map((pass) => (
+						<div
+							key={pass.id}
+							className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+						>
+							<div className="mb-4 flex items-center justify-between">
+								<span
+									className={`rounded-full px-3 py-1 font-semibold text-xs ${
+										pass.status === "ACTIVE"
+											? "bg-green-100 text-green-700"
+											: pass.status === "USED"
+												? "bg-slate-100 text-slate-700"
+												: "bg-red-100 text-red-700"
+									}`}
+								>
+									{pass.status}
+								</span>
+								<span className="text-slate-500 text-xs">
+									{formatDate(pass.createdAt)}
+								</span>
+							</div>
+
+							<div className="mb-4 flex justify-center">
+								<div className="rounded-lg border border-slate-200 bg-white p-4">
+									<QRCodeSVG value={pass.code} size={120} level="M" />
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<div className="flex items-center justify-between">
+									<span className="text-slate-600 text-sm">Pass Code</span>
+									<span className="font-mono font-semibold text-sm">
+										{pass.code}
+									</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-slate-600 text-sm">Event ID</span>
+									<span className="font-mono text-slate-500 text-xs">
+										{pass.eventId.slice(0, 8)}...
+									</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span className="text-slate-600 text-sm">Attendee ID</span>
+									<span className="font-mono text-slate-500 text-xs">
+										{pass.attendeeId.slice(0, 10)}...
+									</span>
+								</div>
+							</div>
+						</div>
+					))
+				) : (
+					<div className="col-span-full p-12 text-center text-slate-500">
+						No passes found.
+					</div>
+				)}
+			</div>
+
+			{passesQuery.data?.meta && passesQuery.data.meta.totalPages > 1 && (
+				<div className="flex items-center justify-center gap-2">
+					<Button
+						variant="outline"
+						onClick={() => setPage((p) => Math.max(1, p - 1))}
+						disabled={page === 1}
 					>
-						<option value="">All statuses</option>
-						<option value="ACTIVE">Active</option>
-						<option value="USED">Used</option>
-						<option value="CANCELLED">Cancelled</option>
-					</Select>
-				</label>
-			</section>
-
-			<DataTable
-				columns={columns}
-				data={passesQuery.data?.data ?? []}
-				meta={passesQuery.data?.meta}
-				onPageChange={setPage}
-			/>
+						Previous
+					</Button>
+					<span className="text-slate-600 text-sm">
+						Page {page} of {passesQuery.data.meta.totalPages}
+					</span>
+					<Button
+						variant="outline"
+						onClick={() =>
+							setPage((p) => Math.min(passesQuery.data.meta.totalPages, p + 1))
+						}
+						disabled={page === passesQuery.data.meta.totalPages}
+					>
+						Next
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }

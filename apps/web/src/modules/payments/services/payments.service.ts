@@ -1,5 +1,9 @@
 import type {
 	ConfirmFreeOrderInput,
+	GuestCheckoutInput,
+	GuestCheckoutResponse,
+	GuestVerifyPaymentInput,
+	GuestVerifyPaymentResponse,
 	InitiatePaymentInput,
 	InitiatePaymentResponse,
 	PaginatedResponse,
@@ -127,5 +131,29 @@ export const paymentsService = {
 
 	async remove(id: string) {
 		await apiClient.delete(`/payments/${id}`);
+	},
+
+	// Guest checkout methods (no auth required)
+	async guestCheckout(input: GuestCheckoutInput) {
+		const response = await apiClient.post<GuestCheckoutResponse>(
+			"/guest-checkout/initiate",
+			input,
+		);
+		return response.data;
+	},
+
+	async guestVerifyPayment(input: GuestVerifyPaymentInput) {
+		const response = await apiClient.post<GuestVerifyPaymentResponse>(
+			"/guest-checkout/verify",
+			input,
+		);
+		return response.data;
+	},
+
+	async guestGetPayment(id: string) {
+		const response = await apiClient.get<PaymentRecord>(
+			`/guest-checkout/payments/${id}`,
+		);
+		return response.data;
 	},
 };

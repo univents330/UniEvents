@@ -100,7 +100,7 @@ export const auth = betterAuth({
 			sameSite: isProduction ? "none" : "lax",
 			secure: isProduction,
 			path: "/",
-			domain: env.AUTH_COOKIE_DOMAIN,
+			domain: isProduction ? env.AUTH_COOKIE_DOMAIN : undefined,
 		},
 	},
 	user: {
