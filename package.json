@@ -38,6 +38,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.0",
 		"@types/bun": "catalog:",
+		"@types/next-pwa": "^5.6.9",
 		"@unievent/config": "workspace:*",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.1.2",
