@@ -18,6 +18,76 @@ const FILTERS = [
 	{ id: "paid", label: "Paid" },
 ];
 
+const MOCK_EVENT_START_DATES = {
+	evt1: "2026-04-26T15:45:00.000Z",
+	evt2: "2026-04-29T18:30:00.000Z",
+	evt3: "2026-05-04T10:00:00.000Z",
+	evt4: "2026-05-09T13:00:00.000Z",
+} as const;
+
+const MOCK_EVENTS = [
+	{
+		id: "evt_1",
+		name: "Web3 Developers Meetup",
+		description:
+			"A community gathering for web3 developers, designers, and enthusiasts to discuss the latest trends in decentralized tech.",
+		startDate: MOCK_EVENT_START_DATES.evt1,
+		venueName: "Innovation Hub, Block C",
+		mode: "OFFLINE",
+		type: "FREE",
+		visibility: "PUBLIC",
+		coverUrl:
+			"https://images.unsplash.com/photo-1591115765373-520b7a21769b?q=80&w=2070&auto=format&fit=crop",
+		thumbnail:
+			"https://images.unsplash.com/photo-1591115765373-520b7a21769b?q=80&w=200&auto=format&fit=crop",
+	},
+	{
+		id: "evt_2",
+		name: "React Advanced Masterclass",
+		description:
+			"Deep dive into React Server Components, Actions, and the future of the frontend ecosystem with hands-on labs.",
+		startDate: MOCK_EVENT_START_DATES.evt2,
+		venueName: "Online (Zoom)",
+		mode: "ONLINE",
+		type: "PAID",
+		visibility: "PUBLIC",
+		coverUrl:
+			"https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=2070&auto=format&fit=crop",
+		thumbnail:
+			"https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=200&auto=format&fit=crop",
+	},
+	{
+		id: "evt_3",
+		name: "University Startup Pitch",
+		description:
+			"Watch the top 10 university startups pitch their ideas to leading angel investors and venture capitalists.",
+		startDate: MOCK_EVENT_START_DATES.evt3,
+		venueName: "Main Auditorium",
+		mode: "OFFLINE",
+		type: "FREE",
+		visibility: "PUBLIC",
+		coverUrl:
+			"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=2070&auto=format&fit=crop",
+		thumbnail:
+			"https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=200&auto=format&fit=crop",
+	},
+	{
+		id: "evt_4",
+		name: "Design Systems Workshop",
+		description:
+			"Learn how to build and scale design systems using Tailwind CSS and Radix UI in this intensive workshop.",
+		startDate: MOCK_EVENT_START_DATES.evt4,
+		venueName: "Design Studio 4",
+		mode: "OFFLINE",
+		type: "PAID",
+		visibility: "PUBLIC",
+		coverUrl:
+			"https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?q=80&w=2070&auto=format&fit=crop",
+		thumbnail:
+			"https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?q=80&w=200&auto=format&fit=crop",
+	},
+] as EventRecord[];
+
 export function EventsNearYou() {
 	const [activeFilter, setActiveFilter] = useState("all");
 	const { location } = useLiveLocation({ fallback: "", autoDetect: true });
