@@ -152,3 +152,20 @@ export function useDeleteEventTicketTier(eventId: string) {
 		},
 	});
 }
+export function useApproveEvent() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			eventId,
+			isApproved,
+		}: {
+			eventId: string;
+			isApproved: boolean;
+		}) => eventsService.approve(eventId, isApproved),
+		onSuccess: (_, { eventId }) => {
+			queryClient.invalidateQueries({ queryKey: eventsKeys.all });
+			queryClient.invalidateQueries({ queryKey: eventsKeys.detail(eventId) });
+		},
+	});
+}

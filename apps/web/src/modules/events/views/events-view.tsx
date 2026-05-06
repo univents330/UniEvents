@@ -15,7 +15,11 @@ type TypeFilter = (typeof typeFilters)[number];
 type SortOption = "SOONEST" | "LATEST" | "ALPHA";
 
 export function EventsView() {
-	const eventsQuery = useEvents({ limit: 100 });
+	const eventsQuery = useEvents({
+		limit: 100,
+		status: "PUBLISHED",
+		isApproved: true,
+	});
 
 	const [query, setQuery] = useState("");
 	const [modeFilter, setModeFilter] = useState<ModeFilter>("ALL");

@@ -643,8 +643,8 @@ export class GuestCheckoutService {
 				return created;
 			});
 
-			// Send email asynchronously
-			void this.sendTicketConfirmationEmail(payment.id, purchaserEmail);
+			// Send email
+			await this.sendTicketConfirmationEmail(payment.id, purchaserEmail);
 
 			return {
 				attendeeId: attendee.id,
@@ -787,7 +787,7 @@ export class GuestCheckoutService {
 				});
 			}
 
-			void this.sendTicketConfirmationEmail(
+			await this.sendTicketConfirmationEmail(
 				payment.id,
 				payment.order.attendee.email,
 			);
@@ -862,7 +862,7 @@ export class GuestCheckoutService {
 		});
 
 		// Send ticket confirmation email
-		void this.sendTicketConfirmationEmail(
+		await this.sendTicketConfirmationEmail(
 			updatedPayment.id,
 			payment.order.attendee.email,
 		);

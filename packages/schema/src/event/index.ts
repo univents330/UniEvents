@@ -126,7 +126,15 @@ export const eventFilterSchema = z
 		type: z.enum(["FREE", "PAID"]).optional(),
 		mode: z.enum(["ONLINE", "OFFLINE"]).optional(),
 		visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
-		isApproved: z.boolean().optional(),
+		isApproved: z
+			.preprocess((val) => {
+				if (typeof val === "string") {
+					if (val.toLowerCase() === "true") return true;
+					if (val.toLowerCase() === "false") return false;
+				}
+				return val;
+			}, z.boolean())
+			.optional(),
 		search: z.string().optional(),
 		startDateFrom: z.coerce.date().optional(),
 		startDateTo: z.coerce.date().optional(),

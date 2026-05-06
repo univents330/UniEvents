@@ -24,11 +24,13 @@ const CATEGORY_SEARCH_MAP: Record<string, string> = {
 };
 
 export function AllEventsList({ searchParams }: AllEventsListProps) {
-	const filters: Record<string, string | number> = {
+	const filters: Record<string, string | number | boolean> = {
 		page: 1,
 		limit: 50,
 		sortBy: "startDate",
 		sortOrder: "asc",
+		status: "PUBLISHED",
+		isApproved: true,
 	};
 
 	if (searchParams.search) {

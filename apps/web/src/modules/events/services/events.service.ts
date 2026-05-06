@@ -107,4 +107,12 @@ export const eventsService = {
 	async deleteTicketTier(eventId: string, tierId: string) {
 		await apiClient.delete(`/events/${eventId}/ticket-tiers/${tierId}`);
 	},
+
+	async approve(eventId: string, isApproved: boolean) {
+		const response = await apiClient.patch<EventRecord>(
+			`/events/${eventId}/approve`,
+			{ isApproved },
+		);
+		return response.data;
+	},
 };

@@ -531,7 +531,10 @@ export class EventsService {
 
 		return await prisma.event.update({
 			where: { id },
-			data: { isApproved },
+			data: {
+				isApproved,
+				...(isApproved === false ? { status: "DRAFT" } : {}),
+			},
 		});
 	}
 }

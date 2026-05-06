@@ -80,16 +80,6 @@ export default function DashboardGroupLayout({
 			],
 		},
 		{
-			title: "Operations",
-			items: [
-				{
-					label: "Orders",
-					href: "/dashboard/orders",
-					icon: <CreditCard size={18} />,
-				},
-			],
-		},
-		{
 			title: "Other",
 			items: [
 				{
@@ -99,6 +89,20 @@ export default function DashboardGroupLayout({
 				},
 			],
 		},
+		...(user?.role === "ADMIN"
+			? [
+					{
+						title: "Admin",
+						items: [
+							{
+								label: "Approvals",
+								href: "/dashboard/admin",
+								icon: <PlusCircle size={18} />,
+							},
+						],
+					},
+				]
+			: []),
 	];
 
 	const sections = unifiedSections;

@@ -73,6 +73,8 @@ export function EventCategories() {
 					limit: 1,
 					sortBy: "startDate",
 					sortOrder: "asc",
+					status: "PUBLISHED",
+					isApproved: true,
 					search: category.search,
 				}),
 			staleTime: 1000 * 60 * 5,

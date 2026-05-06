@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { Navbar } from "@/shared/ui/navbar/navbar";
 
 export function EventHero() {
 	const router = useRouter();
@@ -89,7 +88,6 @@ export function EventHero() {
 
 	return (
 		<div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#EBF3FF]">
-			<Navbar />
 			<main className="flex w-full flex-1 items-center justify-center">
 				<div className="w-full max-w-6xl px-6 py-24 md:py-32">
 					<div className="flex flex-col items-center gap-3 text-center">

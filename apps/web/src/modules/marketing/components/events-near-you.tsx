@@ -6,6 +6,7 @@ import { useState } from "react";
 import { cn } from "@/core/lib/cn";
 import { EventCard } from "@/modules/events/components/event-card";
 import { useEvents } from "@/modules/events/hooks/use-events";
+import type { EventListQuery } from "@/modules/events/services/events.service";
 import { useLiveLocation } from "@/shared/hooks/use-live-location";
 import { Button } from "@/shared/ui/button";
 
@@ -24,11 +25,13 @@ export function EventsNearYou() {
 
 	// Prepare filters for API
 	const getApiFilters = () => {
-		const filters: Record<string, string | number> = {
+		const filters: EventListQuery = {
 			page: 1,
 			limit: 8,
 			sortBy: "startDate" as const,
 			sortOrder: "asc" as const,
+			status: "PUBLISHED" as const,
+			isApproved: true,
 		};
 
 		if (activeFilter === "free") filters.type = "FREE";

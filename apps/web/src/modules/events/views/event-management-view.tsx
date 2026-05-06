@@ -15,7 +15,11 @@ import { useMemo } from "react";
 import { useAttendees } from "@/modules/attendees/hooks/use-attendees";
 import { useOrders } from "@/modules/orders/hooks/use-orders";
 import { Button } from "@/shared/ui/button";
-import { useEvent, useEventTicketTiers } from "../hooks/use-events";
+import {
+	useEvent,
+	useEventTicketTiers,
+	useUpdateEvent,
+} from "../hooks/use-events";
 
 type EventManagementViewProps = {
 	eventId: string;
@@ -26,6 +30,7 @@ export function EventManagementView({ eventId }: EventManagementViewProps) {
 	const tiersQuery = useEventTicketTiers(eventId);
 	const attendeesQuery = useAttendees({ eventId });
 	const ordersQuery = useOrders({ eventId });
+	const updateEventMutation = useUpdateEvent(eventId);
 
 	const event = eventQuery.data;
 	const tiers = tiersQuery.data?.data ?? [];
@@ -76,24 +81,44 @@ export function EventManagementView({ eventId }: EventManagementViewProps) {
 	return (
 		<div className="space-y-6">
 			{!event.isApproved && (
-				<div className="flex items-center justify-between rounded-2xl border border-amber-100 bg-amber-50 p-6 shadow-sm">
+				<div className="flex flex-col gap-4 rounded-2xl border border-amber-100 bg-amber-50 p-6 shadow-sm md:flex-row md:items-center md:justify-between">
 					<div className="flex items-center gap-4">
-						<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+						<div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
 							<Settings className="h-6 w-6 animate-pulse" />
 						</div>
 						<div>
 							<h3 className="font-black text-amber-900 text-lg">
-								Pending Admin Approval
+								{event.status === "DRAFT"
+									? "Finish Your Event Setup"
+									: "Pending Admin Approval"}
 							</h3>
 							<p className="text-amber-800/70 text-sm">
-								Your event is currently being reviewed. It will not be visible
-								on the public discover page until approved.
+								{event.status === "DRAFT"
+									? "Your event is in Draft mode. Publish it to submit for admin review."
+									: "Your event is currently being reviewed. It will not be visible on the public discover page until approved."}
 							</p>
 						</div>
 					</div>
-					<div className="hidden md:block">
-						<span className="rounded-full bg-amber-200/50 px-4 py-1.5 font-black text-amber-900 text-xs uppercase tracking-widest">
-							Admin Action Required
+					<div className="flex items-center gap-3">
+						{event.status === "DRAFT" && (
+							<Button
+								className="!text-white bg-[#030370] hover:bg-[#030370]/90"
+								disabled={updateEventMutation.isPending}
+								onClick={async () => {
+									try {
+										await updateEventMutation.mutateAsync({
+											status: "PUBLISHED",
+										});
+									} catch (_e) {}
+								}}
+							>
+								{updateEventMutation.isPending
+									? "Publishing..."
+									: "Publish Now"}
+							</Button>
+						)}
+						<span className="rounded-full bg-amber-200/50 px-4 py-1.5 font-black text-[10px] text-amber-900 uppercase tracking-widest">
+							{event.status === "DRAFT" ? "Draft Mode" : "Under Review"}
 						</span>
 					</div>
 				</div>

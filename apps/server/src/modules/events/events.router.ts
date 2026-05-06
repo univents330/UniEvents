@@ -100,7 +100,7 @@ export function createEventsRouter(): Router {
 		validatePipe({ params: eventTicketTierIdParamsSchema }),
 		asyncHandler((req, res) => eventsController.deleteTicketTier(req, res)),
 	);
-	router.post(
+	router.patch(
 		"/:id/approve",
 		requireAuth,
 		validatePipe({ params: idParamSchema, body: approveEventSchema }),
