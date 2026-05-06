@@ -1,20 +1,13 @@
 "use client";
 
-import {
-	CalendarDays,
-	PencilLine,
-	Plus,
-	Search,
-	Trash2,
-	Users,
-} from "lucide-react";
+import { PencilLine, Plus, Search, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/core/providers/auth-provider";
 import { useDeleteEvent, useEvents } from "../hooks/use-events";
 
 // Skeleton loading components
-function EventCardSkeleton() {
+function _EventCardSkeleton() {
 	return (
 		<div className="rounded-2xl border border-slate-200 bg-white p-4">
 			<div className="flex items-start justify-between gap-3">
@@ -69,7 +62,7 @@ export function HostEventsView() {
 	const [status, setStatus] = useState<
 		"ALL" | "DRAFT" | "PUBLISHED" | "COMPLETED" | "CANCELLED"
 	>("ALL");
-	const [deletingId, setDeletingId] = useState<string | null>(null);
+	const [_deletingId, setDeletingId] = useState<string | null>(null);
 	const deleteEvent = useDeleteEvent();
 
 	const eventsQuery = useEvents({
@@ -102,7 +95,7 @@ export function HostEventsView() {
 		return { total, draft, published, completed, live };
 	}, [events]);
 
-	const handleDelete = async (eventId: string, eventName: string) => {
+	const _handleDelete = async (eventId: string, eventName: string) => {
 		const ok = window.confirm(
 			`Delete "${eventName}"? This will remove the event permanently.`,
 		);
@@ -309,7 +302,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
 	);
 }
 
-function Tag({ children }: { children: React.ReactNode }) {
+function _Tag({ children }: { children: React.ReactNode }) {
 	return (
 		<span className="rounded-full border border-[#dbe7ff] bg-[#f5f9ff] px-2.5 py-1 font-semibold text-[#0a4bb8]">
 			{children}

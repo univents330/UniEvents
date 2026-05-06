@@ -7,7 +7,6 @@ import {
 	PlusCircle,
 	Ticket,
 	User,
-	Users,
 	Zap,
 } from "lucide-react";
 import { useState } from "react";
