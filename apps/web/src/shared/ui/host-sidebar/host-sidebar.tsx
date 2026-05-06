@@ -48,16 +48,6 @@ export const navSections: SidebarSection[] = [
 				href: "/dashboard/orders",
 				icon: <ClipboardList className="h-5 w-5" />,
 			},
-			{
-				label: "Attendees",
-				href: "/dashboard/attendees",
-				icon: <Users className="h-5 w-5" />,
-			},
-			{
-				label: "Check-ins",
-				href: "/dashboard/check-ins",
-				icon: <Users className="h-5 w-5" />,
-			},
 		],
 	},
 	{

@@ -84,14 +84,9 @@ export default function DashboardGroupLayout({
 			title: "Operations",
 			items: [
 				{
-					label: "Attendees",
-					href: "/dashboard/attendees",
-					icon: <Users size={18} />,
-				},
-				{
-					label: "Check-ins",
-					href: "/dashboard/check-ins",
-					icon: <Users size={18} />,
+					label: "Orders",
+					href: "/dashboard/orders",
+					icon: <CreditCard size={18} />,
 				},
 			],
 		},

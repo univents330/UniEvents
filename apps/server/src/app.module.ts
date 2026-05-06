@@ -51,6 +51,7 @@ export function createApp(): Express {
 	});
 
 	registerModules(app);
+	app.use("/api/auth", toNodeHandler(auth));
 	app.use("/auth", toNodeHandler(auth));
 	app.use(notFoundMiddleware);
 	app.use(errorHandlerMiddleware);

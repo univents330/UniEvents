@@ -385,7 +385,7 @@ export class GuestCheckoutService {
 			};
 		});
 
-		const dashboardUrl = `${(env.BETTER_AUTH_URL ?? env.WEB_APP_URL ?? "http://localhost:3000").replace("/auth", "")}/tickets`;
+		const dashboardUrl = `${(env.BETTER_AUTH_URL ?? env.WEB_APP_URL ?? "http://localhost:3000").replace(/\/(?:api\/)?auth$/, "")}/tickets`;
 
 		const htmlContent = renderOrderEmail({
 			attendeeName,

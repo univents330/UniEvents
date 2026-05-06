@@ -5,10 +5,10 @@ function getAuthBaseUrl(): string {
 	const apiBase = getApiBaseUrl();
 
 	if (apiBase.endsWith("/api")) {
-		return apiBase.replace(/\/api$/, "/auth");
+		return `${apiBase}/auth`;
 	}
 
-	return `${apiBase}/auth`;
+	return `${apiBase}/api/auth`;
 }
 
 export const authClient = createAuthClient({

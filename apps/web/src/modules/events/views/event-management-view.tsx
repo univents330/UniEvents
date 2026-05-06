@@ -53,7 +53,7 @@ export function EventManagementView({ eventId }: EventManagementViewProps) {
 
 	if (eventQuery.isLoading) {
 		return (
-			<div className="flex min-h-[400px] items-center justify-center">
+			<div className="flex min-h-100 items-center justify-center">
 				<Loader2 className="h-8 w-8 animate-spin text-[#0a4bb8]" />
 			</div>
 		);
@@ -181,18 +181,32 @@ export function EventManagementView({ eventId }: EventManagementViewProps) {
 
 					{/* Recent Activity / Attendees Placeholder */}
 					<div className="rounded-2xl border border-[#dbe7ff] bg-white p-6 shadow-sm">
-						<div className="mb-4 flex items-center justify-between">
+						<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 							<h3 className="font-bold text-lg text-slate-900">
 								Recent Attendees
 							</h3>
-							<Button
-								asChild
-								variant="ghost"
-								size="sm"
-								className="text-[#0a4bb8]"
-							>
-								<Link href="/dashboard/attendees">View All</Link>
-							</Button>
+							<div className="flex flex-wrap items-center gap-2">
+								<Button
+									asChild
+									variant="ghost"
+									size="sm"
+									className="text-[#0a4bb8]"
+								>
+									<Link href={`/dashboard/events/${event.id}/attendees`}>
+										View Attendees
+									</Link>
+								</Button>
+								<Button
+									asChild
+									variant="outline"
+									size="sm"
+									className="text-[#0a4bb8]"
+								>
+									<Link href={`/dashboard/events/${event.id}/check-ins`}>
+										View Check-ins
+									</Link>
+								</Button>
+							</div>
 						</div>
 						<div className="space-y-3">
 							{attendees.length === 0 ? (

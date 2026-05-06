@@ -264,20 +264,6 @@ export function UnifiedDashboard() {
 								<Ticket className="h-5 w-5 text-[#030370]" />
 								<span className="font-medium text-slate-900">View Orders</span>
 							</Link>
-							<Link
-								href="/dashboard/attendees"
-								className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 transition-colors hover:border-[#030370] hover:bg-[#030370]/5"
-							>
-								<Users className="h-5 w-5 text-[#030370]" />
-								<span className="font-medium text-slate-900">Attendees</span>
-							</Link>
-							<Link
-								href="/dashboard/check-ins"
-								className="flex items-center gap-3 rounded-xl border border-slate-200 p-4 transition-colors hover:border-[#030370] hover:bg-[#030370]/5"
-							>
-								<Ticket className="h-5 w-5 text-[#030370]" />
-								<span className="font-medium text-slate-900">Check-ins</span>
-							</Link>
 						</>
 					) : (
 						<>

@@ -41,6 +41,28 @@ function EventCardSkeleton() {
 	);
 }
 
+function EventTableRowSkeleton() {
+	return (
+		<tr className="animate-pulse">
+			<td className="px-6 py-5">
+				<div className="h-4 w-36 rounded bg-slate-200" />
+			</td>
+			<td className="px-6 py-5">
+				<div className="h-4 w-28 rounded bg-slate-200" />
+			</td>
+			<td className="px-6 py-5">
+				<div className="h-4 w-24 rounded bg-slate-200" />
+			</td>
+			<td className="px-6 py-5">
+				<div className="h-4 w-20 rounded bg-slate-200" />
+			</td>
+			<td className="px-6 py-5">
+				<div className="h-8 w-full rounded bg-slate-200" />
+			</td>
+		</tr>
+	);
+}
+
 export function HostEventsView() {
 	const { user } = useAuth();
 	const [search, setSearch] = useState("");
@@ -121,7 +143,6 @@ export function HostEventsView() {
 					</div>
 				</div>
 			</div>
-
 			<div className="grid grid-cols-2 gap-3 md:grid-cols-5">
 				<StatCard label="Total" value={stats.total} />
 				<StatCard label="Published" value={stats.published} />
@@ -129,7 +150,6 @@ export function HostEventsView() {
 				<StatCard label="Live now" value={stats.live} />
 				<StatCard label="Completed" value={stats.completed} />
 			</div>
-
 			<div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center">
 				<div className="relative flex-1">
 					<Search className="absolute top-3 left-3 h-5 w-5 text-slate-400" />
@@ -154,88 +174,124 @@ export function HostEventsView() {
 					<option value="CANCELLED">Cancelled</option>
 				</select>
 			</div>
-
 			{eventsQuery.isLoading ? (
-				<div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-					<EventCardSkeleton />
-					<EventCardSkeleton />
-					<EventCardSkeleton />
-					<EventCardSkeleton />
+				<div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-slate-200">
+							<thead className="bg-slate-50">
+								<tr>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Event
+									</th>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Date
+									</th>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Mode
+									</th>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Status
+									</th>
+									<th className="px-6 py-4" />
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-slate-200">
+								{[...Array(4)].map((_, index) => (
+									<EventTableRowSkeleton key={index} />
+								))}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			) : events.length === 0 ? (
 				<div className="rounded-xl border border-slate-200 bg-white p-6 text-slate-600">
 					No events found for current filters.
 				</div>
 			) : (
-				<div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-					{events.map((event) => (
-						<div
-							key={event.id}
-							className="rounded-2xl border border-[#dbe7ff] bg-white p-4 shadow-sm transition hover:border-[#abc8ff]"
-						>
-							<div className="flex items-start justify-between gap-3">
-								<div className="min-w-0">
-									<h3 className="line-clamp-1 font-bold text-lg text-slate-900">
-										{event.name}
-									</h3>
-									<p className="mt-0.5 line-clamp-1 text-slate-500 text-sm">
-										{event.venueName}
-									</p>
-								</div>
-								<div className="flex flex-col items-end gap-2">
-									<StatusBadge status={event.status} />
-									{!event.isApproved && (
-										<span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-bold text-[10px] text-amber-700">
-											PENDING APPROVAL
-										</span>
-									)}
-								</div>
-							</div>
-
-							<div className="mt-3 space-y-1.5 text-slate-600 text-sm">
-								<p className="flex items-center gap-2">
-									<CalendarDays className="h-4 w-4" />
-									{new Date(event.startDate).toLocaleString("en-IN")}
-								</p>
-								<p className="line-clamp-2">{event.address}</p>
-							</div>
-
-							<div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-								<Tag>{event.mode}</Tag>
-								<Tag>{event.type}</Tag>
-								<Tag>{event.visibility}</Tag>
-							</div>
-
-							<div className="mt-4 flex items-center justify-end gap-2 border-slate-100 border-t pt-3">
-								<Link
-									href={`/dashboard/events/${event.id}`}
-									className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 font-medium text-slate-700 text-sm hover:bg-slate-50"
-								>
-									Manage
-								</Link>
-								<Link
-									href={`/dashboard/events/${event.id}/edit`}
-									className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 font-medium text-slate-700 text-sm hover:bg-slate-50"
-								>
-									<PencilLine className="h-4 w-4" />
-									Edit
-								</Link>
-								<button
-									type="button"
-									onClick={() => handleDelete(event.id, event.name)}
-									disabled={deleteEvent.isPending && deletingId === event.id}
-									className="inline-flex items-center gap-2 rounded-lg border border-rose-200 px-3 py-1.5 font-medium text-rose-700 text-sm hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-								>
-									<Trash2 className="h-4 w-4" />
-									{deleteEvent.isPending && deletingId === event.id
-										? "Deleting..."
-										: "Delete"}
-								</button>
-							</div>
-						</div>
-					))}
+				<div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+					<div className="overflow-x-auto">
+						<table className="min-w-full divide-y divide-slate-200">
+							<thead className="bg-slate-50">
+								<tr>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Event
+									</th>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Date
+									</th>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Mode
+									</th>
+									<th className="px-6 py-4 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">
+										Status
+									</th>
+									<th className="px-6 py-4" />
+								</tr>
+							</thead>
+							<tbody className="divide-y divide-slate-200">
+								{events.map((event) => (
+									<tr
+										key={event.id}
+										className="transition-colors hover:bg-slate-50"
+									>
+										<td className="px-6 py-5">
+											<div className="min-w-0">
+												<p className="font-semibold text-slate-900">
+													{event.name}
+												</p>
+												<p className="line-clamp-1 text-slate-500 text-sm">
+													{event.venueName}
+												</p>
+											</div>
+										</td>
+										<td className="px-6 py-5 text-slate-600">
+											{new Date(event.startDate).toLocaleDateString("en-IN", {
+												dateStyle: "medium",
+											})}
+											<br />
+											<span className="text-slate-400 text-xs">
+												{new Date(event.endDate).toLocaleDateString("en-IN", {
+													dateStyle: "medium",
+												})}
+											</span>
+										</td>
+										<td className="px-6 py-5">
+											<div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 font-semibold text-slate-700 text-xs">
+												{event.mode}
+											</div>
+										</td>
+										<td className="px-6 py-5">
+											<StatusBadge status={event.status} />
+											{!event.isApproved && (
+												<div className="mt-2 inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-1 font-semibold text-[10px] text-amber-700">
+													Pending
+												</div>
+											)}
+										</td>
+										<td className="px-6 py-5 text-right">
+											<div className="flex flex-wrap justify-end gap-2">
+												<Link
+													href={`/dashboard/events/${event.id}`}
+													className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 font-semibold text-slate-700 text-xs hover:bg-white"
+												>
+													Manage
+												</Link>
+												<Link
+													href={`/dashboard/events/${event.id}/edit`}
+													className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 text-xs hover:bg-slate-50"
+												>
+													<PencilLine className="h-4 w-4" />
+													Edit
+												</Link>
+											</div>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
 				</div>
-			)}
+			)}{" "}
 		</div>
 	);
 }
