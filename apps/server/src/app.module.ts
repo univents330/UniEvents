@@ -51,7 +51,7 @@ export function createApp(): Express {
 	});
 
 	registerModules(app);
-	app.use("/api/auth", toNodeHandler(auth));
+	// Mount Better Auth at the canonical `/auth` path only.
 	app.use("/auth", toNodeHandler(auth));
 	app.use(notFoundMiddleware);
 	app.use(errorHandlerMiddleware);
